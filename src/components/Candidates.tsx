@@ -116,8 +116,19 @@ export default function Candidates() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && previewImage) {
+        setPreviewImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewImage]);
 
   const fetchCandidates = async () => {
     setIsRefreshing(true);
@@ -191,50 +202,6 @@ export default function Candidates() {
   }, []);
   
   const showToast = (msg: string) => setToastMessage(msg);
-
-  const handleUploadCandidatePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedCandidate) return;
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const img = new Image();
-      img.onload = async () => {
-        const maxDim = 500;
-        let width = img.width;
-        let height = img.height;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        const b64 = canvas.toDataURL('image/jpeg', 0.85);
-
-        const updated = { ...selectedCandidate, photoUrl: b64 };
-        setSelectedCandidate(updated);
-        setCandidates(prev => prev.map(c => c.id === updated.id ? updated : c));
-
-        try {
-          const { saveFirebaseCandidate } = await import('../firebase');
-          await saveFirebaseCandidate({ id: updated.id, photoUrl: b64 });
-          showToast("Fotosurat muvaffaqiyatli saqlandi!");
-        } catch (err) {
-          console.warn("Failed to save photo to firebase:", err);
-        }
-      };
-      img.src = evt.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
 
   const filteredCandidates = candidates.filter(c => {
     const q = (searchQuery || '').toLowerCase().trim();
@@ -498,7 +465,12 @@ export default function Candidates() {
                       <img 
                         src={candidate.photoUrl} 
                         alt={candidate.fullName} 
-                        className="w-8 h-8 rounded-full object-cover border border-emerald-500/40 shadow-xs shrink-0" 
+                        className="w-8 h-8 rounded-full object-cover border border-emerald-500/40 shadow-xs shrink-0 cursor-pointer hover:scale-110 transition-transform" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewImage({ url: candidate.photoUrl!, title: `${candidate.fullName} - Fotosurat` });
+                        }}
+                        title="Rasmni ochish"
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
@@ -628,8 +600,8 @@ export default function Candidates() {
                       src={selectedCandidate.photoUrl} 
                       alt={selectedCandidate.fullName} 
                       className="w-12 h-12 rounded-xl object-cover border-2 border-[#00A651] shadow-md shrink-0 cursor-pointer hover:opacity-90"
-                      onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
-                      title="Rasmni to'liq ko'rish"
+                      onClick={() => setPreviewImage({ url: selectedCandidate.photoUrl!, title: `${selectedCandidate.fullName} - Fotosurat` })}
+                      title="Kattalashtirib ko'rish"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00A651] to-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
@@ -660,59 +632,25 @@ export default function Candidates() {
               <div className="p-6 overflow-y-auto space-y-5 text-slate-700 dark:text-slate-300 text-sm">
                 
                 {/* Nomzod fotosurati */}
-                <input 
-                  type="file" 
-                  id="modalCandidatePhotoInput" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handleUploadCandidatePhoto} 
-                />
-                
-                {selectedCandidate.photoUrl ? (
-                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+                {selectedCandidate.photoUrl && (
+                  <div 
+                    onClick={() => setPreviewImage({ url: selectedCandidate.photoUrl!, title: `${selectedCandidate.fullName} - Fotosurat` })}
+                    className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl flex items-center gap-4 cursor-pointer group hover:bg-emerald-100/50 dark:hover:bg-emerald-950/40 transition-colors shadow-2xs"
+                    title="Kattalashtirib ko'rish uchun bosing"
+                  >
                     <img 
                       src={selectedCandidate.photoUrl} 
                       alt={selectedCandidate.fullName} 
-                      className="w-24 h-32 object-cover rounded-xl border border-emerald-500/50 shadow-md shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
-                      title="Kattalashtirib ko'rish"
+                      className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-xl border border-emerald-500/50 shadow-md shrink-0 group-hover:scale-105 transition-transform"
                     />
-                    <div className="space-y-1.5 text-center sm:text-left flex-1">
+                    <div className="space-y-1">
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Biriktirilgan 3x4 fotosurat
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Nomzod anketasiga biriktirilgan haqiqiy fotosurat.</p>
-                      <div className="flex items-center gap-2 pt-1 justify-center sm:justify-start">
-                        <button 
-                          type="button" 
-                          onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
-                        >
-                          To'liq ko'rish ↗
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => document.getElementById('modalCandidatePhotoInput')?.click()}
-                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
-                        >
-                          <Camera className="w-3.5 h-3.5 text-blue-500" />
-                          Almashtirish
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => document.getElementById('modalCandidatePhotoInput')?.click()}
-                    className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-center gap-3 cursor-pointer transition-colors group"
-                  >
-                    <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                      <Camera className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Fotosurat yuklanmagan</p>
-                      <p className="text-[11px] text-slate-400">Fotosurat biriktirish uchun shu yerga bosing (3x4 yoki shaxsiy rasm)</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Rasmni kattalashtirib ko'rish uchun ustiga bosing
+                      </p>
                     </div>
                   </div>
                 )}
@@ -909,6 +847,57 @@ export default function Candidates() {
                   Ha, o'chirilsin
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Telegram/Instagram Style Photo Lightbox Preview */}
+      <AnimatePresence>
+        {previewImage && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md cursor-pointer"
+              onClick={() => setPreviewImage(null)}
+            />
+            
+            {/* Top Close Bar */}
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center transition-colors cursor-pointer backdrop-blur-md shadow-lg"
+                title="Yopish (Esc)"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {previewImage.title && (
+              <div className="absolute top-5 left-6 text-white/90 text-sm font-semibold tracking-wide truncate max-w-[70vw] z-20 drop-shadow-md">
+                {previewImage.title}
+              </div>
+            )}
+
+            {/* Centered Image */}
+            <motion.div
+              initial={{ scale: 0.88, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.88, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 28 }}
+              className="relative max-w-[92vw] max-h-[85vh] flex items-center justify-center z-10"
+              onClick={() => setPreviewImage(null)}
+            >
+              <img
+                src={previewImage.url}
+                alt={previewImage.title || "Nomzod rasmi"}
+                className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl border border-white/15"
+                onClick={(e) => e.stopPropagation()}
+              />
             </motion.div>
           </div>
         )}
