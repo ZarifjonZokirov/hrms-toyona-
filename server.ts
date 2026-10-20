@@ -648,9 +648,17 @@ export async function configureRoutes(appInstance: express.Express = app) {
   const PORT = 3000;
 
   // Allow cross-origin requests from the HTML form
-  app.use(cors());
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  appInstance.use(cors());
+  appInstance.use(express.json({ limit: '50mb' }));
+  appInstance.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // Support both /api/... and /... in serverless environments
+  appInstance.use((req, res, next) => {
+    if (!req.url.startsWith('/api') && !req.url.startsWith('/_') && req.url !== '/') {
+      req.url = '/api' + req.url;
+    }
+    next();
+  });
 
   // API Routes
   app.get("/api/candidates/health", async (req, res) => {
@@ -1702,24 +1710,28 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       ]
     });
   });
+}
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+export async function startServer(appInstance: express.Express = app) {
+  const PORT = process.env.PORT || 3000;
+
+  // Vite middleware for development (ONLY in local development, NEVER in Serverless/Vercel)
+  if (!process.env.VERCEL && !process.env.SERVERLESS && process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
-    app.use(vite.middlewares);
-  } else {
+    appInstance.use(vite.middlewares);
+  } else if (!process.env.VERCEL && !process.env.SERVERLESS) {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    appInstance.use(express.static(distPath));
+    appInstance.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, "0.0.0.0", () => {
+  if (!process.env.VERCEL && !process.env.SERVERLESS && process.env.NODE_ENV !== 'test') {
+    appInstance.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
   }
@@ -1734,5 +1746,7 @@ function calculateAge(dobStr: string) {
 }
 
 if (!process.env.VERCEL && !process.env.SERVERLESS) {
-  configureRoutes(app);
+  configureRoutes(app).then(() => {
+    startServer(app);
+  });
 }

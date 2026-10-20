@@ -31,7 +31,8 @@ var server_exports = {};
 __export(server_exports, {
   app: () => app,
   configureRoutes: () => configureRoutes,
-  formatDelayText: () => formatDelayText
+  formatDelayText: () => formatDelayText,
+  startServer: () => startServer
 });
 module.exports = __toCommonJS(server_exports);
 var import_express = __toESM(require("express"), 1);
@@ -577,9 +578,15 @@ async function configureRoutes(appInstance = app) {
   if (isRoutesConfigured) return;
   isRoutesConfigured = true;
   const PORT = 3e3;
-  app.use((0, import_cors.default)());
-  app.use(import_express.default.json({ limit: "50mb" }));
-  app.use(import_express.default.urlencoded({ limit: "50mb", extended: true }));
+  appInstance.use((0, import_cors.default)());
+  appInstance.use(import_express.default.json({ limit: "50mb" }));
+  appInstance.use(import_express.default.urlencoded({ limit: "50mb", extended: true }));
+  appInstance.use((req, res, next) => {
+    if (!req.url.startsWith("/api") && !req.url.startsWith("/_") && req.url !== "/") {
+      req.url = "/api" + req.url;
+    }
+    next();
+  });
   app.get("/api/candidates/health", async (req, res) => {
     try {
       const list = await getFirestoreCandidates();
@@ -1470,32 +1477,38 @@ async function configureRoutes(appInstance = app) {
       ]
     });
   });
-  if (process.env.NODE_ENV !== "production") {
+}
+async function startServer(appInstance = app) {
+  const PORT = process.env.PORT || 3e3;
+  if (!process.env.VERCEL && !process.env.SERVERLESS && process.env.NODE_ENV !== "production") {
     const vite = await (0, import_vite.createServer)({
       server: { middlewareMode: true },
       appType: "spa"
     });
-    app.use(vite.middlewares);
-  } else {
+    appInstance.use(vite.middlewares);
+  } else if (!process.env.VERCEL && !process.env.SERVERLESS) {
     const distPath = import_path.default.join(process.cwd(), "dist");
-    app.use(import_express.default.static(distPath));
-    app.get("*", (req, res) => {
+    appInstance.use(import_express.default.static(distPath));
+    appInstance.get("*", (req, res) => {
       res.sendFile(import_path.default.join(distPath, "index.html"));
     });
   }
-  if (!process.env.VERCEL && process.env.NODE_ENV !== "test") {
-    app.listen(PORT, "0.0.0.0", () => {
+  if (!process.env.VERCEL && !process.env.SERVERLESS && process.env.NODE_ENV !== "test") {
+    appInstance.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
   }
 }
 if (!process.env.VERCEL && !process.env.SERVERLESS) {
-  configureRoutes(app);
+  configureRoutes(app).then(() => {
+    startServer(app);
+  });
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   app,
   configureRoutes,
-  formatDelayText
+  formatDelayText,
+  startServer
 });
 //# sourceMappingURL=server.cjs.map
