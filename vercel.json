@@ -1,6 +1,11 @@
 {
+  "version": 2,
   "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
     {
       "source": "/anketa.html",
       "destination": "/anketa.html"
@@ -10,7 +15,7 @@
       "destination": "/assets/$1"
     },
     {
-      "source": "/((?!anketa\\.html|assets/).*)",
+      "source": "/((?!anketa\\.html|assets/|api/).*)",
       "destination": "/index.html"
     }
   ]

@@ -849,8 +849,12 @@ function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2:
   return Math.round(R * c);
 }
 
-async function startServer() {
-  const app = express();
+export const app = express();
+
+let isRoutesConfigured = false;
+export function configureRoutes(appInstance: express.Express = app) {
+  if (isRoutesConfigured) return;
+  isRoutesConfigured = true;
   const PORT = 3000;
 
   // Allow cross-origin requests from the HTML form
@@ -1900,9 +1904,11 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
 }
 
 function calculateAge(dobStr: string) {
@@ -1913,4 +1919,4 @@ function calculateAge(dobStr: string) {
   return Math.abs(age_dt.getUTCFullYear() - 1970);
 }
 
-startServer();
+configureRoutes(app);
