@@ -181,7 +181,8 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
-    const mergeUserLists = (prevUsers: UserItem[], incomingUsers: any[]): UserItem[] => {
+    // Cleanly build user list from authoritative Firebase snapshot without resurrecting deleted users
+    const buildUserList = (incomingUsers: any[]): UserItem[] => {
       const map = new Map<string, UserItem>();
       
       const addOrMerge = (u: any) => {
@@ -215,20 +216,19 @@ export default function App() {
       };
 
       addOrMerge(CANONICAL_SUPER_ADMIN as UserItem);
-      prevUsers.forEach(addOrMerge);
-      incomingUsers.forEach(addOrMerge);
+      (incomingUsers || []).forEach(addOrMerge);
 
       return Array.from(map.values());
     };
 
     getFirebaseUsers().then(fbUsers => {
-      if (!active || !fbUsers || fbUsers.length === 0) return;
-      setUsers(prevUsers => {
-        const merged = mergeUserLists(prevUsers, fbUsers);
+      if (!active || !fbUsers) return;
+      setUsers(() => {
+        const updated = buildUserList(fbUsers);
         try {
-          localStorage.setItem('toyonasavdo_users_v2', JSON.stringify(merged));
+          localStorage.setItem('toyonasavdo_users_v2', JSON.stringify(updated));
         } catch {}
-        return merged;
+        return updated;
       });
     }).catch(err => {
       console.warn("Could not fetch Firebase users:", err);
@@ -240,9 +240,12 @@ export default function App() {
 
     const unsubUsers = subscribeFirebaseUsers((liveUsers) => {
       if (!active || !liveUsers) return;
-      setUsers(prevUsers => {
-        const merged = mergeUserLists(prevUsers, liveUsers);
-        return merged;
+      setUsers(() => {
+        const updated = buildUserList(liveUsers);
+        try {
+          localStorage.setItem('toyonasavdo_users_v2', JSON.stringify(updated));
+        } catch {}
+        return updated;
       });
     });
 

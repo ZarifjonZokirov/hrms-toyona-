@@ -249,21 +249,8 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
         accountCreatedAt: selectedEmployee.accountCreatedAt || new Date().toISOString().split('T')[0]
       };
 
-      // 1. Employee to'plamiga saqlash
+      // 1. Employee to'plamiga saqlash (Davomat hisobi faqat employees to'plamida bo'ladi, users ga aralashmaydi)
       await saveFirebaseEmployee(updatedEmp);
-
-      // 2. Users to'plamiga ham Xodim roli bilan sinxronlash (narigi AI kirishi oson bo'lishi uchun)
-      await saveFirebaseUser({
-        id: updatedEmp.staffId ? parseInt(updatedEmp.staffId.replace(/\D/g, '')) || Date.now() : Date.now(),
-        name: updatedEmp.fullName,
-        username: formUsername.trim(),
-        password: formPassword.trim(),
-        email: updatedEmp.email || `${formUsername.trim()}@toyonasavdo.uz`,
-        role: 'Xodim',
-        branch: updatedEmp.branch,
-        lastActive: 'Hozirgina yangilandi',
-        allowedModules: ['employee_portal']
-      });
 
       // Mahalliy holatni yangilash
       setEmployees(prev => prev.map(e => e.id === updatedEmp.id ? updatedEmp : e));
@@ -290,6 +277,9 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     }
 
     try {
+      // Serverdagi xotiradan ham zudlik bilan o'chirish
+      fetch(`/api/attendance/employees/${emp.id}`, { method: 'DELETE' }).catch(() => {});
+
       if (emp.username) {
         // Login va parolni tozalash
         const updatedEmp: EmployeeWithCredentials = {

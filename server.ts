@@ -343,165 +343,14 @@ const defaultEmployees: ServerEmployee[] = [
     phone: '+998 90 123 45 67',
     email: 'zarifjon@toyona.uz',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-    username: 'zarif_admin',
+    username: '20090915',
     password: 'ZZOKIROV20009@z',
-    status: 'active'
-  },
-  {
-    id: 'emp-102',
-    staffId: 'TS-0012',
-    fullName: 'Alisher Qodirov',
-    position: 'HR Menejer',
-    department: 'HR va Kadrlar',
-    branch: 'Turkiston filiali',
-    phone: '+998 91 234 56 78',
-    email: 'alisher.q@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    username: 'qodirov.alisher',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-103',
-    staffId: 'TS-0015',
-    fullName: 'Dilnoza Karimova',
-    position: 'Bosh Hisobchi',
-    department: 'Moliya va Hisobot',
-    branch: 'Bosh ofis',
-    phone: '+998 93 345 67 89',
-    email: 'd.karimova@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
-    username: 'karimova.dilnoza',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-104',
-    staffId: 'TS-0028',
-    fullName: 'Bobur Saidov',
-    position: 'Filial Mudiri',
-    department: 'Savdo va Chakana',
-    branch: 'Turkiston filiali',
-    phone: '+998 94 456 78 90',
-    email: 'bobur.s@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    username: 'saidov.bobur',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-105',
-    staffId: 'TS-0044',
-    fullName: 'Malika Umarova',
-    position: 'Sifat Nazorati Mutaxassisi',
-    department: 'Sifat Nazorati',
-    branch: 'Navoiy filiali',
-    phone: '+998 99 567 89 01',
-    email: 'm.umarova@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80',
-    username: 'umarova.malika',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-106',
-    staffId: 'TS-0035',
-    fullName: 'Jahongir Rahimov',
-    position: 'Katta IT Tizim Administratori',
-    department: 'IT va Dasturlash',
-    branch: 'Bosh ofis',
-    phone: '+998 97 678 90 12',
-    email: 'j.rahimov@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
-    username: 'rahimov.jahongir',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-107',
-    staffId: 'TS-0062',
-    fullName: 'Sevara Yusupova',
-    position: 'Katta Kassa Nazoratchisi',
-    department: 'Kassa va Moliya',
-    branch: 'Istiqlol (Gorod) filiali',
-    phone: '+998 93 789 01 23',
-    email: 'sevara.y@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80',
-    username: 'yusupova.sevara',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-108',
-    staffId: 'TS-0071',
-    fullName: 'Sardor Mansurov',
-    position: 'Logistika va Ombor Mudiri',
-    department: 'Logistika',
-    branch: 'Mingtut filiali',
-    phone: '+998 90 890 12 34',
-    email: 'sardor.m@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop&q=80',
-    username: 'mansurov.sardor',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-109',
-    staffId: 'TS-0083',
-    fullName: 'Zulxumor Ahmedova',
-    position: 'Marketing Mutaxassisi',
-    department: 'Marketing va Reklama',
-    branch: 'Yakkatut filiali',
-    phone: '+998 91 901 23 45',
-    email: 'z.ahmedova@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=300&auto=format&fit=crop&q=80',
-    username: 'ahmedova.zulxumor',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-110',
-    staffId: 'TS-0070',
-    fullName: 'Bekzod Niyozov',
-    position: 'Savdo Konsultanti',
-    department: 'Savdo va Chakana',
-    branch: 'Pop filiali',
-    phone: '+998 90 012 34 56',
-    email: 'bekzod.n@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80',
-    username: 'niyozov.bekzod',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-111',
-    staffId: 'TS-0081',
-    fullName: 'Nodirbek Qodirov',
-    position: 'Filial Boshqaruvchisi',
-    department: 'Ijroiya Boshqaruvi',
-    branch: 'Yaypan filiali',
-    phone: '+998 90 234 56 78',
-    email: 'nodirbek.q@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80',
-    username: 'qodirov.nodirbek',
-    password: 'Toyona#2026',
-    status: 'active'
-  },
-  {
-    id: 'emp-112',
-    staffId: 'TS-0082',
-    fullName: 'Rustam Alimov',
-    position: 'Filial Boshqaruvchisi',
-    department: 'Ijroiya Boshqaruvi',
-    branch: 'Furqat filiali',
-    phone: '+998 93 456 78 90',
-    email: 'rustam.a@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80',
-    username: 'alimov.rustam',
-    password: 'Toyona#2026',
     status: 'active'
   }
 ];
+
+// O'chirilgan xodimlar ro'yxati (hech qachon qayta tirilib chiqmaydi)
+const deletedEmployeeIds = new Set<string>();
 
 // In-memory employee photo overrides (for immediate reflection across API and mini app)
 const employeePhotoOverrides: Record<string, string> = {};
@@ -528,19 +377,21 @@ async function saveFirestoreEmployeePhoto(employeeId: string, photoUrl: string):
   }
 }
 
-// Helper: Fetch all employees from Firestore or fallback, merging with users collection
+// Helper: Fetch all employees from Firestore or fallback, keeping distinct from admin users
 async function getAllServerEmployees(): Promise<ServerEmployee[]> {
   const map = new Map<string, ServerEmployee>();
   defaultEmployees.forEach(e => {
-    const customPhoto = employeePhotoOverrides[e.id];
-    map.set(e.id, { 
-      ...e, 
-      photoUrl: customPhoto || e.photoUrl 
-    });
+    if (!deletedEmployeeIds.has(e.id)) {
+      const customPhoto = employeePhotoOverrides[e.id];
+      map.set(e.id, { 
+        ...e, 
+        photoUrl: customPhoto || e.photoUrl 
+      });
+    }
   });
 
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
-    return Array.from(map.values());
+    return Array.from(map.values()).filter(e => !deletedEmployeeIds.has(e.id));
   }
 
   const controller = new AbortController();
@@ -564,6 +415,7 @@ async function getAllServerEmployees(): Promise<ServerEmployee[]> {
         data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
           const f = item.document.fields;
           const docId = item.document.name.split('/').pop() || '';
+          if (deletedEmployeeIds.has(docId)) return;
           const existing = map.get(docId) || {} as Partial<ServerEmployee>;
           const empName = f.fullName?.stringValue || existing.fullName || 'Xodim';
           const defaultUser = empName.toLowerCase().replace(/['`ʻ’\s]/g, '.');
@@ -589,70 +441,8 @@ async function getAllServerEmployees(): Promise<ServerEmployee[]> {
     clearTimeout(timeoutId);
   }
 
-  // Also query users collection from Firestore to capture passwords and credentials
-  try {
-    const usersUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
-    const usersRes = await fetch(usersUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: { from: [{ collectionId: 'users' }] }
-      })
-    });
-    if (usersRes.ok) {
-      const uData = await usersRes.json();
-      if (Array.isArray(uData)) {
-        uData.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
-          const f = item.document.fields;
-          const uName = f.name?.stringValue || f.fullName?.stringValue || '';
-          const uUsername = f.username?.stringValue || '';
-          const uPassword = f.password?.stringValue || '';
-          const uRole = f.role?.stringValue || 'Xodim';
-          const uBranch = f.branch?.stringValue || 'Bosh ofis';
-          const uEmail = f.email?.stringValue || '';
-
-          if (uUsername && uPassword) {
-            let found = false;
-            for (const [key, emp] of map.entries()) {
-              if (
-                (emp.username && emp.username.toLowerCase() === uUsername.toLowerCase()) ||
-                (emp.fullName && uName && emp.fullName.toLowerCase() === uName.toLowerCase())
-              ) {
-                // Agar xodimning paroli employees to'plamida bo'lmasa yoki default bo'lsagina users'dan olamiz
-                if (!emp.password || emp.password === 'Toyona#2026') {
-                  emp.password = uPassword;
-                }
-                if (!emp.username) emp.username = uUsername;
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              const newId = `user-${uUsername}`;
-              map.set(newId, {
-                id: newId,
-                staffId: 'TS-USER',
-                fullName: uName || uUsername,
-                position: uRole,
-                department: 'Boshqaruv',
-                branch: uBranch,
-                phone: '',
-                email: uEmail,
-                photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-                username: uUsername,
-                password: uPassword,
-                status: 'active'
-              });
-            }
-          }
-        });
-      }
-    }
-  } catch (err: any) {
-    // non-fatal
-  }
-
-  return Array.from(map.values());
+  // NOTE: Users collection is NOT merged here! Foydalanuvchilar (adminlar) va Xodimlar (davomat) 2 xil dunyo.
+  return Array.from(map.values()).filter(e => !deletedEmployeeIds.has(e.id));
 }
 
 // Helper: Fetch all geozones from Firestore or fallback to default 11 branches
@@ -1587,6 +1377,27 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       res.json(sanitized);
     } catch (err: any) {
       res.status(500).json([]);
+    }
+  });
+
+  // 5a. Xodim yoki uning davomat hisobini serverdan to'liq o'chirish (hech qachon qayta tirilmaydi)
+  app.delete("/api/attendance/employees/:id", async (req, res) => {
+    try {
+      const id = String(req.params.id || '').trim();
+      if (!id) return res.status(400).json({ success: false, message: "ID ko'rsatilmadi" });
+
+      deletedEmployeeIds.add(id);
+
+      // Agar Firestore sozlangan bo'lsa, employees to'plamidan ham to'g'ridan-to'g'ri o'chiramiz
+      if (firebaseConfig?.projectId && firebaseConfig?.firestoreDatabaseId && firebaseConfig?.apiKey) {
+        const deleteUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/employees/${id}?key=${firebaseConfig.apiKey}`;
+        fetch(deleteUrl, { method: 'DELETE' }).catch(() => {});
+      }
+
+      console.log(`[DELETE] Xodim muvaffaqiyatli o'chirildi: ${id}`);
+      res.json({ success: true, message: `Xodim (${id}) serverdan o'chirildi` });
+    } catch (err: any) {
+      res.status(500).json({ success: false, message: err.message });
     }
   });
 
