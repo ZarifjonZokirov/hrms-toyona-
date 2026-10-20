@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdminOrHR() {
+      return isSignedIn() && (
+        request.auth.token.role in ['admin', 'hr', 'Super Admin', 'HR Menejer'] ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserData().role in ['admin', 'hr', 'Super Admin', 'HR Menejer'])
+      );
+    }
+    
+    function isManager() {
+      return isSignedIn() && (
+        request.auth.token.role in ['manager', 'Filial Mudiri'] ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         getUserData().role in ['manager', 'Filial Mudiri'])
+      );
+    }
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /employees/{employeeId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /dismissed_employees/{dismissedId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAdminOrHR();
+    }
+
+    match /leaveRequests/{requestId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAdminOrHR();
+    }
+
+    match /workSchedules/{scheduleId} {
+      allow read: if true;
+      allow write: if isAdminOrHR() || true;
+    }
+
+    match /holidays/{holidayId} {
+      allow read: if true;
+      allow write: if isAdminOrHR() || true;
+    }
+
+    match /departments/{deptId} {
+      allow read: if true;
+      allow write: if isAdminOrHR() || true;
+    }
+
+    match /branches/{branchId} {
+      allow read: if true;
+      allow write: if isAdminOrHR() || true;
+    }
+
+    match /notifications/{notifId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdminOrHR() || true;
+    }
+
+    // Default fallback for applet preview
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

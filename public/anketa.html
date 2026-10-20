@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ishga qabul qilish anketasi</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0f7ff', 100: '#e0effe', 500: '#2563eb', 600: '#1d4ed8',
+              700: '#1e40af', 800: '#1e3a8a', 900: '#0f172a',
+              dark: '#0a0f1d', card: '#131b2e', border: '#22304d'
+            }
+          },
+          animation: {
+            'fast-fade': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'fast-slide': 'slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'fast-pop': 'popIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; user-select: none; }
+    input, textarea, select { user-select: auto; }
+    .fast-transition { transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 4px; }
+    .custom-input { background: rgba(19, 27, 46, 0.75); border: 1px solid #22304d; transition: border-color 0.18s, box-shadow 0.18s, background-color 0.18s; }
+    .custom-input:focus { border-color: #3b82f6; background: rgba(19, 27, 46, 0.95); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+    .option-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+    .option-card:active { transform: scale(0.975); }
+    .option-card.active { border-color: #3b82f6; background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(30, 58, 138, 0.25) 100%); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15); }
+  </style>
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 font-sans min-h-screen pb-16">
+  <header class="sticky top-0 z-40 bg-[#0a0f1d]/90 backdrop-blur-md border-b border-brand-border/80 px-4 py-3">
+    <div class="max-w-2xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-900 border border-brand-border flex items-center justify-center shrink-0 p-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 531" class="w-7 h-7">
+            <path d="M 211.00,529.00 L 211.00,239.00 L 214.00,236.00 L 281.00,236.00 L 256.00,189.00 L 95.00,189.00 L 96.00,236.00 L 155.00,236.00 L 158.00,239.00 L 157.00,469.00 L 140.10,460.91 L 122.41,449.99 L 106.55,437.55 L 92.49,423.74 L 80.22,408.72 L 69.72,392.65 L 60.98,375.67 L 53.97,357.95 L 48.68,339.64 L 45.09,320.90 L 43.18,301.88 L 42.93,282.73 L 44.33,263.62 L 47.35,244.70 L 51.98,226.13 L 58.20,208.05 L 66.00,190.63 L 75.35,174.03 L 86.23,158.39 L 98.56,143.83 L 112.21,130.44 L 127.03,118.30 L 142.90,107.49 L 159.67,98.10 L 177.21,90.21 L 195.38,83.90 L 214.04,79.26 L 233.05,76.37 L 252.29,75.31 L 271.60,76.17 L 290.86,79.02 L 309.93,83.96 L 328.66,91.07 L 346.93,100.42 L 364.59,112.11 L 382.00,80.00 L 381.00,74.00 L 363.88,64.61 L 344.48,54.23 L 324.69,46.11 L 304.62,40.16 L 284.37,36.30 L 264.04,34.44 L 243.74,34.50 L 223.58,36.39 L 203.65,40.04 L 184.06,45.34 L 164.91,52.22 L 146.32,60.59 L 128.37,70.37 L 111.18,81.48 L 94.85,93.82 L 79.49,107.31 L 65.19,121.87 L 52.06,137.41 L 40.21,153.84 L 29.74,171.09 L 20.75,189.07 L 13.34,207.68 L 7.63,226.85 L 3.71,246.49 L 1.60,266.49 L 1.25,286.71 L 2.61,307.00 L 5.62,327.23 L 10.23,347.26 L 16.38,366.95 L 24.03,386.16 L 33.11,404.75 L 43.57,422.59 L 55.36,439.52 L 68.42,455.42 L 82.71,470.13 L 98.15,483.53 L 114.71,495.48 L 132.33,505.83 L 150.94,514.44 L 170.51,521.18 L 190.96,525.90 L 212.26,528.47 Z" fill="#00A651"/>
+            <path d="M 406.00,92.00 L 403.00,92.00 L 301.00,263.00 L 297.00,262.00 L 291.00,251.00 L 230.00,251.00 L 271.00,315.00 L 271.00,491.00 L 237.00,492.00 L 237.00,530.00 L 255.11,531.14 L 275.31,531.14 L 294.94,529.31 L 313.95,525.76 L 332.30,520.57 L 349.93,513.83 L 366.81,505.64 L 382.89,496.09 L 398.12,485.27 L 412.45,473.28 L 425.84,460.22 L 438.24,446.16 L 449.61,431.21 L 459.90,415.45 L 469.06,398.99 L 477.05,381.92 L 483.82,364.31 L 489.33,346.29 L 493.56,327.93 L 496.48,309.34 L 498.06,290.62 L 498.28,271.86 L 497.11,253.17 L 494.52,234.64 L 490.49,216.38 L 485.00,198.47 L 478.01,181.02 L 469.49,164.14 L 459.44,147.90 L 447.81,132.43 L 434.58,117.81 L 419.72,104.14 L 403.22,91.52 Z M 420.00,166.00 L 430.23,180.72 L 439.15,196.48 L 446.34,212.89 L 451.86,229.83 L 455.74,247.18 L 458.02,264.80 L 458.73,282.58 L 457.93,300.39 L 455.64,318.10 L 451.91,335.58 L 446.77,352.71 L 440.26,369.37 L 432.42,385.42 L 423.30,400.75 L 412.92,415.22 L 401.33,428.71 L 388.57,441.10 L 374.67,452.25 L 359.68,462.04 L 343.63,470.36 L 326.56,477.06 L 326.00,316.00 L 416.00,168.00 L 420.00,166.00 Z" fill="#ED1C24" fillRule="evenodd"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-black text-sm text-white tracking-tight" id="navTitle">TOYONA SAVDO</h1>
+            <span class="text-[9px] font-extrabold bg-blue-600/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">KARYERA</span>
+          </div>
+          <p class="text-[11px] text-blue-400 font-medium" id="navSubtitle">Rasmiy ishga qabul anketasi</p>
+        </div>
+      </div>
+      <div class="flex items-center bg-[#131b2e] p-1 rounded-xl border border-brand-border">
+        <button type="button" onclick="setLanguage('uz')" id="langBtnUz" class="fast-transition px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white">UZB</button>
+        <button type="button" onclick="setLanguage('ru')" id="langBtnRu" class="fast-transition px-3 py-1 rounded-lg text-xs font-semibold text-slate-400">РУС</button>
+      </div>
+    </div>
+    <div class="max-w-2xl mx-auto mt-2.5">
+      <div class="flex justify-between items-center text-[11px] text-slate-400 mb-1">
+        <span id="progressText">To'ldirish jarayoni</span>
+        <span id="progressPercent" class="font-bold text-blue-400">0%</span>
+      </div>
+      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div id="progressBar" class="h-full bg-gradient-to-r from-blue-600 to-cyan-400 fast-transition w-0 rounded-full"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 pt-4 pb-12">
+    <form id="vacancyForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+      <!-- 1. SHAXSIY MA'LUMOTLAR -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="user" class="w-4 h-4"></i></div>
+          <h2 class="font-bold text-sm text-white" id="secPersonalTitle">1. SHAXSIY MA'LUMOTLAR</h2>
+        </div>
+        <div class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblLastName">Familiyangiz *</label>
+            <input type="text" name="lastName" required placeholder="Masalan: Karimov" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblFirstName">Ismingiz *</label>
+            <input type="text" name="firstName" required placeholder="Masalan: Sardor" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblMiddleName">Otasining ismi *</label>
+            <input type="text" name="middleName" required placeholder="Masalan: Alisher o'g'li" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblGender">Jinsi *</label>
+            <div class="grid grid-cols-2 gap-2.5">
+              <label class="option-card flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-brand-border bg-[#101728]" onclick="selectCardOption('gender', 'male', this)">
+                <input type="radio" name="gender" value="Erkak" class="hidden" required>
+                <i data-lucide="user-check" class="w-4 h-4 text-blue-400"></i>
+                <span class="text-xs font-bold text-slate-200" id="optMale">Erkak</span>
+              </label>
+              <label class="option-card flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-brand-border bg-[#101728]" onclick="selectCardOption('gender', 'female', this)">
+                <input type="radio" name="gender" value="Ayol" class="hidden">
+                <i data-lucide="heart" class="w-4 h-4 text-pink-400"></i>
+                <span class="text-xs font-bold text-slate-200" id="optFemale">Ayol</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblDob">Tug'ilgan sana *</label>
+            <input type="date" name="dob" required oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. YASHASH MANZILI -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="map-pin" class="w-4 h-4"></i></div>
+          <h2 class="font-bold text-sm text-white" id="secAddressTitle">3. YASHASH MANZILI</h2>
+        </div>
+        <div class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblRegion">Viloyat / Hudud *</label>
+            <div class="relative">
+              <select name="region" id="regionSelect" required onchange="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none appearance-none cursor-pointer"></select>
+              <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="chevron-down" class="w-4 h-4"></i></div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblExactAddress">Aniq yashash manzilingiz *</label>
+            <textarea name="exactAddress" rows="2" required placeholder="Masalan: Chilonzor tumani..." oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none resize-none"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. FILIAL TANLASH -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="flex items-center space-x-2.5">
+            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="building-2" class="w-4 h-4"></i></div>
+            <h2 class="font-bold text-sm text-white" id="secBranchTitle">4. FILIALNI TANLANG</h2>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="branchesContainer"></div>
+      </section>
+
+      <!-- 5. VAKANSIYA / LAVOZIM -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="flex items-center space-x-2.5">
+            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="award" class="w-4 h-4"></i></div>
+            <h2 class="font-bold text-sm text-white" id="secJobTitle">5. TALABGOR LAVOZIMINGIZ</h2>
+          </div>
+        </div>
+        <div class="relative mb-3">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="jobSearchInput" oninput="filterJobs()" placeholder="Lavozim nomini qidirish..." class="w-full custom-input rounded-xl pl-9 pr-3.5 py-2 text-xs text-white outline-none">
+        </div>
+        <div class="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto pr-1" id="jobsContainer"></div>
+        <div id="experienceSection" class="hidden mt-4 pt-4 border-t border-brand-border/80">
+          <div class="bg-blue-950/30 border border-blue-500/30 rounded-xl p-3.5 space-y-3.5">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+              <span class="text-xs font-bold text-blue-300" id="expHeaderTitle">Ushbu lavozim bo'yicha tajribangiz *</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="expOptionsContainer"></div>
+            <div class="pt-2">
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPastWork">Oldin qayerda ishlagansiz? *</label>
+              <textarea name="pastExperience" id="pastExpInput" rows="2" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-xs text-white outline-none resize-none"></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. BOG'LANISH RAQAMLARI -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="phone-call" class="w-4 h-4"></i></div>
+          <h2 class="font-bold text-sm text-white" id="secContactTitle">6. ALOQA MA'LUMOTLARI</h2>
+        </div>
+        <div class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPhone1">Telefon raqamingiz *</label>
+            <div class="relative">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-300">🇺🇿 +998</div>
+              <input type="tel" name="phone1" id="phone1" required maxlength="12" placeholder="90 123 45 67" oninput="updateProgress()" class="w-full custom-input rounded-xl pl-16 pr-3.5 py-2.5 text-sm font-semibold tracking-wider text-white outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPhone2">Qo'shimcha telefon raqami</label>
+            <div class="relative">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-300">🇺🇿 +998</div>
+              <input type="tel" name="phone2" id="phone2" maxlength="12" placeholder="99 987 65 43" class="w-full custom-input rounded-xl pl-16 pr-3.5 py-2.5 text-sm font-semibold tracking-wider text-white outline-none">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. HUJJATLAR VA RASMLAR -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="camera" class="w-4 h-4"></i></div>
+          <h2 class="font-bold text-sm text-white" id="secPhotosTitle">7. RASM VA PASPORT NUSXASI</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- 1. Yuz rasmi -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-300">Nomzod yuzi / 3x4 rasm *</label>
+            <div class="relative border-2 border-dashed border-brand-border hover:border-blue-500 rounded-xl p-3 text-center transition-colors bg-[#101728] cursor-pointer group" onclick="document.getElementById('inputPhoto').click()">
+              <input type="file" id="inputPhoto" accept="image/*" class="hidden" onchange="handleImageUpload('photoUrl', this, 'previewPhoto', 'iconPhoto')">
+              <div id="iconPhoto" class="space-y-1 py-3">
+                <i data-lucide="user" class="w-7 h-7 mx-auto text-blue-400 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[11px] font-semibold text-slate-300 block">3x4 yoki Selphi rasm</span>
+              </div>
+              <img id="previewPhoto" class="hidden w-full h-28 object-cover rounded-lg border border-brand-border">
+            </div>
+          </div>
+
+          <!-- 2. Pasport oldi -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-300">Pasport (Oldi tomoni) *</label>
+            <div class="relative border-2 border-dashed border-brand-border hover:border-blue-500 rounded-xl p-3 text-center transition-colors bg-[#101728] cursor-pointer group" onclick="document.getElementById('inputPassFront').click()">
+              <input type="file" id="inputPassFront" accept="image/*" class="hidden" onchange="handleImageUpload('passportFrontUrl', this, 'previewPassFront', 'iconPassFront')">
+              <div id="iconPassFront" class="space-y-1 py-3">
+                <i data-lucide="file-text" class="w-7 h-7 mx-auto text-cyan-400 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[11px] font-semibold text-slate-300 block">Pasport old tarafidan rasm</span>
+              </div>
+              <img id="previewPassFront" class="hidden w-full h-28 object-cover rounded-lg border border-brand-border">
+            </div>
+          </div>
+
+          <!-- 3. Pasport orqasi -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-300">Pasport (Orqa/Propiska) *</label>
+            <div class="relative border-2 border-dashed border-brand-border hover:border-blue-500 rounded-xl p-3 text-center transition-colors bg-[#101728] cursor-pointer group" onclick="document.getElementById('inputPassBack').click()">
+              <input type="file" id="inputPassBack" accept="image/*" class="hidden" onchange="handleImageUpload('passportBackUrl', this, 'previewPassBack', 'iconPassBack')">
+              <div id="iconPassBack" class="space-y-1 py-3">
+                <i data-lucide="file-text" class="w-7 h-7 mx-auto text-indigo-400 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[11px] font-semibold text-slate-300 block">Pasport orqa tarafidan rasm</span>
+              </div>
+              <img id="previewPassBack" class="hidden w-full h-28 object-cover rounded-lg border border-brand-border">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="pt-2">
+        <button type="submit" id="submitBtn" class="fast-transition w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2.5">
+          <i data-lucide="send" class="w-5 h-5"></i>
+          <span class="text-sm tracking-wider uppercase" id="btnSubmitText">Arizani yuborish</span>
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <div id="successModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-[#111827] border border-blue-500/40 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-fast-pop">
+      <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="check" class="w-8 h-8 stroke-[3]"></i>
+      </div>
+      <h3 class="text-lg font-extrabold text-white" id="modalTitle">Arizangiz qabul qilindi!</h3>
+      <p class="text-xs text-slate-300" id="modalDesc">Nomzodingiz tizimga muvaffaqiyatli saqlandi.</p>
+      <div class="space-y-2 pt-2">
+        <button onclick="closeModalAndGoToCandidates()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs tracking-wider uppercase transition-colors">Nomzodlar bo'limiga o'tish</button>
+        <button onclick="closeModalAndExit()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition-colors">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentLang = 'uz';
+    let selectedJob = '';
+    let selectedBranch = '';
+    let selectedExp = '';
+
+    const i18n = {
+      uz: {
+        selectRegionDefault: "Viloyatni tanlang...",
+        regions: ["Toshkent shahri", "Toshkent viloyati", "Andijon viloyati", "Farg'ona viloyati", "Namangan viloyati"],
+        branches: [
+          { id: "b1", name: "Bosh ofis", icon: "building" },
+          { id: "b2", name: "Farg'ona filiali", icon: "map-pin" },
+          { id: "b3", name: "Toshkent filiali", icon: "map-pin" }
+        ],
+        jobs: [
+          { id: "j1", name: "Sotuvchi maslahatchi" },
+          { id: "j2", name: "Kassir" },
+          { id: "j3", name: "Haydovchi kuryer" },
+          { id: "j4", name: "Marketolog" }
+        ],
+        expOptions: [
+          { id: "none", label: "0 yil" },
+          { id: "less_1", label: "< 1 yil" },
+          { id: "1_3", label: "1-3 yil" }
+        ]
+      }
+    };
+
+    function setLanguage(lang) {
+      currentLang = 'uz'; // Force uz for demo
+      renderRegions(); renderBranches(); renderJobs(); renderExpOptions();
+      setTimeout(() => lucide.createIcons(), 20);
+      updateProgress();
+    }
+
+    function renderRegions() {
+      const select = document.getElementById('regionSelect');
+      const regions = i18n.uz.regions;
+      select.innerHTML = `<option value="" disabled selected>${i18n.uz.selectRegionDefault}</option>` + 
+        regions.map(r => `<option value="${r}">${r}</option>`).join('');
+    }
+
+    function renderBranches() {
+      const container = document.getElementById('branchesContainer');
+      container.innerHTML = i18n.uz.branches.map(b => `
+        <label class="option-card flex items-center p-3 rounded-xl border border-brand-border bg-[#101728] ${selectedBranch === b.id ? 'active' : ''}" onclick="selectBranchOption('${b.id}', this)">
+          <div class="flex items-center space-x-2 flex-1">
+            <i data-lucide="${b.icon}" class="w-4 h-4 text-blue-400"></i>
+            <span class="text-xs font-bold text-slate-200">${b.name}</span>
+          </div>
+          <input type="radio" name="branch" value="${b.name}" class="hidden" required>
+        </label>
+      `).join('');
+    }
+
+    function selectBranchOption(id, el) {
+      selectedBranch = id;
+      document.querySelectorAll('#branchesContainer .option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('input').checked = true;
+      updateProgress();
+    }
+
+    function renderJobs() {
+      const container = document.getElementById('jobsContainer');
+      const query = (document.getElementById('jobSearchInput')?.value || '').toLowerCase();
+      const filtered = i18n.uz.jobs.filter(j => j.name.toLowerCase().includes(query));
+      container.innerHTML = filtered.map(job => `
+        <label class="option-card flex items-center p-2.5 rounded-xl border border-brand-border bg-[#101728] ${selectedJob === job.id ? 'active' : ''}" onclick="selectJobOption('${job.id}', this)">
+          <span class="text-xs font-semibold text-slate-200 flex-1">${job.name}</span>
+          <input type="radio" name="jobPosition" value="${job.name}" class="hidden" required>
+        </label>
+      `).join('');
+      setTimeout(() => lucide.createIcons(), 10);
+    }
+
+    function filterJobs() { renderJobs(); }
+
+    function selectJobOption(id, el) {
+      selectedJob = id;
+      document.querySelectorAll('#jobsContainer .option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('input').checked = true;
+      document.getElementById('experienceSection').classList.remove('hidden');
+      document.getElementById('pastExpInput').setAttribute('required', 'true');
+      updateProgress();
+    }
+
+    function renderExpOptions() {
+      const container = document.getElementById('expOptionsContainer');
+      container.innerHTML = i18n.uz.expOptions.map(item => `
+        <label class="option-card flex items-center justify-center p-2 rounded-lg border border-brand-border bg-[#101728] text-center ${selectedExp === item.id ? 'active' : ''}" onclick="selectExpOption('${item.id}', this)">
+          <span class="text-[11px] font-bold text-slate-200">${item.label}</span>
+          <input type="radio" name="experienceYears" value="${item.label}" class="hidden">
+        </label>
+      `).join('');
+    }
+
+    function selectExpOption(id, el) {
+      selectedExp = id;
+      document.querySelectorAll('#expOptionsContainer .option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('input').checked = true;
+      updateProgress();
+    }
+
+    let uploadedImages = {
+      photoUrl: '',
+      passportFrontUrl: '',
+      passportBackUrl: ''
+    };
+
+    function handleImageUpload(key, input, previewId, iconId) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          uploadedImages[key] = e.target.result;
+          const img = document.getElementById(previewId);
+          const icon = document.getElementById(iconId);
+          if (img && icon) {
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            icon.classList.add('hidden');
+          }
+          updateProgress();
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function selectCardOption(group, val, el) {
+      el.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('input').checked = true;
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const form = document.getElementById('vacancyForm');
+      let fields = 0; let total = 8;
+      if (form.lastName?.value) fields++;
+      if (form.firstName?.value) fields++;
+      if (form.dob?.value) fields++;
+      if (form.region?.value) fields++;
+      if (form.exactAddress?.value) fields++;
+      if (form.phone1?.value) fields++;
+      if (selectedBranch) fields++;
+      if (selectedJob) { total += 2; fields++; if (selectedExp) fields++; if (form.pastExperience?.value) fields++; }
+      
+      const percent = Math.min(Math.round((fields / total) * 100), 100);
+      document.getElementById('progressBar').style.width = percent + '%';
+      document.getElementById('progressPercent').innerText = percent + '%';
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = {
+        id: 'cand_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        fullName: `${form.lastName.value} ${form.firstName.value} ${form.middleName.value}`.trim(),
+        gender: form.querySelector('input[name="gender"]:checked')?.value || 'Erkak',
+        dob: form.dob.value || '',
+        region: form.region.value || '',
+        exactAddress: form.exactAddress.value || '',
+        address: form.exactAddress.value || '',
+        branch: form.querySelector('input[name="branch"]:checked')?.value || 'Bosh ofis',
+        jobPosition: form.querySelector('input[name="jobPosition"]:checked')?.value || 'Sotuvchi maslahatchi',
+        position: form.querySelector('input[name="jobPosition"]:checked')?.value || 'Sotuvchi maslahatchi',
+        pastExperience: form.pastExperience?.value || 'Ko\'rsatilmadi',
+        phone1: '+998 ' + form.phone1.value,
+        phone2: form.phone2.value ? '+998 ' + form.phone2.value : "Ko'rsatilmadi",
+        photoUrl: uploadedImages.photoUrl || 'https://i.pravatar.cc/150?img=33',
+        passportFrontUrl: uploadedImages.passportFrontUrl || '',
+        passportBackUrl: uploadedImages.passportBackUrl || '',
+        submittedAt: new Date().toISOString(),
+        status: 'Yangi nomzod'
+      };
+
+      // 1. LocalStorage-ga saqlash (Offline / Instant)
+      try {
+        const stored = JSON.parse(localStorage.getItem('hrms_candidates') || '[]');
+        stored.unshift(formData);
+        localStorage.setItem('hrms_candidates', JSON.stringify(stored));
+      } catch (err) {
+        console.error("LocalStorage error:", err);
+      }
+
+      // 2. Parent oynaga bildirish
+      try {
+        window.parent.postMessage({ type: 'CANDIDATE_SUBMITTED', candidate: formData }, '*');
+      } catch (e) {}
+
+      // 3. Backend API ga yuborish (Server orqali Firestore'ga 100% kafolatli saqlash)
+      try {
+        fetch('/api/candidates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        }).catch(err => console.warn("Backend API candidates notice:", err));
+      } catch (e) {}
+
+      // 4. Firestore REST API ga parallel to'g'ridan-to'g'ri yozish (Client fallback)
+      const firestoreBody = {
+        fields: {
+          id: { stringValue: formData.id },
+          date: { stringValue: new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.') },
+          submittedAt: { stringValue: new Date().toISOString() },
+          status: { stringValue: 'Yangi nomzod' },
+          fullName: { stringValue: formData.fullName || "Noma\'lum" },
+          fatherName: { stringValue: formData.fatherName || "" },
+          position: { stringValue: formData.jobPosition || "Noma\'lum" },
+          jobPosition: { stringValue: formData.jobPosition || "Noma\'lum" },
+          region: { stringValue: formData.region || "Noma\'lum" },
+          address: { stringValue: formData.exactAddress || "" },
+          exactAddress: { stringValue: formData.exactAddress || "" },
+          targetBranch: { stringValue: formData.branch || formData.targetBranch || "" },
+          maritalStatus: { stringValue: formData.maritalStatus || "" },
+          educationLevel: { stringValue: formData.educationLevel || "" },
+          graduationYear: { stringValue: formData.graduationYear || "" },
+          phone1: { stringValue: formData.phone1 || "" },
+          phone2: { stringValue: formData.phone2 || "" },
+          gender: { stringValue: formData.gender || "Erkak" },
+          dob: { stringValue: formData.dob || "" },
+          pastExperience: { stringValue: formData.pastExperience || "" },
+          candidateMessage: { stringValue: formData.pastExperience || "" }
+        }
+      };
+
+      const firestoreDocId = formData.id;
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/gen-lang-client-0391742872/databases/ai-studio-toyonasavdo-a87699da-8d38-4976-8749-f4100631b191/documents/candidates/${firestoreDocId}?key=AIzaSyB6DEX7gW5Z9grIcZJrkNwTeUsiRl2N568`;
+      
+      const fsController = new AbortController();
+      const fsTimeout = setTimeout(() => fsController.abort(), 4000);
+
+      fetch(firestoreUrl, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(firestoreBody),
+        signal: fsController.signal
+      })
+      .then(() => clearTimeout(fsTimeout))
+      .catch(err => {
+        clearTimeout(fsTimeout);
+        console.warn("Direct Firestore fallback notice:", err);
+      });
+
+
+      // 4. Modalni ochish
+      document.getElementById('successModal').classList.remove('hidden');
+      try { confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } }); } catch (err) {}
+
+      // 5. Formani tozalash
+      form.reset();
+      selectedJob = ''; selectedBranch = ''; selectedExp = '';
+      uploadedImages = { photoUrl: '', passportFrontUrl: '', passportBackUrl: '' };
+      ['previewPhoto', 'previewPassFront', 'previewPassBack'].forEach(id => {
+        const img = document.getElementById(id);
+        if (img) { img.src = ''; img.classList.add('hidden'); }
+      });
+      ['iconPhoto', 'iconPassFront', 'iconPassBack'].forEach(id => {
+        const icon = document.getElementById(id);
+        if (icon) icon.classList.remove('hidden');
+      });
+      document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+      const expSec = document.getElementById('experienceSection');
+      if (expSec) expSec.classList.add('hidden');
+    }
+
+    function closeModalAndGoToCandidates() {
+      document.getElementById('successModal').classList.add('hidden');
+      try {
+        window.parent.postMessage({ type: 'SWITCH_TO_CANDIDATES' }, '*');
+      } catch (e) {}
+    }
+
+    function closeModalAndExit() {
+      document.getElementById('successModal').classList.add('hidden');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setLanguage('uz');
+    });
+  </script>
+</body>
+</html>

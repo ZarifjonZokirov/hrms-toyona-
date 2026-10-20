@@ -1,0 +1,17 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/anketa.html",
+      "destination": "/anketa.html"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/((?!anketa\\.html|assets/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
