@@ -11,6 +11,7 @@ import AttendanceJournal from './components/AttendanceJournal';
 import BranchGeozones from './components/BranchGeozones';
 import EmployeeCredentials from './components/EmployeeCredentials';
 import AttendanceSettings from './components/AttendanceSettings';
+import PhotoRequestsManager from './components/PhotoRequestsManager';
 import TelegramAttendance from './components/TelegramAttendance';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import UsersManagement, { INITIAL_USERS_DATA, UserItem, ALL_MODULE_DEFS } from './components/UsersManagement';
@@ -112,6 +113,7 @@ const navItems: NavItemDef[] = [
     icon: Clock,
     subItems: [
       { id: 'attendance_journal', label: 'Davomat jurnali' },
+      { id: 'attendance_photo_requests', label: 'Surat so\'rovlari (Face ID)' },
       { id: 'attendance_settings', label: 'Ish vaqti, jarima & dam kunlari' },
       { id: 'attendance_branches', label: 'Filialni belgilash' },
       { id: 'attendance_credentials', label: 'Xodimlar hisoblari (Login/Parol)' }
@@ -655,7 +657,28 @@ export default function App() {
     if (activeItem.startsWith('requests_') || activeItem === 'requests') {
       setExpandedMenus(prev => prev.includes('requests') ? prev : [...prev, 'requests']);
     }
+    if (activeItem.startsWith('attendance_') || activeItem === 'attendance') {
+      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+    }
   }, [activeItem]);
+
+  // Live count of pending employee photo requests for notification badges in sidebar
+  const [pendingPhotoRequestsCount, setPendingPhotoRequestsCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchPendingPhotoCount = async () => {
+      try {
+        const res = await fetch('/api/attendance/photo-requests?status=pending');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.requests)) {
+          setPendingPhotoRequestsCount(data.requests.length);
+        }
+      } catch {}
+    };
+    fetchPendingPhotoCount();
+    const interval = setInterval(fetchPendingPhotoCount, 12000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Handle postMessage
   useEffect(() => {
@@ -1006,8 +1029,11 @@ export default function App() {
                     )}
                     
                     {/* Icon Container */}
-                    <div className="w-14 shrink-0 flex items-center justify-center">
+                    <div className="w-14 shrink-0 flex items-center justify-center relative">
                       <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'text-[#00A651]' : 'text-slate-400 dark:text-slate-500'}`} />
+                      {!isOpen && item.id === 'attendance' && pendingPhotoRequestsCount > 0 && (
+                        <span className="absolute top-2 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
+                      )}
                     </div>
                     
                     {/* Label & Chevron / Move Controls */}
@@ -1020,9 +1046,16 @@ export default function App() {
                           transition={{ duration: 0.2 }}
                           className="flex items-center justify-between flex-1 pr-3 overflow-hidden"
                         >
-                          <span className={`text-[14px] font-semibold whitespace-nowrap text-left tracking-wide truncate ${isActive ? 'text-[#00A651]' : ''}`}>
-                            {item.label}
-                          </span>
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className={`text-[14px] font-semibold whitespace-nowrap text-left tracking-wide truncate ${isActive ? 'text-[#00A651]' : ''}`}>
+                              {item.label}
+                            </span>
+                            {item.id === 'attendance' && pendingPhotoRequestsCount > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                                {pendingPhotoRequestsCount}
+                              </span>
+                            )}
+                          </div>
                           
                           {isReorderMode ? (
                             <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -1058,17 +1091,23 @@ export default function App() {
                     <div className="ml-11 flex flex-col gap-1 py-1 pl-3 border-l-2 border-[#00A651]/25 dark:border-[#00A651]/40 my-1">
                       {item.subItems!.map(sub => {
                         const subIsActive = activeItem === sub.id;
+                        const isPhotoReq = sub.id === 'attendance_photo_requests';
                         return (
                           <button
                             key={sub.id}
                             onClick={() => setActiveItem(sub.id)}
-                            className={`text-xs text-left py-2 px-3 rounded-lg transition-all font-semibold cursor-pointer ${
+                            className={`text-xs text-left py-2 px-3 rounded-lg transition-all font-semibold cursor-pointer flex items-center justify-between ${
                               subIsActive 
                                 ? 'text-[#00A651] font-bold bg-[#00A651]/15 dark:bg-[#00A651]/25 shadow-2xs' 
                                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                             }`}
                           >
-                            {sub.label}
+                            <span className="truncate">{sub.label}</span>
+                            {isPhotoReq && pendingPhotoRequestsCount > 0 && (
+                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse shrink-0">
+                                {pendingPhotoRequestsCount}
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -1219,6 +1258,15 @@ export default function App() {
                     isSuperAdmin={isSuperAdmin} 
                   />
                 </ModuleErrorBoundary>
+              ) : activeItem === 'attendance_photo_requests' ? (
+                <ModuleErrorBoundary moduleName="Surat so'rovlari & Rasmlar keldi-ketdisi">
+                  <PhotoRequestsManager 
+                    onNavigateToJournal={() => {
+                      setActiveItem('attendance_journal');
+                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                    }}
+                  />
+                </ModuleErrorBoundary>
               ) : activeItem === 'attendance_settings' ? (
                 <ModuleErrorBoundary moduleName="Ish vaqti, jarima va dam kunlari sozlamalari">
                   <AttendanceSettings />
@@ -1238,6 +1286,10 @@ export default function App() {
                     }}
                     onNavigateToSettings={() => {
                       setActiveItem('attendance_settings');
+                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                    }}
+                    onNavigateToPhotoRequests={() => {
+                      setActiveItem('attendance_photo_requests');
                       setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
                     }}
                   />

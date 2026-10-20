@@ -338,20 +338,35 @@ var defaultEmployees = [
 var deletedEmployeeIds = /* @__PURE__ */ new Set();
 var employeePhotoOverrides = {};
 async function saveFirestoreEmployeePhoto(employeeId, photoUrl) {
-  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
-    return false;
+  employeePhotoOverrides[employeeId] = photoUrl;
+  const defEmp = defaultEmployees.find((e) => e.id === employeeId);
+  if (defEmp) {
+    defEmp.photoUrl = photoUrl;
+    defEmp.avatarUrl = photoUrl;
   }
-  const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/employees/${employeeId}?updateMask.fieldPaths=avatarUrl&updateMask.fieldPaths=photoUrl&key=${firebaseConfig.apiKey}`;
+  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
+    return true;
+  }
+  const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/employees/${employeeId}?updateMask.fieldPaths=avatarUrl&updateMask.fieldPaths=photoUrl&updateMask.fieldPaths=rasmUrl&key=${firebaseConfig.apiKey}`;
   const fields = {
     avatarUrl: { stringValue: String(photoUrl) },
-    photoUrl: { stringValue: String(photoUrl) }
+    photoUrl: { stringValue: String(photoUrl) },
+    rasmUrl: { stringValue: String(photoUrl) }
   };
   try {
-    const res = await fetch(writeUrl, {
+    let res = await fetch(writeUrl, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fields })
     });
+    if (!res.ok) {
+      const upsertUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/employees/${employeeId}?key=${firebaseConfig.apiKey}`;
+      res = await fetch(upsertUrl, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields })
+      });
+    }
     return res.ok;
   } catch (e) {
     return false;
@@ -1132,7 +1147,9 @@ async function configureRoutes(appInstance = app) {
       if (!emp) {
         return res.status(404).json({ success: false, message: "Xodim topilmadi." });
       }
-      const requestId = `req_${emp.id}`;
+      const list = await getFirestorePhotoRequests();
+      const existingPending = list.find((r) => String(r.employeeId).trim() === String(emp.id).trim() && r.status === "pending");
+      const requestId = existingPending ? existingPending.id : `req_${emp.id}_${Date.now()}`;
       const newReq = {
         id: requestId,
         employeeId: emp.id,

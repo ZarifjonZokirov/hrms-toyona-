@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, Filter, Plus, Calendar, Clock, Download, 
-  ArrowLeft, Archive, Edit, Settings, Bell, X, CheckCircle2,
+  ArrowLeft, ArrowRight, Archive, Edit, Settings, Bell, X, CheckCircle2,
   AlertTriangle, UserCheck, UserX, User, Building2, Briefcase,
   TrendingUp, FileSpreadsheet, ChevronLeft, ChevronRight, HelpCircle,
   Key, MapPin, Plane, Leaf, Navigation, ScanFace, Camera, Radio, Check,
@@ -299,6 +299,7 @@ interface AttendanceJournalProps {
   onNavigateToCredentials?: () => void;
   onNavigateToBranches?: () => void;
   onNavigateToSettings?: () => void;
+  onNavigateToPhotoRequests?: () => void;
 }
 
 export default function AttendanceJournal({ 
@@ -306,7 +307,8 @@ export default function AttendanceJournal({
   isSuperAdmin,
   onNavigateToCredentials,
   onNavigateToBranches,
-  onNavigateToSettings
+  onNavigateToSettings,
+  onNavigateToPhotoRequests
 }: AttendanceJournalProps) {
   const [employees, setEmployees] = useState<EmployeeData[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<DailyAttendance[]>([]);
@@ -890,7 +892,13 @@ export default function AttendanceJournal({
           </button>
 
           <button
-            onClick={() => handleOpenFaceIdModal(null, 'requests')}
+            onClick={() => {
+              if (onNavigateToPhotoRequests) {
+                onNavigateToPhotoRequests();
+              } else {
+                handleOpenFaceIdModal(null, 'requests');
+              }
+            }}
             className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title="Xodimlar yuborgan yangi Face ID rasm so'rovlarini ko'rish va tasdiqlash"
           >
@@ -909,6 +917,42 @@ export default function AttendanceJournal({
           />
         </div>
       </div>
+
+      {/* Prominent notification banner for pending photo requests */}
+      {pendingPhotoRequestsCount > 0 && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 border border-purple-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 bg-purple-600 text-white rounded-xl shadow-xs shrink-0">
+              <Camera className="w-5 h-5" />
+            </span>
+            <div className="text-xs">
+              <p className="font-extrabold text-sm text-purple-950 flex items-center gap-2">
+                <span>Yangi Face ID surat so'rovlari keldi!</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                  {pendingPhotoRequestsCount} ta kutilmoqda
+                </span>
+              </p>
+              <p className="text-slate-600 font-medium mt-0.5">
+                Xodimlar profilidan yangi surat yuklagan. Tasdiqlasangiz, Face ID etalon bazasi zudlik bilan yangilanadi.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (onNavigateToPhotoRequests) {
+                onNavigateToPhotoRequests();
+              } else {
+                handleOpenFaceIdModal(null, 'requests');
+              }
+            }}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <span>Ko'rib chiqish & Tasdiqlash</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Overview Charts & Cards */}
       <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 mb-6">
