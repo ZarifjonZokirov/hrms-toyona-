@@ -4,15 +4,25 @@ import { createServer as createViteServer } from "vite";
 import cors from "cors";
 import fs from "fs";
 
-// Load firebase config if available for server-side persistence
-let firebaseConfig: any = null;
+// Load firebase config (embedded for Vercel Serverless + file fallback)
+const DEFAULT_FIREBASE_CONFIG = {
+  projectId: "gen-lang-client-0391742872",
+  appId: "1:811535018031:web:b3dc918af92284f02abeda",
+  apiKey: "AIzaSyB6DEX7gW5Z9grIcZJrkNwTeUsiRl2N568",
+  authDomain: "gen-lang-client-0391742872.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-toyonasavdo-a87699da-8d38-4976-8749-f4100631b191",
+  storageBucket: "gen-lang-client-0391742872.firebasestorage.app",
+  messagingSenderId: "811535018031",
+};
+
+let firebaseConfig: any = DEFAULT_FIREBASE_CONFIG;
 try {
   const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
   if (fs.existsSync(configPath)) {
-    firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    firebaseConfig = { ...DEFAULT_FIREBASE_CONFIG, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) };
   }
 } catch (e) {
-  // ignore
+  firebaseConfig = DEFAULT_FIREBASE_CONFIG;
 }
 
 async function getFirestoreCandidates(): Promise<any[]> {
@@ -175,7 +185,7 @@ let branchGeozones: BranchGeozone[] = [
     name: 'Turkiston filiali',
     lat: 40.5283,
     lon: 70.9425,
-    radius: 100,
+    radius: 270,
     address: 'Qo\'qon shahar, Turkiston ko\'chasi, 45-uy',
     updatedAt: new Date().toISOString()
   },
@@ -184,7 +194,7 @@ let branchGeozones: BranchGeozone[] = [
     name: 'Navoiy filiali',
     lat: 40.5312,
     lon: 70.9388,
-    radius: 120,
+    radius: 500,
     address: 'Qo\'qon shahar, A.Navoiy shoh ko\'chasi, 12-uy',
     updatedAt: new Date().toISOString()
   },
@@ -218,9 +228,9 @@ let branchGeozones: BranchGeozone[] = [
   {
     id: 'branch-6',
     name: 'Bosh ofis',
-    lat: 40.5320,
-    lon: 70.9410,
-    radius: 80,
+    lat: 40.563128390281896,
+    lon: 71.10360156678978,
+    radius: 260,
     address: 'Qo\'qon shahar, Markaziy bino, Bosh ofis',
     updatedAt: new Date().toISOString()
   },
@@ -445,7 +455,77 @@ async function getAllServerEmployees(): Promise<ServerEmployee[]> {
   return Array.from(map.values()).filter(e => !deletedEmployeeIds.has(e.id));
 }
 
-// Helper: Fetch all geozones from Firestore or fallback to default 11 branches
+// Helper: Normalize branch name for comparison
+function normalizeBranchName(name?: string): string {
+  if (!name) return '';
+  return String(name).trim().toLowerCase().replace(/['`ʻ’]/g, "'");
+}
+
+// Helper: Smart match a branch geozone by ID, exact name, head-office synonyms, or stripped name
+function findMatchingGeozone(
+  allBranches: BranchGeozone[],
+  branchName?: string,
+  branchId?: string
+): BranchGeozone {
+  if (!allBranches.length) {
+    return {
+      id: 'branch-6',
+      name: 'Bosh ofis',
+      lat: 40.563128390281896,
+      lon: 71.10360156678978,
+      radius: 260,
+      address: "Qo'qon shahar, Markaziy bino, Bosh ofis",
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  // 1. Exact ID match
+  if (branchId) {
+    const byId = allBranches.find(b => String(b.id).trim() === String(branchId).trim());
+    if (byId) return byId;
+  }
+
+  const normInput = normalizeBranchName(branchName);
+  if (!normInput) {
+    return allBranches.find(b => b.id === 'branch-6') || allBranches[0];
+  }
+
+  // 2. Exact name match
+  const exact = allBranches.find(b => normalizeBranchName(b.name) === normInput);
+  if (exact) return exact;
+
+  // 3. Head office synonyms ("bosh ofis", "bosh idora", "bosh bino", "markaziy ofis")
+  const isHeadOffice =
+    normInput.includes('bosh ofis') ||
+    normInput.includes('bosh idora') ||
+    normInput.includes('bosh bino') ||
+    normInput.includes('markaziy ofis');
+  if (isHeadOffice) {
+    const headMatch = allBranches.find(
+      b =>
+        b.id === 'branch-6' ||
+        normalizeBranchName(b.name).includes('bosh ofis') ||
+        normalizeBranchName(b.name).includes('bosh idora')
+    );
+    if (headMatch) return headMatch;
+  }
+
+  // 4. Stripped name match (ignoring "filiali", "filial", parentheses)
+  const strip = (s: string) =>
+    s.replace(/\b(filiali|filial|shahar|shahri|tumani)\b/gi, '').replace(/[()]/g, '').trim();
+  const strippedInput = strip(normInput);
+  if (strippedInput) {
+    const partial = allBranches.find(b => {
+      const sb = strip(normalizeBranchName(b.name));
+      return sb && (sb === strippedInput || sb.includes(strippedInput) || strippedInput.includes(sb));
+    });
+    if (partial) return partial;
+  }
+
+  return allBranches.find(b => b.id === 'branch-6') || allBranches[0];
+}
+
+// Helper: Fetch all geozones from Firestore or fallback to default branches
 async function getAllServerGeozones(): Promise<BranchGeozone[]> {
   const map = new Map<string, BranchGeozone>();
   branchGeozones.forEach(b => map.set(b.id, b));
@@ -454,6 +534,9 @@ async function getAllServerGeozones(): Promise<BranchGeozone[]> {
     return Array.from(map.values());
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   try {
     const gzUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
     const res = await fetch(gzUrl, {
@@ -461,8 +544,10 @@ async function getAllServerGeozones(): Promise<BranchGeozone[]> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         structuredQuery: { from: [{ collectionId: 'geozones' }] }
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -470,25 +555,45 @@ async function getAllServerGeozones(): Promise<BranchGeozone[]> {
           const f = item.document.fields;
           const docId = item.document.name.split('/').pop() || '';
           const name = f.name?.stringValue || 'Filial';
-          const lat = f.lat?.doubleValue ?? f.lat?.integerValue ?? 40.5283;
-          const lon = f.lon?.doubleValue ?? f.lon?.integerValue ?? 70.9425;
-          const radius = f.radius?.integerValue ? Number(f.radius.integerValue) : (f.radius?.doubleValue ?? 100);
+          const description = f.description?.stringValue || '';
+          const rawLat = f.lat?.doubleValue ?? f.lat?.integerValue ?? f.lat?.stringValue;
+          const rawLon = f.lon?.doubleValue ?? f.lon?.integerValue ?? f.lon?.stringValue;
+          const rawRadius = f.radius?.integerValue ?? f.radius?.doubleValue ?? f.radius?.stringValue;
+          const lat = rawLat !== undefined ? Number(rawLat) : 40.5283;
+          const lon = rawLon !== undefined ? Number(rawLon) : 70.9425;
+          const radius = rawRadius !== undefined ? Number(rawRadius) : 100;
           const address = f.address?.stringValue || '';
 
-          map.set(docId, {
-            id: docId,
+          // Match by docId or by existing branch name to prevent duplicate branch names
+          let targetKey = docId;
+          if (!map.has(docId)) {
+            for (const [k, existing] of map.entries()) {
+              if (normalizeBranchName(existing.name) === normalizeBranchName(name)) {
+                targetKey = k;
+                break;
+              }
+            }
+          }
+
+          const gzItem: BranchGeozone = {
+            id: targetKey,
             name,
-            lat: Number(lat),
-            lon: Number(lon),
-            radius: Number(radius),
+            description: description || map.get(targetKey)?.description || '',
+            lat: !isNaN(lat) ? lat : 40.5283,
+            lon: !isNaN(lon) ? lon : 70.9425,
+            radius: !isNaN(radius) && radius > 0 ? radius : 100,
             address,
             updatedAt: f.updatedAt?.stringValue || new Date().toISOString()
-          });
+          };
+
+          map.set(targetKey, gzItem);
         });
+        // Keep in-memory cache synced with latest Firestore data
+        branchGeozones = Array.from(map.values());
       }
     }
   } catch (e) {
-    // non-fatal
+    clearTimeout(timeoutId);
   }
 
   return Array.from(map.values());
@@ -499,13 +604,14 @@ async function saveFirestoreGeozone(geozone: BranchGeozone): Promise<boolean> {
     return false;
   }
   const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/geozones/${geozone.id}?key=${firebaseConfig.apiKey}`;
-  const fields = {
-    id: { stringValue: geozone.id },
-    name: { stringValue: geozone.name },
-    lat: { doubleValue: geozone.lat },
-    lon: { doubleValue: geozone.lon },
-    radius: { integerValue: String(geozone.radius) },
-    address: { stringValue: geozone.address || '' },
+  const fields: Record<string, any> = {
+    id: { stringValue: String(geozone.id) },
+    name: { stringValue: String(geozone.name) },
+    description: { stringValue: String(geozone.description || '') },
+    lat: { doubleValue: Number(geozone.lat) },
+    lon: { doubleValue: Number(geozone.lon) },
+    radius: { integerValue: String(Math.round(Number(geozone.radius) || 100)) },
+    address: { stringValue: String(geozone.address || '') },
     updatedAt: { stringValue: new Date().toISOString() }
   };
   try {
@@ -514,6 +620,19 @@ async function saveFirestoreGeozone(geozone: BranchGeozone): Promise<boolean> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields })
     });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function deleteFirestoreGeozone(docId: string): Promise<boolean> {
+  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
+    return false;
+  }
+  const deleteUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/geozones/${docId}?key=${firebaseConfig.apiKey}`;
+  try {
+    const res = await fetch(deleteUrl, { method: 'DELETE' });
     return res.ok;
   } catch (e) {
     return false;
@@ -782,19 +901,21 @@ export async function configureRoutes(appInstance: express.Express = app) {
   app.get("/api/qatnashish/geozone", handleGetGeozones);
   app.get("/api/davomat/geozonalar", handleGetGeozones);
 
-  app.post("/api/branch-geozones", async (req, res) => {
+  const handleSaveGeozone = async (req: any, res: any) => {
     const { id, name, description, lat, lon, radius, address } = req.body;
     if (!name) {
       return res.status(400).json({ error: "Filial nomi kiritilmadi" });
     }
 
     const existingIndex = branchGeozones.findIndex(
-      b => b.id === id || b.name.toLowerCase() === name.toLowerCase()
+      b => b.id === id || normalizeBranchName(b.name) === normalizeBranchName(name)
     );
 
+    const targetId = existingIndex >= 0 ? branchGeozones[existingIndex].id : (id || `branch-${Date.now()}`);
+
     const updatedItem: BranchGeozone = {
-      id: id || `branch-${Date.now()}`,
-      name,
+      id: targetId,
+      name: String(name).trim(),
       description: description || '',
       lat: Number(lat) || 40.5283,
       lon: Number(lon) || 70.9425,
@@ -809,9 +930,20 @@ export async function configureRoutes(appInstance: express.Express = app) {
       branchGeozones.push(updatedItem);
     }
 
-    await saveFirestoreGeozone(updatedItem);
+    const saved = await saveFirestoreGeozone(updatedItem);
 
-    res.json({ success: true, geozone: updatedItem });
+    res.json({ success: true, savedToFirestore: saved, geozone: updatedItem });
+  };
+
+  app.post("/api/branch-geozones", handleSaveGeozone);
+  app.post("/api/geozones", handleSaveGeozone);
+  app.post("/api/attendance/geozones", handleSaveGeozone);
+
+  app.delete("/api/branch-geozones/:id", async (req, res) => {
+    const id = req.params.id;
+    branchGeozones = branchGeozones.filter(b => b.id !== id);
+    await deleteFirestoreGeozone(id);
+    res.json({ success: true });
   });
 
   // --- Attendance API for Employee "Keldim/Ketdim" Mini App & Face Recognition ---
@@ -914,9 +1046,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
 
       // Xodimning biriktirilgan filiali geozonasi
       const allBranches = await getAllServerGeozones();
-      const targetBranch = allBranches.find(
-        b => b.name.toLowerCase() === (matched.branch || '').toLowerCase()
-      ) || allBranches[0];
+      const targetBranch = findMatchingGeozone(allBranches, matched.branch);
 
       // Ism va familiyani ajratish
       const nameParts = matched.fullName.split(' ');
@@ -1195,11 +1325,11 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
 
       // Filialni aniqlash
       const allBranches = await getAllServerGeozones();
-      const targetBranch = allBranches.find(
-        b => (branchId && b.id === branchId) || 
-             (branchName && b.name.toLowerCase() === branchName.toLowerCase()) ||
-             (emp.branch && b.name.toLowerCase() === (emp.branch || '').toLowerCase())
-      ) || allBranches[0];
+      const targetBranch = findMatchingGeozone(
+        allBranches,
+        branchName || emp.branch,
+        branchId
+      );
 
       // Geozonagacha masofani hisoblash
       const numLat = Number(latVal);

@@ -95,7 +95,7 @@ export const DEFAULT_GEOZONES: BranchGeozone[] = [
     description: 'Qo\'qon markazidagi bosh savdo do\'koni. Mo\'ljal: Markaziy xiyobon ro\'parasi',
     lat: 40.5283,
     lon: 70.9425,
-    radius: 100,
+    radius: 270,
     address: 'Qo\'qon shahar, Turkiston ko\'chasi, 45-uy'
   },
   {
@@ -104,7 +104,7 @@ export const DEFAULT_GEOZONES: BranchGeozone[] = [
     description: 'A.Navoiy shoh ko\'chasidagi supermarket. Mo\'ljal: Markaziy bozor yonida',
     lat: 40.5312,
     lon: 70.9388,
-    radius: 120,
+    radius: 500,
     address: 'Qo\'qon shahar, A.Navoiy shoh ko\'chasi, 12-uy'
   },
   {
@@ -138,9 +138,9 @@ export const DEFAULT_GEOZONES: BranchGeozone[] = [
     id: 'branch-6',
     name: 'Bosh ofis',
     description: 'Toyona Savdo bosh boshqarmasi, ma\'muriyat va omborxona',
-    lat: 40.5320,
-    lon: 70.9410,
-    radius: 80,
+    lat: 40.563128390281896,
+    lon: 71.10360156678978,
+    radius: 260,
     address: 'Qo\'qon shahar, Markaziy bino, Bosh ofis'
   },
   {
@@ -239,20 +239,78 @@ export default function BranchGeozones() {
 
   const [selectedBranchId, setSelectedBranchId] = useState<string>(DEFAULT_GEOZONES[0].id);
 
-  // Sync with Firebase on mount without burst writing loops
+  // Sync with Backend API & Firebase on mount
   useEffect(() => {
     async function initData() {
       try {
-        const fbGeozones = await getFirebaseGeozones();
-        if (fbGeozones && fbGeozones.length > 0) {
-          const merged = deduplicateGeozones([...fbGeozones, ...DEFAULT_GEOZONES]);
+        let fetchedGeozones: BranchGeozone[] = [];
+        try {
+          const res = await fetch('/api/geozones');
+          if (res.ok) {
+            const apiData = await res.json();
+            if (Array.isArray(apiData) && apiData.length > 0) {
+              fetchedGeozones = apiData;
+            }
+          }
+        } catch (apiErr) {
+          console.warn("API geozones fetch notice:", apiErr);
+        }
+
+        if (fetchedGeozones.length === 0) {
+          const fbGeozones = await getFirebaseGeozones();
+          if (fbGeozones && fbGeozones.length > 0) {
+            fetchedGeozones = fbGeozones;
+          }
+        }
+
+        if (fetchedGeozones.length > 0) {
+          // Overlay fetched geozones onto DEFAULT_GEOZONES to preserve canonical ordering while keeping latest coordinates
+          const map = new Map<string, BranchGeozone>();
+          DEFAULT_GEOZONES.forEach(def => map.set(def.id, { ...def }));
+
+          fetchedGeozones.forEach(item => {
+            const rawId = item.id || (item as any).firestoreId || '';
+            const normName = (item.name || '').trim().toLowerCase();
+            let targetKey = rawId;
+            if (!map.has(targetKey)) {
+              for (const [k, existing] of map.entries()) {
+                if ((existing.name || '').trim().toLowerCase() === normName) {
+                  targetKey = k;
+                  break;
+                }
+              }
+            }
+            const prev = map.get(targetKey);
+            map.set(targetKey || `branch-${map.size + 1}`, {
+              ...prev,
+              ...item,
+              id: targetKey || item.id,
+              description: item.description || prev?.description || '',
+              lat: Number(item.lat) || prev?.lat || 40.5283,
+              lon: Number(item.lon) || prev?.lon || 70.9425,
+              radius: Number(item.radius) || prev?.radius || 100
+            });
+          });
+
+          const merged = deduplicateGeozones(Array.from(map.values()));
           setGeozones(merged);
-          setSelectedBranchId(merged[0]?.id || DEFAULT_GEOZONES[0].id);
+          try {
+            localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(merged));
+          } catch {}
+
+          const first = merged.find(b => b.id === selectedBranchId) || merged[0] || DEFAULT_GEOZONES[0];
+          setSelectedBranchId(first.id);
+          setEditName(first.name);
+          setEditDescription(first.description || '');
+          setEditLat(first.lat);
+          setEditLon(first.lon);
+          setEditRadius(first.radius);
+          setEditAddress(first.address);
         } else {
           setGeozones(deduplicateGeozones(DEFAULT_GEOZONES));
         }
       } catch (error) {
-        console.warn("Firebase geozones sync notice:", error);
+        console.warn("Geozones sync notice:", error);
         setGeozones(deduplicateGeozones(DEFAULT_GEOZONES));
       } finally {
         setIsLoading(false);
@@ -481,11 +539,21 @@ export default function BranchGeozones() {
       });
 
       setGeozones(updated);
-      
-      // Save to Firebase
+      try {
+        localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updated));
+      } catch {}
+
+      // Save to Backend API (Firestore REST + server memory) and Client Firebase
       const branchToSave = updated.find(b => b.id === selectedBranchId);
       if (branchToSave) {
-        await saveFirebaseGeozone(branchToSave);
+        await Promise.allSettled([
+          fetch('/api/branch-geozones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(branchToSave)
+          }),
+          saveFirebaseGeozone(branchToSave)
+        ]);
       }
 
       // Freeze in place
@@ -529,10 +597,18 @@ export default function BranchGeozones() {
 
     const updatedList = [newBranch, ...geozones];
     setGeozones(updatedList);
-    // Note: We don't save to Firebase until they hit "Save" on the main screen 
-    // but the user wants real-time or persistent data. 
-    // Actually, I'll save it to Firebase immediately to avoid data loss.
-    await saveFirebaseGeozone(newBranch);
+    try {
+      localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updatedList));
+    } catch {}
+
+    await Promise.allSettled([
+      fetch('/api/branch-geozones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBranch)
+      }),
+      saveFirebaseGeozone(newBranch)
+    ]);
 
     setNewBranchName('');
     setNewBranchDescription('');
@@ -563,10 +639,15 @@ export default function BranchGeozones() {
     }
     const idToDelete = selectedBranchId;
     const updated = geozones.filter(b => b.id !== idToDelete);
-    
-    // Delete from Firebase
-    await deleteFirebaseGeozone(idToDelete);
-    
+    try {
+      localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updated));
+    } catch {}
+
+    await Promise.allSettled([
+      fetch(`/api/branch-geozones/${encodeURIComponent(idToDelete)}`, { method: 'DELETE' }),
+      deleteFirebaseGeozone(idToDelete)
+    ]);
+
     setGeozones(updated);
     setShowDeleteBranchModal(false);
     selectBranch(updated[0].id, updated);

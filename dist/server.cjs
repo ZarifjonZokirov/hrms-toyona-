@@ -40,13 +40,23 @@ var import_path = __toESM(require("path"), 1);
 var import_vite = require("vite");
 var import_cors = __toESM(require("cors"), 1);
 var import_fs = __toESM(require("fs"), 1);
-var firebaseConfig = null;
+var DEFAULT_FIREBASE_CONFIG = {
+  projectId: "gen-lang-client-0391742872",
+  appId: "1:811535018031:web:b3dc918af92284f02abeda",
+  apiKey: "AIzaSyB6DEX7gW5Z9grIcZJrkNwTeUsiRl2N568",
+  authDomain: "gen-lang-client-0391742872.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-toyonasavdo-a87699da-8d38-4976-8749-f4100631b191",
+  storageBucket: "gen-lang-client-0391742872.firebasestorage.app",
+  messagingSenderId: "811535018031"
+};
+var firebaseConfig = DEFAULT_FIREBASE_CONFIG;
 try {
   const configPath = import_path.default.join(process.cwd(), "firebase-applet-config.json");
   if (import_fs.default.existsSync(configPath)) {
-    firebaseConfig = JSON.parse(import_fs.default.readFileSync(configPath, "utf8"));
+    firebaseConfig = { ...DEFAULT_FIREBASE_CONFIG, ...JSON.parse(import_fs.default.readFileSync(configPath, "utf8")) };
   }
 } catch (e) {
+  firebaseConfig = DEFAULT_FIREBASE_CONFIG;
 }
 async function getFirestoreCandidates() {
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
@@ -184,7 +194,7 @@ var branchGeozones = [
     name: "Turkiston filiali",
     lat: 40.5283,
     lon: 70.9425,
-    radius: 100,
+    radius: 270,
     address: "Qo'qon shahar, Turkiston ko'chasi, 45-uy",
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   },
@@ -193,7 +203,7 @@ var branchGeozones = [
     name: "Navoiy filiali",
     lat: 40.5312,
     lon: 70.9388,
-    radius: 120,
+    radius: 500,
     address: "Qo'qon shahar, A.Navoiy shoh ko'chasi, 12-uy",
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   },
@@ -227,9 +237,9 @@ var branchGeozones = [
   {
     id: "branch-6",
     name: "Bosh ofis",
-    lat: 40.532,
-    lon: 70.941,
-    radius: 80,
+    lat: 40.563128390281896,
+    lon: 71.10360156678978,
+    radius: 260,
     address: "Qo'qon shahar, Markaziy bino, Bosh ofis",
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   },
@@ -406,12 +416,58 @@ async function getAllServerEmployees() {
   }
   return Array.from(map.values()).filter((e) => !deletedEmployeeIds.has(e.id));
 }
+function normalizeBranchName(name) {
+  if (!name) return "";
+  return String(name).trim().toLowerCase().replace(/['`ʻ’]/g, "'");
+}
+function findMatchingGeozone(allBranches, branchName, branchId) {
+  if (!allBranches.length) {
+    return {
+      id: "branch-6",
+      name: "Bosh ofis",
+      lat: 40.563128390281896,
+      lon: 71.10360156678978,
+      radius: 260,
+      address: "Qo'qon shahar, Markaziy bino, Bosh ofis",
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  if (branchId) {
+    const byId = allBranches.find((b) => String(b.id).trim() === String(branchId).trim());
+    if (byId) return byId;
+  }
+  const normInput = normalizeBranchName(branchName);
+  if (!normInput) {
+    return allBranches.find((b) => b.id === "branch-6") || allBranches[0];
+  }
+  const exact = allBranches.find((b) => normalizeBranchName(b.name) === normInput);
+  if (exact) return exact;
+  const isHeadOffice = normInput.includes("bosh ofis") || normInput.includes("bosh idora") || normInput.includes("bosh bino") || normInput.includes("markaziy ofis");
+  if (isHeadOffice) {
+    const headMatch = allBranches.find(
+      (b) => b.id === "branch-6" || normalizeBranchName(b.name).includes("bosh ofis") || normalizeBranchName(b.name).includes("bosh idora")
+    );
+    if (headMatch) return headMatch;
+  }
+  const strip = (s) => s.replace(/\b(filiali|filial|shahar|shahri|tumani)\b/gi, "").replace(/[()]/g, "").trim();
+  const strippedInput = strip(normInput);
+  if (strippedInput) {
+    const partial = allBranches.find((b) => {
+      const sb = strip(normalizeBranchName(b.name));
+      return sb && (sb === strippedInput || sb.includes(strippedInput) || strippedInput.includes(sb));
+    });
+    if (partial) return partial;
+  }
+  return allBranches.find((b) => b.id === "branch-6") || allBranches[0];
+}
 async function getAllServerGeozones() {
   const map = /* @__PURE__ */ new Map();
   branchGeozones.forEach((b) => map.set(b.id, b));
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
     return Array.from(map.values());
   }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5e3);
   try {
     const gzUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
     const res = await fetch(gzUrl, {
@@ -419,8 +475,10 @@ async function getAllServerGeozones() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         structuredQuery: { from: [{ collectionId: "geozones" }] }
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -428,23 +486,40 @@ async function getAllServerGeozones() {
           const f = item.document.fields;
           const docId = item.document.name.split("/").pop() || "";
           const name = f.name?.stringValue || "Filial";
-          const lat = f.lat?.doubleValue ?? f.lat?.integerValue ?? 40.5283;
-          const lon = f.lon?.doubleValue ?? f.lon?.integerValue ?? 70.9425;
-          const radius = f.radius?.integerValue ? Number(f.radius.integerValue) : f.radius?.doubleValue ?? 100;
+          const description = f.description?.stringValue || "";
+          const rawLat = f.lat?.doubleValue ?? f.lat?.integerValue ?? f.lat?.stringValue;
+          const rawLon = f.lon?.doubleValue ?? f.lon?.integerValue ?? f.lon?.stringValue;
+          const rawRadius = f.radius?.integerValue ?? f.radius?.doubleValue ?? f.radius?.stringValue;
+          const lat = rawLat !== void 0 ? Number(rawLat) : 40.5283;
+          const lon = rawLon !== void 0 ? Number(rawLon) : 70.9425;
+          const radius = rawRadius !== void 0 ? Number(rawRadius) : 100;
           const address = f.address?.stringValue || "";
-          map.set(docId, {
-            id: docId,
+          let targetKey = docId;
+          if (!map.has(docId)) {
+            for (const [k, existing] of map.entries()) {
+              if (normalizeBranchName(existing.name) === normalizeBranchName(name)) {
+                targetKey = k;
+                break;
+              }
+            }
+          }
+          const gzItem = {
+            id: targetKey,
             name,
-            lat: Number(lat),
-            lon: Number(lon),
-            radius: Number(radius),
+            description: description || map.get(targetKey)?.description || "",
+            lat: !isNaN(lat) ? lat : 40.5283,
+            lon: !isNaN(lon) ? lon : 70.9425,
+            radius: !isNaN(radius) && radius > 0 ? radius : 100,
             address,
             updatedAt: f.updatedAt?.stringValue || (/* @__PURE__ */ new Date()).toISOString()
-          });
+          };
+          map.set(targetKey, gzItem);
         });
+        branchGeozones = Array.from(map.values());
       }
     }
   } catch (e) {
+    clearTimeout(timeoutId);
   }
   return Array.from(map.values());
 }
@@ -454,12 +529,13 @@ async function saveFirestoreGeozone(geozone) {
   }
   const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/geozones/${geozone.id}?key=${firebaseConfig.apiKey}`;
   const fields = {
-    id: { stringValue: geozone.id },
-    name: { stringValue: geozone.name },
-    lat: { doubleValue: geozone.lat },
-    lon: { doubleValue: geozone.lon },
-    radius: { integerValue: String(geozone.radius) },
-    address: { stringValue: geozone.address || "" },
+    id: { stringValue: String(geozone.id) },
+    name: { stringValue: String(geozone.name) },
+    description: { stringValue: String(geozone.description || "") },
+    lat: { doubleValue: Number(geozone.lat) },
+    lon: { doubleValue: Number(geozone.lon) },
+    radius: { integerValue: String(Math.round(Number(geozone.radius) || 100)) },
+    address: { stringValue: String(geozone.address || "") },
     updatedAt: { stringValue: (/* @__PURE__ */ new Date()).toISOString() }
   };
   try {
@@ -468,6 +544,18 @@ async function saveFirestoreGeozone(geozone) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fields })
     });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+async function deleteFirestoreGeozone(docId) {
+  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
+    return false;
+  }
+  const deleteUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/geozones/${docId}?key=${firebaseConfig.apiKey}`;
+  try {
+    const res = await fetch(deleteUrl, { method: "DELETE" });
     return res.ok;
   } catch (e) {
     return false;
@@ -694,17 +782,18 @@ async function configureRoutes(appInstance = app) {
   app.get("/api/qatnashish/geozonalar", handleGetGeozones);
   app.get("/api/qatnashish/geozone", handleGetGeozones);
   app.get("/api/davomat/geozonalar", handleGetGeozones);
-  app.post("/api/branch-geozones", async (req, res) => {
+  const handleSaveGeozone = async (req, res) => {
     const { id, name, description, lat, lon, radius, address } = req.body;
     if (!name) {
       return res.status(400).json({ error: "Filial nomi kiritilmadi" });
     }
     const existingIndex = branchGeozones.findIndex(
-      (b) => b.id === id || b.name.toLowerCase() === name.toLowerCase()
+      (b) => b.id === id || normalizeBranchName(b.name) === normalizeBranchName(name)
     );
+    const targetId = existingIndex >= 0 ? branchGeozones[existingIndex].id : id || `branch-${Date.now()}`;
     const updatedItem = {
-      id: id || `branch-${Date.now()}`,
-      name,
+      id: targetId,
+      name: String(name).trim(),
       description: description || "",
       lat: Number(lat) || 40.5283,
       lon: Number(lon) || 70.9425,
@@ -717,8 +806,17 @@ async function configureRoutes(appInstance = app) {
     } else {
       branchGeozones.push(updatedItem);
     }
-    await saveFirestoreGeozone(updatedItem);
-    res.json({ success: true, geozone: updatedItem });
+    const saved = await saveFirestoreGeozone(updatedItem);
+    res.json({ success: true, savedToFirestore: saved, geozone: updatedItem });
+  };
+  app.post("/api/branch-geozones", handleSaveGeozone);
+  app.post("/api/geozones", handleSaveGeozone);
+  app.post("/api/attendance/geozones", handleSaveGeozone);
+  app.delete("/api/branch-geozones/:id", async (req, res) => {
+    const id = req.params.id;
+    branchGeozones = branchGeozones.filter((b) => b.id !== id);
+    await deleteFirestoreGeozone(id);
+    res.json({ success: true });
   });
   const handleAttendanceLoginNotAllowed = (req, res) => {
     res.status(405).json({
@@ -796,9 +894,7 @@ async function configureRoutes(appInstance = app) {
         });
       }
       const allBranches = await getAllServerGeozones();
-      const targetBranch = allBranches.find(
-        (b) => b.name.toLowerCase() === (matched.branch || "").toLowerCase()
-      ) || allBranches[0];
+      const targetBranch = findMatchingGeozone(allBranches, matched.branch);
       const nameParts = matched.fullName.split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
@@ -1036,9 +1132,11 @@ async function configureRoutes(appInstance = app) {
         photoUrl: "https://hrms-toyona.vercel.app/zarifjon.jpg"
       };
       const allBranches = await getAllServerGeozones();
-      const targetBranch = allBranches.find(
-        (b) => branchId && b.id === branchId || branchName && b.name.toLowerCase() === branchName.toLowerCase() || emp.branch && b.name.toLowerCase() === (emp.branch || "").toLowerCase()
-      ) || allBranches[0];
+      const targetBranch = findMatchingGeozone(
+        allBranches,
+        branchName || emp.branch,
+        branchId
+      );
       const numLat = Number(latVal);
       const numLon = Number(lonVal);
       const distance = !isNaN(numLat) && !isNaN(numLon) ? calculateDistanceMeters(numLat, numLon, targetBranch.lat, targetBranch.lon) : 0;
