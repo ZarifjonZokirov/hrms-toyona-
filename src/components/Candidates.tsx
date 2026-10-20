@@ -34,6 +34,9 @@ export interface Candidate {
   date?: string;
   candidateMessage?: string;
   isViewed?: boolean;
+  photoUrl?: string;
+  passportFrontUrl?: string;
+  passportBackUrl?: string;
 }
 
 export const POSITIONS_LIST = [
@@ -413,10 +416,25 @@ export default function Candidates() {
                   #{index + 1}
                 </td>
                 <td className="p-3 border-y border-slate-100 dark:border-slate-700/60">
-                  <div className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-[#00A651] transition-colors">{candidate.fullName}</div>
-                  {candidate.fatherName && (
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">otasi: {candidate.fatherName}</div>
-                  )}
+                  <div className="flex items-center gap-2.5">
+                    {candidate.photoUrl ? (
+                      <img 
+                        src={candidate.photoUrl} 
+                        alt={candidate.fullName} 
+                        className="w-8 h-8 rounded-full object-cover border border-emerald-500/40 shadow-xs shrink-0" 
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
+                        {candidate.fullName ? candidate.fullName.charAt(0) : 'N'}
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-[#00A651] transition-colors">{candidate.fullName}</div>
+                      {candidate.fatherName && (
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">otasi: {candidate.fatherName}</div>
+                      )}
+                    </div>
+                  </div>
                 </td>
                 <td className="p-3 border-y border-slate-100 dark:border-slate-700/60">
                   <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
@@ -528,9 +546,19 @@ export default function Candidates() {
               {/* Modal Header */}
               <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00A651] to-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
-                    {selectedCandidate.fullName ? selectedCandidate.fullName.charAt(0) : 'N'}
-                  </div>
+                  {selectedCandidate.photoUrl ? (
+                    <img 
+                      src={selectedCandidate.photoUrl} 
+                      alt={selectedCandidate.fullName} 
+                      className="w-12 h-12 rounded-xl object-cover border-2 border-[#00A651] shadow-md shrink-0 cursor-pointer hover:opacity-90"
+                      onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
+                      title="Rasmni to'liq ko'rish"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00A651] to-emerald-600 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
+                      {selectedCandidate.fullName ? selectedCandidate.fullName.charAt(0) : 'N'}
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                       {selectedCandidate.fullName} {selectedCandidate.fatherName ? `(${selectedCandidate.fatherName})` : ''}
@@ -554,6 +582,33 @@ export default function Candidates() {
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto space-y-5 text-slate-700 dark:text-slate-300 text-sm">
                 
+                {/* Nomzod fotosurati */}
+                {selectedCandidate.photoUrl && (
+                  <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
+                    <img 
+                      src={selectedCandidate.photoUrl} 
+                      alt={selectedCandidate.fullName} 
+                      className="w-24 h-28 object-cover rounded-xl border border-emerald-500/50 shadow-md shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                      onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
+                      title="Kattalashtirib ko'rish"
+                    />
+                    <div className="space-y-1 text-center sm:text-left">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Biriktirilgan 3x4 fotosurat
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Nomzod anketa to'ldirish vaqtida o'z fotosuratini yuklagan.</p>
+                      <button 
+                        type="button" 
+                        onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 pt-1 cursor-pointer"
+                      >
+                        Rasmni to'liq hajmda ochish ↗
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. Shaxsiy ma'lumotlar */}
                 <div className="space-y-2">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
