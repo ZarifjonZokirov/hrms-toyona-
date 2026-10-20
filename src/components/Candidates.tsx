@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, ChevronDown, Trash2, CheckCircle2, X, Phone, MapPin, 
   User, Calendar, Briefcase, UserCheck, GraduationCap, Building2, 
-  Heart, Filter, RefreshCw, Loader2
+  Heart, Filter, RefreshCw, Loader2, Camera, Upload
 } from 'lucide-react';
 import { ToyonaBrand, ModuleHeaderLogo } from './Logo';
 import { db, handleFirestoreError } from '../firebase';
@@ -122,10 +122,43 @@ export default function Candidates() {
   const fetchCandidates = async () => {
     setIsRefreshing(true);
     try {
-      const { getFirebaseCandidates } = await import('../firebase');
-      const fbCandidates = await getFirebaseCandidates();
+      let list: Candidate[] = [];
+
+      // 1. Backend API orqali olish (eng ishonchli, to'liq ma'lumotlar va fotosuratlar)
+      try {
+        const res = await fetch('/api/candidates');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            list = data;
+          }
+        }
+      } catch (apiErr) {
+        console.warn("API candidates fetch notice:", apiErr);
+      }
+
+      // 2. Agar API dan bo'sh kelsa, bevosita Firebase SDK dan olish
+      if (!list.length) {
+        try {
+          const { getFirebaseCandidates } = await import('../firebase');
+          const fbCandidates = await getFirebaseCandidates();
+          if (Array.isArray(fbCandidates) && fbCandidates.length > 0) {
+            list = fbCandidates;
+          }
+        } catch (fbErr) {
+          console.warn("Firebase candidates fetch notice:", fbErr);
+        }
+      }
       
-      const combined = (fbCandidates as Candidate[]).sort((a, b) => {
+      const normalized = list.map(c => ({
+        ...c,
+        id: c.id || (c as any).firestoreId || `cand_${Math.random()}`,
+        fullName: c.fullName || (c as any).fio || 'Noma\'lum',
+        jobPosition: c.jobPosition || (c as any).position || (c as any).lavozim || 'Noma\'lum',
+        photoUrl: c.photoUrl || (c as any).photo_url || (c as any).avatarUrl || (c as any).photo || '',
+      }));
+
+      const combined = (normalized as Candidate[]).sort((a, b) => {
         const tA = new Date(a.submittedAt).getTime() || 0;
         const tB = new Date(b.submittedAt).getTime() || 0;
         return tB - tA;
@@ -133,7 +166,7 @@ export default function Candidates() {
 
       setCandidates(combined);
     } catch (err) {
-      console.warn("Firebase candidates fetch notice:", err);
+      console.warn("Candidates fetch notice:", err);
     } finally {
       setIsRefreshing(false);
       setIsInitialLoading(false);
@@ -158,6 +191,50 @@ export default function Candidates() {
   }, []);
   
   const showToast = (msg: string) => setToastMessage(msg);
+
+  const handleUploadCandidatePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedCandidate) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const img = new Image();
+      img.onload = async () => {
+        const maxDim = 500;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const b64 = canvas.toDataURL('image/jpeg', 0.85);
+
+        const updated = { ...selectedCandidate, photoUrl: b64 };
+        setSelectedCandidate(updated);
+        setCandidates(prev => prev.map(c => c.id === updated.id ? updated : c));
+
+        try {
+          const { saveFirebaseCandidate } = await import('../firebase');
+          await saveFirebaseCandidate({ id: updated.id, photoUrl: b64 });
+          showToast("Fotosurat muvaffaqiyatli saqlandi!");
+        } catch (err) {
+          console.warn("Failed to save photo to firebase:", err);
+        }
+      };
+      img.src = evt.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const filteredCandidates = candidates.filter(c => {
     const q = (searchQuery || '').toLowerCase().trim();
@@ -583,28 +660,59 @@ export default function Candidates() {
               <div className="p-6 overflow-y-auto space-y-5 text-slate-700 dark:text-slate-300 text-sm">
                 
                 {/* Nomzod fotosurati */}
-                {selectedCandidate.photoUrl && (
+                <input 
+                  type="file" 
+                  id="modalCandidatePhotoInput" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleUploadCandidatePhoto} 
+                />
+                
+                {selectedCandidate.photoUrl ? (
                   <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
                     <img 
                       src={selectedCandidate.photoUrl} 
                       alt={selectedCandidate.fullName} 
-                      className="w-24 h-28 object-cover rounded-xl border border-emerald-500/50 shadow-md shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                      className="w-24 h-32 object-cover rounded-xl border border-emerald-500/50 shadow-md shrink-0 cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
                       title="Kattalashtirib ko'rish"
                     />
-                    <div className="space-y-1 text-center sm:text-left">
+                    <div className="space-y-1.5 text-center sm:text-left flex-1">
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Biriktirilgan 3x4 fotosurat
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Nomzod anketa to'ldirish vaqtida o'z fotosuratini yuklagan.</p>
-                      <button 
-                        type="button" 
-                        onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 pt-1 cursor-pointer"
-                      >
-                        Rasmni to'liq hajmda ochish ↗
-                      </button>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Nomzod anketasiga biriktirilgan haqiqiy fotosurat.</p>
+                      <div className="flex items-center gap-2 pt-1 justify-center sm:justify-start">
+                        <button 
+                          type="button" 
+                          onClick={() => window.open(selectedCandidate.photoUrl, '_blank')}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                        >
+                          To'liq ko'rish ↗
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => document.getElementById('modalCandidatePhotoInput')?.click()}
+                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-blue-500" />
+                          Almashtirish
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => document.getElementById('modalCandidatePhotoInput')?.click()}
+                    className="p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-center gap-3 cursor-pointer transition-colors group"
+                  >
+                    <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Fotosurat yuklanmagan</p>
+                      <p className="text-[11px] text-slate-400">Fotosurat biriktirish uchun shu yerga bosing (3x4 yoki shaxsiy rasm)</p>
                     </div>
                   </div>
                 )}
