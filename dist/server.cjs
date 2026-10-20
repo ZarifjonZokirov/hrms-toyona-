@@ -357,6 +357,88 @@ async function saveFirestoreEmployeePhoto(employeeId, photoUrl) {
     return false;
   }
 }
+var photoRequestsMap = /* @__PURE__ */ new Map();
+async function getFirestorePhotoRequests() {
+  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
+    return Array.from(photoRequestsMap.values());
+  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4e3);
+  try {
+    const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
+    const response = await fetch(firestoreUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "photo_requests" }]
+        }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) return Array.from(photoRequestsMap.values());
+    const fData = await response.json();
+    if (!Array.isArray(fData)) return Array.from(photoRequestsMap.values());
+    const result = [];
+    fData.forEach((item) => {
+      if (!item.document || !item.document.fields) return;
+      const f = item.document.fields;
+      const docId = item.document.name.split("/").pop() || "";
+      const req = {
+        id: docId,
+        employeeId: f.employeeId?.stringValue || "",
+        employeeName: f.employeeName?.stringValue || "Noma'lum",
+        branch: f.branch?.stringValue || "",
+        position: f.position?.stringValue || "",
+        currentPhotoUrl: f.currentPhotoUrl?.stringValue || "",
+        newPhotoUrl: f.newPhotoUrl?.stringValue || "",
+        status: f.status?.stringValue || "pending",
+        submittedAt: f.submittedAt?.stringValue || (/* @__PURE__ */ new Date()).toISOString(),
+        reviewedAt: f.reviewedAt?.stringValue,
+        reviewedBy: f.reviewedBy?.stringValue,
+        rejectionReason: f.rejectionReason?.stringValue
+      };
+      photoRequestsMap.set(req.id, req);
+      result.push(req);
+    });
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    return Array.from(photoRequestsMap.values());
+  }
+}
+async function saveFirestorePhotoRequest(req) {
+  photoRequestsMap.set(req.id, req);
+  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
+    return true;
+  }
+  const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/photo_requests/${req.id}?key=${firebaseConfig.apiKey}`;
+  const fields = {
+    id: { stringValue: String(req.id) },
+    employeeId: { stringValue: String(req.employeeId) },
+    employeeName: { stringValue: String(req.employeeName) },
+    branch: { stringValue: String(req.branch || "") },
+    position: { stringValue: String(req.position || "") },
+    currentPhotoUrl: { stringValue: String(req.currentPhotoUrl || "") },
+    newPhotoUrl: { stringValue: String(req.newPhotoUrl || "") },
+    status: { stringValue: String(req.status || "pending") },
+    submittedAt: { stringValue: String(req.submittedAt || (/* @__PURE__ */ new Date()).toISOString()) }
+  };
+  if (req.reviewedAt) fields.reviewedAt = { stringValue: String(req.reviewedAt) };
+  if (req.reviewedBy) fields.reviewedBy = { stringValue: String(req.reviewedBy) };
+  if (req.rejectionReason) fields.rejectionReason = { stringValue: String(req.rejectionReason) };
+  try {
+    const res = await fetch(writeUrl, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields })
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
 async function getAllServerEmployees() {
   const map = /* @__PURE__ */ new Map();
   defaultEmployees.forEach((e) => {
@@ -1021,6 +1103,114 @@ async function configureRoutes(appInstance = app) {
   app.post("/api/attendance/upload-photo", handleSaveEmployeePhoto);
   app.post("/api/qatnashish/xodim-rasmi", handleSaveEmployeePhoto);
   app.post("/api/davomat/xodim-rasmi", handleSaveEmployeePhoto);
+  app.get("/api/attendance/photo-requests", async (req, res) => {
+    try {
+      const { employeeId, status } = req.query || {};
+      let list = await getFirestorePhotoRequests();
+      if (employeeId) {
+        const empQuery = String(employeeId).trim();
+        list = list.filter((r) => String(r.employeeId).trim() === empQuery);
+      }
+      if (status) {
+        list = list.filter((r) => r.status === status);
+      }
+      list.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      res.json({ success: true, requests: list });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e.message || "So'rovlarni olishda xatolik" });
+    }
+  });
+  app.post("/api/attendance/photo-request/submit", async (req, res) => {
+    try {
+      const { employeeId, photoUrl, newPhotoUrl } = req.body || {};
+      const targetPhoto = newPhotoUrl || photoUrl;
+      if (!targetPhoto) {
+        return res.status(400).json({ success: false, message: "Yangi rasm kiritilishi shart." });
+      }
+      const allEmployees = await getAllServerEmployees();
+      const emp = findServerEmployee(allEmployees, employeeId);
+      if (!emp) {
+        return res.status(404).json({ success: false, message: "Xodim topilmadi." });
+      }
+      const requestId = `req_${emp.id}`;
+      const newReq = {
+        id: requestId,
+        employeeId: emp.id,
+        employeeName: emp.fullName,
+        branch: emp.branch || "",
+        position: emp.position || "",
+        currentPhotoUrl: emp.photoUrl || emp.avatarUrl || "",
+        newPhotoUrl: targetPhoto,
+        status: "pending",
+        submittedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      await saveFirestorePhotoRequest(newReq);
+      res.json({
+        success: true,
+        message: "Rasm HR tasdig'iga muvaffaqiyatli yuborildi. Kutilmoqda.",
+        request: newReq
+      });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e.message || "Rasm so'rovini yuborishda xatolik" });
+    }
+  });
+  app.post("/api/attendance/photo-request/action", async (req, res) => {
+    try {
+      const { requestId, employeeId, action, rejectionReason, reviewerName } = req.body || {};
+      let list = await getFirestorePhotoRequests();
+      let targetReq = list.find((r) => r.id === requestId || employeeId && r.employeeId === employeeId && r.status === "pending");
+      if (!targetReq) {
+        return res.status(404).json({ success: false, message: "So'rov topilmadi." });
+      }
+      if (action === "approve") {
+        targetReq.status = "approved";
+        targetReq.reviewedAt = (/* @__PURE__ */ new Date()).toISOString();
+        targetReq.reviewedBy = reviewerName || "HR Menejer";
+        targetReq.rejectionReason = void 0;
+        employeePhotoOverrides[targetReq.employeeId] = targetReq.newPhotoUrl;
+        const defEmp = defaultEmployees.find((e) => e.id === targetReq.employeeId);
+        if (defEmp) {
+          defEmp.photoUrl = targetReq.newPhotoUrl;
+        }
+        await saveFirestoreEmployeePhoto(targetReq.employeeId, targetReq.newPhotoUrl);
+        await saveFirestorePhotoRequest(targetReq);
+        return res.json({
+          success: true,
+          message: "Xodim rasmi muvaffaqiyatli tasdiqlandi va Face ID uchun yangilandi!",
+          request: targetReq
+        });
+      } else if (action === "reject") {
+        targetReq.status = "rejected";
+        targetReq.reviewedAt = (/* @__PURE__ */ new Date()).toISOString();
+        targetReq.reviewedBy = reviewerName || "HR Menejer";
+        targetReq.rejectionReason = rejectionReason || "HR tomonidan rad etildi";
+        await saveFirestorePhotoRequest(targetReq);
+        return res.json({
+          success: true,
+          message: "Rasm so'rovi rad etildi.",
+          request: targetReq
+        });
+      } else {
+        return res.status(400).json({ success: false, message: "Noto'g'ri amal (action: approve yoki reject)." });
+      }
+    } catch (e) {
+      res.status(500).json({ success: false, message: e.message || "So'rovni ko'rib chiqishda xatolik" });
+    }
+  });
+  app.delete("/api/attendance/photo-request/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      photoRequestsMap.delete(id);
+      if (firebaseConfig?.projectId && firebaseConfig?.firestoreDatabaseId && firebaseConfig?.apiKey) {
+        const deleteUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/photo_requests/${id}?key=${firebaseConfig.apiKey}`;
+        fetch(deleteUrl, { method: "DELETE" }).catch(() => {
+        });
+      }
+      res.json({ success: true, message: "So'rov o'chirildi." });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e.message || "O'chirishda xatolik" });
+    }
+  });
   const handleTodayStatus = async (req, res) => {
     try {
       const employeeId = (req.query.employeeId || req.query.id || req.query.username || req.query.login || "").toString().trim();
@@ -1577,7 +1767,7 @@ async function configureRoutes(appInstance = app) {
   });
 }
 async function startServer(appInstance = app) {
-  const PORT = process.env.PORT || 3e3;
+  const PORT = Number(process.env.PORT) || 3e3;
   if (!process.env.VERCEL && !process.env.SERVERLESS && process.env.NODE_ENV !== "production") {
     const vite = await (0, import_vite.createServer)({
       server: { middlewareMode: true },

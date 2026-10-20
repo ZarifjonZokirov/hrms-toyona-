@@ -327,14 +327,30 @@ export default function AttendanceJournal({
   const [selectedMonth, setSelectedMonth] = useState('Sentyabr, 2026');
   const [editingRecord, setEditingRecord] = useState<DailyAttendance | null>(null);
 
-  const [faceIdInitialTab, setFaceIdInitialTab] = useState<'photos' | 'accounts' | 'simulator'>('photos');
+  const [faceIdInitialTab, setFaceIdInitialTab] = useState<'photos' | 'accounts' | 'simulator' | 'requests'>('photos');
+  const [pendingPhotoRequestsCount, setPendingPhotoRequestsCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const res = await fetch('/api/attendance/photo-requests?status=pending');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.requests)) {
+          setPendingPhotoRequestsCount(data.requests.length);
+        }
+      } catch {}
+    };
+    fetchPendingCount();
+    const interval = setInterval(fetchPendingCount, 15000);
+    return () => clearInterval(interval);
+  }, [showFaceIdModal]);
 
   const handleOpenGpsModal = (emp?: EmployeeData | null) => {
     setGpsTargetEmployee(emp || null);
     setShowGpsModal(true);
   };
 
-  const handleOpenFaceIdModal = (emp?: EmployeeData | null, tab: 'photos' | 'accounts' | 'simulator' = 'photos') => {
+  const handleOpenFaceIdModal = (emp?: EmployeeData | null, tab: 'photos' | 'accounts' | 'simulator' | 'requests' = 'photos') => {
     setFaceIdTargetEmployee(emp || null);
     setFaceIdInitialTab(tab);
     setShowFaceIdModal(true);
@@ -861,6 +877,20 @@ export default function AttendanceJournal({
           >
             <Clock className="w-3.5 h-3.5 text-rose-600" />
             <span>Jarima & Dam Kunlari</span>
+          </button>
+
+          <button
+            onClick={() => handleOpenFaceIdModal(null, 'requests')}
+            className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Xodimlar yuborgan yangi Face ID rasm so'rovlarini ko'rish va tasdiqlash"
+          >
+            <Camera className="w-3.5 h-3.5 text-purple-600" />
+            <span>Rasm So'rovlari</span>
+            {pendingPhotoRequestsCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                {pendingPhotoRequestsCount}
+              </span>
+            )}
           </button>
 
           <ExportButtons 
@@ -3551,7 +3581,7 @@ interface FaceIdIntegrationModalProps {
   geozones?: BranchGeozone[];
   attendanceMap?: Map<string, DailyAttendance>;
   selectedDate: string;
-  initialTab?: 'photos' | 'accounts' | 'simulator';
+  initialTab?: 'photos' | 'accounts' | 'simulator' | 'requests';
   onUpdateEmployeePhoto?: (employeeId: string, newPhotoUrl: string) => void;
   onClose: () => void;
   onRecord: (record: DailyAttendance) => void;
@@ -3570,7 +3600,7 @@ function FaceIdIntegrationModal({
   onRecord,
   showToast
 }: FaceIdIntegrationModalProps) {
-  const [activeTab, setActiveTab] = useState<'photos' | 'accounts' | 'simulator'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'photos' | 'accounts' | 'simulator' | 'requests'>(initialTab);
   const [selectedEmpId, setSelectedEmpId] = useState<string>(employee?.id || employees[0]?.id || '');
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any | null>(null);
@@ -3578,6 +3608,114 @@ function FaceIdIntegrationModal({
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [aiSyncLog, setAiSyncLog] = useState<{ empId: string; type: 'vacation' | 'trip' | 'all'; time: string } | null>(null);
+
+  // Photo request approval states
+  const [photoRequests, setPhotoRequests] = useState<any[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [requestStatusFilter, setRequestStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [processingReqId, setProcessingReqId] = useState<string | null>(null);
+  const [activeRejectId, setActiveRejectId] = useState<string | null>(null);
+  const [rejectReasonText, setRejectReasonText] = useState('');
+
+  const fetchPhotoRequests = async () => {
+    setIsLoadingRequests(true);
+    try {
+      const res = await fetch('/api/attendance/photo-requests');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.requests)) {
+        setPhotoRequests(data.requests);
+      }
+    } catch (err) {
+      console.error("fetchPhotoRequests error:", err);
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPhotoRequests();
+  }, []);
+
+  const pendingRequestsCount = useMemo(() => {
+    return photoRequests.filter(r => r.status === 'pending').length;
+  }, [photoRequests]);
+
+  const filteredPhotoRequests = useMemo(() => {
+    if (requestStatusFilter === 'all') return photoRequests;
+    return photoRequests.filter(r => r.status === requestStatusFilter);
+  }, [photoRequests, requestStatusFilter]);
+
+  const handleApproveRequest = async (req: any) => {
+    setProcessingReqId(req.id);
+    try {
+      const res = await fetch('/api/attendance/photo-request/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: req.id,
+          action: 'approve',
+          reviewerName: 'HR Menejer'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`${req.employeeName} uchun yangi rasm tasdiqlandi va Face ID etaloniga saqlandi! ✅`);
+        if (onUpdateEmployeePhoto) {
+          onUpdateEmployeePhoto(req.employeeId, req.newPhotoUrl);
+        }
+        await fetchPhotoRequests();
+      } else {
+        showToast(data.message || "Tasdiqlashda xatolik yuz berdi");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Xatolik yuz berdi");
+    } finally {
+      setProcessingReqId(null);
+    }
+  };
+
+  const handleRejectRequest = async (req: any) => {
+    setProcessingReqId(req.id);
+    try {
+      const res = await fetch('/api/attendance/photo-request/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: req.id,
+          action: 'reject',
+          reviewerName: 'HR Menejer',
+          rejectionReason: rejectReasonText.trim() || "Yuz aniq ko'rinmagan yoki sifat talabga javob bermaydi"
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`${req.employeeName} so'rovi rad etildi. ❌`);
+        setActiveRejectId(null);
+        setRejectReasonText('');
+        await fetchPhotoRequests();
+      } else {
+        showToast(data.message || "Rad etishda xatolik yuz berdi");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Xatolik yuz berdi");
+    } finally {
+      setProcessingReqId(null);
+    }
+  };
+
+  const handleDeleteRequest = async (reqId: string) => {
+    if (!confirm("Ushbu so'rov tarixini o'chirmoqchimisiz?")) return;
+    try {
+      const res = await fetch(`/api/attendance/photo-request/${reqId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast("So'rov o'chirildi.");
+        await fetchPhotoRequests();
+      }
+    } catch (err) {
+      showToast("O'chirishda xatolik");
+    }
+  };
 
   // Photo studio states
   const [selectedPhotoEmpId, setSelectedPhotoEmpId] = useState<string>(employee?.id || employees[0]?.id || '');
@@ -3920,6 +4058,27 @@ function FaceIdIntegrationModal({
           >
             <ScanFace className="w-3.5 h-3.5" />
             <span>🧪 Yuz Skaneri Sinovi</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('requests');
+              fetchPhotoRequests();
+            }}
+            className={`py-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === 'requests'
+                ? 'border-emerald-600 text-emerald-700 bg-white/70 shadow-2xs'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>⏳ Xodimlar Rasm So'rovlari</span>
+            {pendingRequestsCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                {pendingRequestsCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -4611,6 +4770,321 @@ function FaceIdIntegrationModal({
                       <span>Davomat Jurnaliga Yozish</span>
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'requests' ? (
+            /* TAB 3: XODIMLAR RASM SO'ROVLARI (HR TASDIG'I) */
+            <div className="space-y-4">
+              {/* Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-purple-50 border border-emerald-200 rounded-2xl flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs mt-0.5">
+                    <UserCheck className="w-5 h-5" />
+                  </span>
+                  <div className="text-xs text-slate-800 leading-relaxed">
+                    <p className="font-bold text-sm text-emerald-950 mb-0.5 flex items-center gap-2">
+                      <span>Xodimlar Yuborgan Yangi Face ID Surat So'rovlari</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-200 text-emerald-900">
+                        HR Tasdiqlash Markazi
+                      </span>
+                    </p>
+                    <p className="text-slate-600 font-medium">
+                      Xodimlar o'z profilidan yuborgan yangi fotosuratlarni ko'rib chiqing. <b>"Tasdiqlash"</b> tugmasi bosilganda xodimning Face ID etalon rasmi yangilanadi va u yangi rasm orqali bemalol davomat qila oladi.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fetchPhotoRequests}
+                  disabled={isLoadingRequests}
+                  className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingRequests ? 'animate-spin text-emerald-600' : 'text-slate-500'}`} />
+                  <span>Yangilash</span>
+                </button>
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                  {(['pending', 'all', 'approved', 'rejected'] as const).map((st) => {
+                    const count = st === 'all' 
+                      ? photoRequests.length 
+                      : photoRequests.filter(r => r.status === st).length;
+                    const labels: Record<string, string> = {
+                      pending: '⏳ Kutilmoqda',
+                      all: 'Barchasi',
+                      approved: '✓ Tasdiqlangan',
+                      rejected: '✕ Rad etilgan'
+                    };
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setRequestStatusFilter(st)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                          requestStatusFilter === st
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <span>{labels[st]}</span>
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                          st === 'pending' && count > 0 
+                            ? 'bg-rose-500 text-white' 
+                            : 'bg-slate-200 text-slate-700'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="text-xs text-slate-500 font-bold">
+                  Jami: {filteredPhotoRequests.length} ta so'rov
+                </div>
+              </div>
+
+              {/* Requests List */}
+              {isLoadingRequests && photoRequests.length === 0 ? (
+                <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 font-medium">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
+                  So'rovlar yuklanmoqda...
+                </div>
+              ) : filteredPhotoRequests.length === 0 ? (
+                <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-xl">
+                    📸
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-700">Hozircha so'rovlar mavjud emas</h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Xodimlar o'z profilidan yangi surat yuklaganida so'rovlar shu yerda paydo bo'ladi.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredPhotoRequests.map((req) => {
+                    const isPending = req.status === 'pending';
+                    const isApproved = req.status === 'approved';
+                    const isRejected = req.status === 'rejected';
+                    const isProcessing = processingReqId === req.id;
+                    const isRejecting = activeRejectId === req.id;
+
+                    return (
+                      <div
+                        key={req.id}
+                        className={`p-4 rounded-2xl border transition-all bg-white shadow-2xs ${
+                          isPending
+                            ? 'border-amber-300 ring-1 ring-amber-100'
+                            : isApproved
+                            ? 'border-emerald-200 bg-emerald-50/20'
+                            : 'border-slate-200 bg-slate-50/40'
+                        }`}
+                      >
+                        {/* Card Header */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0 border border-slate-300">
+                              <img
+                                src={req.currentPhotoUrl || req.newPhotoUrl}
+                                alt={req.employeeName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                {req.employeeName}
+                                <span className="text-[11px] font-semibold text-slate-500">
+                                  (ID: {req.employeeId})
+                                </span>
+                              </h4>
+                              <p className="text-xs text-slate-500 font-medium">
+                                {req.branch} &bull; {req.position}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <span className="text-[11px] text-slate-400 font-medium">
+                              {new Date(req.submittedAt).toLocaleString('uz-UZ', {
+                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                              })}
+                            </span>
+
+                            {isPending && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-700" />
+                                Kutilmoqda
+                              </span>
+                            )}
+                            {isApproved && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                Tasdiqlangan
+                              </span>
+                            )}
+                            {isRejected && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                                <X className="w-3 h-3 text-rose-700" />
+                                Rad etilgan
+                              </span>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRequest(req.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                              title="Tarixdan o'chirish"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Visual comparison */}
+                        <div className="py-3 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 bg-slate-50/70 rounded-xl my-3 p-3 border border-slate-100">
+                          {/* Old / Current */}
+                          <div className="flex flex-col items-center gap-1.5">
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                              Joriy etalon rasm
+                            </span>
+                            <div className="w-24 h-28 rounded-xl overflow-hidden bg-white border border-slate-200 shadow-2xs relative">
+                              {req.currentPhotoUrl ? (
+                                <img
+                                  src={req.currentPhotoUrl}
+                                  alt="Joriy rasm"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+                                  Rasm yo'q
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-medium">Amaldagi</span>
+                          </div>
+
+                          {/* Arrow */}
+                          <div className="text-slate-400 font-black text-xl hidden sm:block">
+                            ➔
+                          </div>
+
+                          {/* New Request */}
+                          <div className="flex flex-col items-center gap-1.5">
+                            <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wide flex items-center gap-1">
+                              <span>Yangi yuborilgan rasm</span>
+                              <Sparkles className="w-3 h-3 text-purple-600" />
+                            </span>
+                            <div className="w-24 h-28 rounded-xl overflow-hidden bg-white border-2 border-purple-500 shadow-md ring-4 ring-purple-100 relative">
+                              <img
+                                src={req.newPhotoUrl}
+                                alt="Yangi rasm"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <span className="text-[10px] text-purple-700 font-bold">Kutilayotgan yangi</span>
+                          </div>
+                        </div>
+
+                        {/* Status details or review notes */}
+                        {isApproved && (
+                          <div className="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 flex items-center justify-between">
+                            <span>✓ Ushbu rasm <strong>Face ID etalon bazasiga biriktirildi</strong>. Xodim endi shu rasm orqali taniydi.</span>
+                            {req.reviewedBy && (
+                              <span className="text-[11px] text-emerald-700 font-bold">
+                                {req.reviewedBy} ({req.reviewedAt ? new Date(req.reviewedAt).toLocaleDateString('uz-UZ') : ''})
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {isRejected && (
+                          <div className="text-xs text-rose-800 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                            <span className="font-bold">Rad etildi: </span>
+                            <span>{req.rejectionReason || "Talabga mos kelmagani sababli rad etildi."}</span>
+                          </div>
+                        )}
+
+                        {/* Action buttons (Only for pending requests) */}
+                        {isPending && (
+                          <div className="pt-2">
+                            {isRejecting ? (
+                              <div className="bg-rose-50/70 border border-rose-200 p-3 rounded-xl space-y-2">
+                                <label className="text-xs font-bold text-rose-900 block">
+                                  Rad etish sababini kiriting (Xodimga ko'rinadi):
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Masalan: Yuz qorong'i tushgan, iltimos yaxshi yorug'likda oling..."
+                                  value={rejectReasonText}
+                                  onChange={(e) => setRejectReasonText(e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs bg-white border border-rose-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-200"
+                                />
+                                <div className="flex items-center justify-end gap-2 pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveRejectId(null);
+                                      setRejectReasonText('');
+                                    }}
+                                    className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                  >
+                                    Bekor qilish
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRejectRequest(req)}
+                                    disabled={isProcessing}
+                                    className="px-4 py-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-lg cursor-pointer shadow-xs"
+                                  >
+                                    {isProcessing ? "Rad etilmoqda..." : "✕ Rad etishni tasdiqlash"}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-end gap-2.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveRejectId(req.id);
+                                    setRejectReasonText('');
+                                  }}
+                                  disabled={isProcessing}
+                                  className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Rad etish</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveRequest(req)}
+                                  disabled={isProcessing}
+                                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition-all flex items-center gap-1.5"
+                                >
+                                  {isProcessing ? (
+                                    <>
+                                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                      <span>Saqlanmoqda...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="w-4 h-4" />
+                                      <span>✓ Tasdiqlash va etalon qilish</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
