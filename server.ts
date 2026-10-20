@@ -342,7 +342,7 @@ const defaultEmployees: ServerEmployee[] = [
     branch: 'Bosh ofis',
     phone: '+998 90 123 45 67',
     email: 'zarifjon@toyona.uz',
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    photoUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg',
     username: '20090915',
     password: 'ZZOKIROV20009@z',
     status: 'active'
@@ -429,7 +429,7 @@ async function getAllServerEmployees(): Promise<ServerEmployee[]> {
             branch: f.branch?.stringValue || existing.branch || 'Bosh ofis',
             phone: f.phone?.stringValue || existing.phone || '',
             email: f.email?.stringValue || existing.email || '',
-            photoUrl: employeePhotoOverrides[docId] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+            photoUrl: employeePhotoOverrides[docId] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
             username: f.username?.stringValue || existing.username || defaultUser,
             password: f.password?.stringValue || existing.password || 'Toyona#2026',
             status: f.status?.stringValue || existing.status || 'active'
@@ -1190,7 +1190,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         branch: branchName || 'Bosh ofis',
         position: 'Xodim',
         department: 'Savdo',
-        photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'
+        photoUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg'
       };
 
       // Filialni aniqlash

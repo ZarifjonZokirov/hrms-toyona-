@@ -208,7 +208,7 @@ const employees = [
     email: 'zarifjon@toyona.uz',
     hireDate: '2020-03-15',
     status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatarUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg',
     staffId: 'TS-0001',
     salary: '25,000,000 UZS',
     address: 'Toshkent sh., Yunusobod t.',
