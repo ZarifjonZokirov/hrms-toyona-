@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { BRANCHES_LIST } from './Candidates';
 import BranchGeozones from './BranchGeozones';
+import { formatDelayText, formatDelayShort } from './AttendanceJournal';
 
 interface AttendanceProps {
   currentUser?: any;
@@ -188,7 +189,7 @@ export default function Attendance({
             r.status === 'Ish yuzasidan safarda' ? 'trip' : 'on_time',
     delayMinutes: r.delayMinutes || 0,
     durationDays: r.durationDays,
-    notes: r.notes || (r.status === 'Kech qolgan' ? `${r.delayMinutes} daqiqa kechikkan` : 'Vaqtida kelgan')
+    notes: r.notes || (r.status === 'Kech qolgan' ? `${formatDelayText(r.delayMinutes)} kech qoldi` : 'Vaqtida kelgan')
   }));
 
   const allRecords = [...mappedFirestore, ...dynamicLogs, ...baseSampleRecords];
@@ -448,8 +449,8 @@ export default function Attendance({
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono">
                       {record.delayMinutes > 0 ? (
-                        <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                          +{record.delayMinutes} daq
+                        <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 whitespace-nowrap">
+                          +{formatDelayShort(record.delayMinutes)} kech qoldi
                         </span>
                       ) : (
                         <span className="text-slate-400">-</span>

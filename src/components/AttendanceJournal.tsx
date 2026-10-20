@@ -80,6 +80,16 @@ export function formatDelayText(delayMinutes: number): string {
   return `${hours} soat ${remaining} daqiqa`;
 }
 
+export function formatDelayShort(delayMinutes: number): string {
+  const d = Math.max(0, Number(delayMinutes) || 0);
+  if (d <= 0) return "";
+  if (d < 60) return `${d} daq`;
+  const hours = Math.floor(d / 60);
+  const remaining = d % 60;
+  if (remaining === 0) return `${hours} soat`;
+  return `${hours} soat ${remaining} daq`;
+}
+
 export interface EmployeeData {
   id: string;
   fullName: string;
@@ -1181,7 +1191,7 @@ export default function AttendanceJournal({
                 <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Keldi</th>
                 <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Ketdi</th>
                 <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Davomat</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Amallar (GPS / Face ID / Ta'til)</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Ta'til / Safar</th>
               </tr>
             </thead>
             <tbody>
@@ -1232,7 +1242,9 @@ export default function AttendanceJournal({
                         status === 'Kech qolgan' ? (
                           <div className="flex flex-col">
                             <span className="text-amber-700 font-bold font-mono">{record.checkIn}</span>
-                            <span className="text-[10px] text-amber-600 font-black">+{record.delayMinutes || 0} daq</span>
+                            <span className="text-[10px] text-amber-600 font-black whitespace-nowrap">
+                              +{formatDelayShort(record.delayMinutes || 0)} kech qoldi
+                            </span>
                           </div>
                         ) : (
                           <span className="text-emerald-700 font-bold font-mono">{record.checkIn}</span>
@@ -1271,53 +1283,27 @@ export default function AttendanceJournal({
                       </span>
                     </td>
                     <td className="py-3.5 px-5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* GPS Action */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenGpsModal(emp)}
-                          title="GPS Davomat: Filial radiusi tekshirish va kelgan deb yozish"
-                          className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 hover:border-emerald-300 transition-all cursor-pointer flex items-center justify-center text-[11px] font-bold shadow-2xs"
-                        >
-                          <Navigation className="w-3.5 h-3.5 text-emerald-600" />
-                        </button>
-
-                        {/* Face ID Rasm Joylash Action */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenFaceIdModal(emp, 'photos')}
-                          title="📸 Face ID etalon rasmini joylash / kameradan olish"
-                          className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 hover:border-purple-300 transition-all cursor-pointer flex items-center justify-center text-[11px] font-bold shadow-2xs"
-                        >
-                          <Camera className="w-3.5 h-3.5 text-purple-600" />
-                        </button>
-
-                        {/* Face ID Action */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenFaceIdModal(emp, 'simulator')}
-                          title="Face ID sinovi: AI orqali yuz tanish va davomat yozish"
-                          className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 hover:border-indigo-300 transition-all cursor-pointer flex items-center justify-center text-[11px] font-bold shadow-2xs"
-                        >
-                          <ScanFace className="w-3.5 h-3.5 text-indigo-600" />
-                        </button>
-
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Samolyot (Ta'tilda) */}
                         <button
                           type="button"
                           onClick={() => handleOpenLeaveModal(emp, 'leave')}
-                          title="Samolyot: Ta'tilda (Necha kunligini sozlash)"
-                          className="p-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 hover:border-sky-300 transition-all cursor-pointer flex items-center justify-center text-[11px] font-bold shadow-2xs"
+                          title="✈️ Ta'tilga chiqarish (Samolyot)"
+                          className="px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 hover:border-sky-300 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
                         >
-                          <Plane className="w-3.5 h-3.5 text-sky-600" />
+                          <Plane className="w-4 h-4 text-sky-600" />
+                          <span className="hidden md:inline text-[11px]">Ta'til</span>
                         </button>
 
+                        {/* Barg (Ish safari) */}
                         <button
                           type="button"
                           onClick={() => handleOpenLeaveModal(emp, 'trip')}
-                          title="Barg: Ish yuzasidan safarda (Necha kunligini sozlash)"
-                          className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 hover:border-teal-300 transition-all cursor-pointer flex items-center justify-center text-[11px] font-bold shadow-2xs"
+                          title="🍃 Ish safariga yuborish (Barg)"
+                          className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 hover:border-emerald-300 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-2xs"
                         >
-                          <Leaf className="w-3.5 h-3.5 text-teal-600" />
+                          <Leaf className="w-4 h-4 text-emerald-600" />
+                          <span className="hidden md:inline text-[11px]">Safar</span>
                         </button>
                       </div>
                     </td>
@@ -1971,7 +1957,7 @@ function EmployeeDetailView({
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-xs font-semibold text-slate-600">O'rtacha kechikish:</span>
                       <span className="text-sm font-bold text-slate-800">
-                        {metrics.lateDays > 0 ? Math.round(metrics.totalDelayMinutes / metrics.lateDays) : 0} daqiqa/kun
+                        {metrics.lateDays > 0 ? `${formatDelayShort(Math.round(metrics.totalDelayMinutes / metrics.lateDays))}/kun` : "0 daq/kun"}
                       </span>
                     </div>
                   </div>
@@ -2015,7 +2001,7 @@ function EmployeeDetailView({
                         <td className="py-3 px-6 text-sm text-amber-700 font-mono font-bold">{lateRecord.checkIn}</td>
                         <td className="py-3 px-6">
                           <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-bold">
-                            +{lateRecord.delayMinutes} daqiqa
+                            +{formatDelayText(lateRecord.delayMinutes)} kech qoldi
                           </span>
                         </td>
                         <td className="py-3 px-6 text-sm text-slate-700 font-medium">{lateRecord.delayReason || 'Transport tirbandligi'}</td>
@@ -3272,7 +3258,7 @@ function GpsCheckInModal({
       penalty: delayCalculation.penaltyStr,
       bonus: delayCalculation.bonusStr,
       netPay: delayCalculation.netPayStr,
-      notes: `GPS orqali tasdiqlandi (${branchZone.name}, ${distanceMeters}m masofadan). ${delayCalculation.isLate ? `${delayCalculation.delayMinutes} daqiqa kechikkan` : "O'z vaqtida keldi"}`
+      notes: `GPS orqali tasdiqlandi (${branchZone.name}, ${distanceMeters}m masofadan). ${delayCalculation.isLate ? `${formatDelayText(delayCalculation.delayMinutes)} kech qoldi` : "O'z vaqtida keldi"}`
     };
 
     onRecord(newRec);
@@ -3500,7 +3486,7 @@ function GpsCheckInModal({
                     Kechikish holati:
                   </span>
                   <span className="text-xs font-black px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-mono">
-                    +{delayCalculation.delayMinutes} daqiqa kechikkan
+                    +{formatDelayText(delayCalculation.delayMinutes)} kech qoldi
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-amber-800">
@@ -3947,7 +3933,7 @@ function FaceIdIntegrationModal({
       penalty: scanResult.isLate ? `- ${delayAmount.toLocaleString()} so'm` : '-',
       bonus: !scanResult.isLate && scanResult.action === 'check_in' ? "15,000 so'm" : '-',
       netPay: scanResult.isLate ? `${(dailyBase - delayAmount).toLocaleString()} so'm` : `${(dailyBase + 15000).toLocaleString()} so'm`,
-      notes: `Face ID & AI terminali orqali tasdiqlandi (Moslik: 98.8%, ${selectedEmp.branch}). ${scanResult.isLate ? `${scanResult.delayMinutes} daqiqa kechikkan` : "O'z vaqtida kelgan"}`
+      notes: `Face ID & AI terminali orqali tasdiqlandi (Moslik: 98.8%, ${selectedEmp.branch}). ${scanResult.isLate ? `${formatDelayText(scanResult.delayMinutes)} kech qoldi` : "O'z vaqtida kelgan"}`
     };
 
     onRecord(newRec);
@@ -4755,7 +4741,7 @@ function FaceIdIntegrationModal({
                         : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                     }`}>
                       {scanResult.isLate 
-                        ? `Kech qolgan (+${scanResult.delayMinutes} daqiqa kechikish)` 
+                        ? `Kech qolgan (+${formatDelayShort(scanResult.delayMinutes)} kech qoldi)` 
                         : (scanResult.action === 'check_out' ? "Ishdan ketdi ✅" : "O'z vaqtida kelgan ✅")}
                     </span>
                   </div>
