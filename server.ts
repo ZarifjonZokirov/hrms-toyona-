@@ -852,7 +852,7 @@ function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2:
 export const app = express();
 
 let isRoutesConfigured = false;
-export function configureRoutes(appInstance: express.Express = app) {
+export async function configureRoutes(appInstance: express.Express = app) {
   if (isRoutesConfigured) return;
   isRoutesConfigured = true;
   const PORT = 3000;
@@ -1904,7 +1904,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
     });
   }
 
-  if (!process.env.VERCEL) {
+  if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -1919,4 +1919,6 @@ function calculateAge(dobStr: string) {
   return Math.abs(age_dt.getUTCFullYear() - 1970);
 }
 
-configureRoutes(app);
+if (!process.env.VERCEL && !process.env.SERVERLESS) {
+  configureRoutes(app);
+}
