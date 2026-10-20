@@ -757,6 +757,20 @@ async function deleteFirestoreGeozone(docId: string): Promise<boolean> {
   }
 }
 
+// Helper: Toshkent (UTC+5) vaqti bilan to'g'ri ISO sana (YYYY-MM-DD) olish (UTC toISOString() xatosini oldini oladi)
+function getLocalIsoDate(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getLocalTimeString(d: Date = new Date()): string {
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  return `${hour}:${minute}`;
+}
+
 // Helper: Fetch all attendance logs from Firestore and merge with memory logs
 async function getAllServerAttendanceLogs(): Promise<any[]> {
   const map = new Map<string, any>();
@@ -783,7 +797,7 @@ async function getAllServerAttendanceLogs(): Promise<any[]> {
           const docId = item.document.name.split('/').pop() || '';
           const empId = f.employeeId?.stringValue || '';
           const empName = f.employeeName?.stringValue || 'Xodim';
-          const dateStr = f.date?.stringValue || new Date().toISOString().split('T')[0];
+          const dateStr = f.date?.stringValue || getLocalIsoDate();
           const checkIn = f.checkIn?.stringValue || '--:--';
           const checkOut = f.checkOut?.stringValue || '--:--';
           const status = f.status?.stringValue || 'Vaqtida kelgan';
@@ -820,16 +834,26 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
     return false;
   }
-  const docId = record.id || `att-${record.employeeId}-${record.date || new Date().toISOString().split('T')[0]}`;
+  const dateIso = record.date || getLocalIsoDate();
+  const docId = record.id || `att-${record.employeeId}-${dateIso}`;
   const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/attendance/${docId}?key=${firebaseConfig.apiKey}`;
+
+  let checkInVal = record.checkIn || record.checkInTime;
+  let checkOutVal = record.checkOut || record.checkOutTime;
+  if (!checkInVal && record.prevCheckIn) {
+    checkInVal = record.prevCheckIn;
+  }
+  if (!checkOutVal && record.prevCheckOut) {
+    checkOutVal = record.prevCheckOut;
+  }
 
   const fields: Record<string, any> = {
     id: { stringValue: String(docId) },
     employeeId: { stringValue: String(record.employeeId || 'EMP') },
     employeeName: { stringValue: String(record.employeeName || 'Xodim') },
-    date: { stringValue: String(record.date || new Date().toISOString().split('T')[0]) },
-    checkIn: { stringValue: String(record.checkIn || record.checkInTime || '--:--') },
-    checkOut: { stringValue: String(record.checkOut || record.checkOutTime || '--:--') },
+    date: { stringValue: String(dateIso) },
+    checkIn: { stringValue: String(checkInVal || '--:--') },
+    checkOut: { stringValue: String(checkOutVal || '--:--') },
     status: { stringValue: String(record.status || 'Vaqtida kelgan') },
     delayMinutes: { integerValue: String(record.delayMinutes || 0) },
     branch: { stringValue: String(record.branch || record.branchName || 'Bosh ofis') },
@@ -1443,8 +1467,9 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
   const handleTodayStatus = async (req: any, res: any) => {
     try {
       const employeeId = (req.query.employeeId || req.query.id || req.query.username || req.query.login || '').toString().trim();
-      const todayStr = new Date().toLocaleDateString('uz-UZ');
-      const todayIso = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayIso = getLocalIsoDate(now);
+      const todayStr = now.toLocaleDateString('uz-UZ');
 
       const allEmployees = await getAllServerEmployees();
       const matched = employeeId ? findServerEmployee(allEmployees, employeeId) : null;
@@ -1457,7 +1482,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           (matched && l.employeeId === matched.id) ||
           (matched && l.username && l.username.toLowerCase() === (matched.username || '').toLowerCase()) ||
           (l.employeeName && matched && l.employeeName.toLowerCase() === matched.fullName.toLowerCase());
-        const matchesDate = l.dateFormatted === todayStr || l.dateIso === todayIso || (l.date && l.date.includes(todayIso));
+        const logIso = String(l.dateIso || l.date || l.timestamp || '').slice(0, 10);
+        const matchesDate = logIso === todayIso || l.dateFormatted === todayStr || (l.date && l.date.includes(todayIso));
         return matchesEmp && matchesDate && l.success;
       });
 
@@ -1473,10 +1499,11 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           position: matched.position
         } : null,
         hasCheckedIn: !!checkInLog,
-        checkInTime: checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : null,
+        checkInTime: checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn || checkInLog.time) : null,
         hasCheckedOut: !!checkOutLog,
-        checkOutTime: checkOutLog ? (checkOutLog.timeFormatted || checkOutLog.checkOut) : null,
-        todayDate: todayStr
+        checkOutTime: checkOutLog ? (checkOutLog.timeFormatted || checkOutLog.checkOut || checkOutLog.time) : null,
+        todayDate: todayStr,
+        todayIso
       });
     } catch (err: any) {
       res.status(500).json({ success: false, message: "Bugungi statusni olishda xatolik" });
@@ -1593,7 +1620,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const scheduledTotalMin = (schedH || 9) * 60 + (schedM || 0);
       const gracePeriodMin = Number(penaltySettings.gracePeriodMinutes) || 15;
 
-      const dateIso = now.toISOString().split('T')[0];
+      const dateIso = getLocalIsoDate(now);
       const dayOfWeek = now.getDay(); // 0: Yakshanba, 1: Dushanba, ...
       const isRestDay = (penaltySettings.restDays || []).includes(dayOfWeek) || (penaltySettings.customHolidays || []).includes(dateIso);
 
@@ -1611,13 +1638,51 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
             ? 'Ketdi (Ish yakunlandi)' 
             : (delayMinutes > 0 ? `Kech qolgan (${delayMinutes} daqiqa)` : 'Vaqtida kelgan'));
 
-      const timeFormatted = now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+      const timeFormatted = getLocalTimeString(now);
       const dateFormatted = now.toLocaleDateString('uz-UZ');
 
-      // Check if duplicate check-in today
-      const alreadyCheckedToday = attendanceLogs.some(
-        l => l.employeeId === emp.id && l.dateFormatted === dateFormatted && l.action === action && l.success
-      );
+      // Bugungi mavjud yozuvlarni tekshiramiz (memory va Firestore)
+      const allLogs = await getAllServerAttendanceLogs();
+      const empLogsToday = allLogs.filter(l => {
+        const matchesEmp = l.employeeId === emp.id || 
+          (emp.username && l.username && l.username.toLowerCase() === emp.username.toLowerCase()) ||
+          (l.employeeName && l.employeeName.toLowerCase() === emp.fullName.toLowerCase());
+        const logIso = String(l.dateIso || l.date || l.timestamp || '').slice(0, 10);
+        const matchesDate = logIso === dateIso || l.dateFormatted === dateFormatted || (l.date && l.date.includes(dateIso));
+        return matchesEmp && matchesDate && l.success;
+      });
+
+      const checkInLog = empLogsToday.find(l => l.action === 'keldim' || !l.action);
+      const checkOutLog = empLogsToday.find(l => l.action === 'ketdim');
+
+      // Xodim bugun kelgan bo'lsa va yana keldimni bossa - ISHLAMASIN!
+      if (action === 'keldim' && checkInLog) {
+        const prevTime = checkInLog.timeFormatted || checkInLog.checkIn || checkInLog.time || '';
+        return res.status(400).json({
+          success: false,
+          code: "ALREADY_CHECKED_IN",
+          message: `Siz bugun allaqachon "Keldim" deb qayd etilgansiz${prevTime ? ` (soat ${prevTime} da)` : ''}! Takroriy kelish qabul qilinmaydi.`
+        });
+      }
+
+      // Xodim hali kelmagan bo'lsa - ketdim tugmasi ISHLAMASIN!
+      if (action === 'ketdim' && !checkInLog) {
+        return res.status(400).json({
+          success: false,
+          code: "NOT_CHECKED_IN_YET",
+          message: `Avval "Keldim" tugmasi orqali ishga kelganingizni tasdiqlashingiz kerak!`
+        });
+      }
+
+      // Xodim bugun ketgan bo'lsa va yana ketdimni bossa - ISHLAMASIN!
+      if (action === 'ketdim' && checkOutLog) {
+        const prevTime = checkOutLog.timeFormatted || checkOutLog.checkOut || checkOutLog.time || '';
+        return res.status(400).json({
+          success: false,
+          code: "ALREADY_CHECKED_OUT",
+          message: `Siz bugun allaqachon "Ketdim" deb qayd etilgansiz${prevTime ? ` (soat ${prevTime} da)` : ''}! Takroriy ketish qabul qilinmaydi.`
+        });
+      }
 
       const newLog = {
         id: `log-${Date.now()}`,
@@ -1661,8 +1726,9 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           branch: targetBranch.name,
           department: emp.department,
           date: dateIso,
-          checkIn: action === 'keldim' ? timeFormatted : undefined,
+          checkIn: action === 'keldim' ? timeFormatted : (checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : undefined),
           checkOut: action === 'ketdim' ? timeFormatted : undefined,
+          prevCheckIn: checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : undefined,
           checkInTimestamp: action === 'keldim' ? now.toISOString() : undefined,
           checkOutTimestamp: action === 'ketdim' ? now.toISOString() : undefined,
           status: statusText,
@@ -1677,7 +1743,6 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         return res.json({
           success: true,
           action,
-          isDuplicate: alreadyCheckedToday,
           insideZone: true,
           distance,
           radius: targetBranch.radius,
@@ -1690,7 +1755,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           penaltyFormatted: penaltyAmount > 0 ? `${penaltyAmount.toLocaleString()} so'm` : "0 so'm",
           isRestDay,
           message: action === 'keldim' 
-            ? `Muvaffaqiyatli! ${emp.fullName}, siz ${targetBranch.name} hududida (${distance}m) "Keldim" deb qayd etildingiz.${penaltyAmount > 0 ? ` (Kechikish: ${formatDelayText(delayMinutes)}, Jarima: ${penaltyAmount.toLocaleString()} so'm)` : ""}${alreadyCheckedToday ? " (Bugungi takroriy qayd yangilandi)" : ""}`
+            ? `Muvaffaqiyatli! ${emp.fullName}, siz ${targetBranch.name} hududida (${distance}m) "Keldim" deb qayd etildingiz.${penaltyAmount > 0 ? ` (Kechikish: ${formatDelayText(delayMinutes)}, Jarima: ${penaltyAmount.toLocaleString()} so'm)` : ""}`
             : `Muvaffaqiyatli! ${emp.fullName}, siz ${targetBranch.name} hududida (${distance}m) "Ketdim" deb qayd etildingiz. Xayrli kech!`,
           employee: {
             id: emp.id,
