@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import cors from "cors";
 import fs from "fs";
+import os from "os";
 
 // Load firebase config (embedded for Vercel Serverless + file fallback)
 const DEFAULT_FIREBASE_CONFIG = {
@@ -281,8 +282,34 @@ let branchGeozones: BranchGeozone[] = [
   }
 ];
 
-// Real in-memory attendance check-in logs buffer (merged with Firestore on reads)
-let attendanceLogs: any[] = [];
+// Persistent attendance check-in logs (disk + memory + Firestore sync)
+const LOCAL_LOGS_FILE = path.join(process.cwd(), 'attendance_logs.json');
+const TMP_LOGS_FILE = path.join(os.tmpdir(), 'toyonasavdo_attendance_logs.json');
+
+function saveLocalAttendance(logs: any[]) {
+  const data = JSON.stringify(logs.slice(0, 1000));
+  try {
+    fs.writeFileSync(LOCAL_LOGS_FILE, data, 'utf8');
+  } catch {}
+  try {
+    fs.writeFileSync(TMP_LOGS_FILE, data, 'utf8');
+  } catch {}
+}
+
+function loadLocalAttendance(): any[] {
+  for (const p of [LOCAL_LOGS_FILE, TMP_LOGS_FILE]) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+  }
+  return [];
+}
+
+let attendanceLogs: any[] = loadLocalAttendance();
 
 // Penalty and Work Schedule Configuration
 export interface PenaltySettings {
@@ -797,9 +824,13 @@ function getLocalDateFormatted(d: Date = new Date()): string {
   }
 }
 
-// Helper: Fetch all attendance logs from Firestore and merge with memory logs
+// Helper: Fetch all attendance logs from local storage and Firestore
 async function getAllServerAttendanceLogs(): Promise<any[]> {
   const map = new Map<string, any>();
+  
+  // 1. Avval mahalliy fayl va xotiradagi davomat yozuvlarini yuklaymiz
+  const localLogs = loadLocalAttendance();
+  localLogs.forEach(l => map.set(l.id, l));
   attendanceLogs.forEach(l => map.set(l.id, l));
 
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
@@ -897,6 +928,18 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
     checkOutVal = record.prevCheckOut;
   }
 
+  // Agar checkIn hali bo'lmasa, mavjud xotiradan to'ldiramiz
+  if (!checkInVal || checkInVal === '--:--') {
+    const existing = attendanceLogs.find(l => 
+      (l.employeeId === record.employeeId || l.employeeName === record.employeeName) &&
+      (l.dateIso === dateIso || l.date === dateIso) &&
+      (l.action === 'keldim' || (l.checkIn && l.checkIn !== '--:--'))
+    );
+    if (existing) {
+      checkInVal = existing.timeFormatted || existing.checkIn || existing.time;
+    }
+  }
+
   const fields: Record<string, any> = {
     id: { stringValue: String(docId) },
     employeeId: { stringValue: String(record.employeeId || 'EMP') },
@@ -918,7 +961,7 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
   if (record.faceVerified !== undefined) fields.faceVerified = { booleanValue: Boolean(record.faceVerified) };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
 
   try {
     const res = await fetch(writeUrl, {
@@ -1764,29 +1807,34 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         faceConfidence: faceConfidence !== undefined ? Number(faceConfidence) : 0.95
       };
 
-      // 1. Mahalliy xotiraga qo'shish
+      // 1. Mahalliy xotiraga va faylga qo'shish
       attendanceLogs.unshift(newLog);
+      saveLocalAttendance(attendanceLogs);
 
       // 2. Firestore "attendance" to'plamiga ham sinxron saqlash
       if (insideZone) {
-        saveFirestoreAttendance({
-          id: `att-${emp.id}-${dateIso}`,
-          employeeId: emp.id,
-          employeeName: emp.fullName,
-          branch: targetBranch.name,
-          department: emp.department,
-          date: dateIso,
-          checkIn: action === 'keldim' ? timeFormatted : (checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : undefined),
-          checkOut: action === 'ketdim' ? timeFormatted : undefined,
-          prevCheckIn: checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : undefined,
-          checkInTimestamp: action === 'keldim' ? now.toISOString() : undefined,
-          checkOutTimestamp: action === 'ketdim' ? now.toISOString() : undefined,
-          status: statusText,
-          delayMinutes,
-          capturedPhoto: capturedPhoto || '',
-          faceVerified: faceVerified !== undefined ? faceVerified : true,
-          notes: `${targetBranch.name} (${distance} metr masofada GPS va Yuz tasdiqlandi)`
-        }).catch(err => console.warn("Firestore attendance write notice:", err));
+        try {
+          await saveFirestoreAttendance({
+            id: `att-${emp.id}-${dateIso}`,
+            employeeId: emp.id,
+            employeeName: emp.fullName,
+            branch: targetBranch.name,
+            department: emp.department,
+            date: dateIso,
+            checkIn: action === 'keldim' ? timeFormatted : (checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : undefined),
+            checkOut: action === 'ketdim' ? timeFormatted : undefined,
+            prevCheckIn: checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn) : undefined,
+            checkInTimestamp: action === 'keldim' ? now.toISOString() : undefined,
+            checkOutTimestamp: action === 'ketdim' ? now.toISOString() : undefined,
+            status: statusText,
+            delayMinutes,
+            capturedPhoto: capturedPhoto || '',
+            faceVerified: faceVerified !== undefined ? faceVerified : true,
+            notes: `${targetBranch.name} (${distance} metr masofada GPS va Yuz tasdiqlandi)`
+          });
+        } catch (err) {
+          console.warn("Firestore attendance write error:", err);
+        }
       }
 
       if (insideZone) {

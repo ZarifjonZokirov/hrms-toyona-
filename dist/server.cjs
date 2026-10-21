@@ -40,6 +40,7 @@ var import_path = __toESM(require("path"), 1);
 var import_vite = require("vite");
 var import_cors = __toESM(require("cors"), 1);
 var import_fs = __toESM(require("fs"), 1);
+var import_os = __toESM(require("os"), 1);
 var DEFAULT_FIREBASE_CONFIG = {
   projectId: "gen-lang-client-0391742872",
   appId: "1:811535018031:web:b3dc918af92284f02abeda",
@@ -289,7 +290,33 @@ var branchGeozones = [
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   }
 ];
-var attendanceLogs = [];
+var LOCAL_LOGS_FILE = import_path.default.join(process.cwd(), "attendance_logs.json");
+var TMP_LOGS_FILE = import_path.default.join(import_os.default.tmpdir(), "toyonasavdo_attendance_logs.json");
+function saveLocalAttendance(logs) {
+  const data = JSON.stringify(logs.slice(0, 1e3));
+  try {
+    import_fs.default.writeFileSync(LOCAL_LOGS_FILE, data, "utf8");
+  } catch {
+  }
+  try {
+    import_fs.default.writeFileSync(TMP_LOGS_FILE, data, "utf8");
+  } catch {
+  }
+}
+function loadLocalAttendance() {
+  for (const p of [LOCAL_LOGS_FILE, TMP_LOGS_FILE]) {
+    try {
+      if (import_fs.default.existsSync(p)) {
+        const raw = import_fs.default.readFileSync(p, "utf8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+    }
+  }
+  return [];
+}
+var attendanceLogs = loadLocalAttendance();
 var penaltySettings = {
   workStartTime: "09:00",
   workEndTime: "18:00",
@@ -696,6 +723,8 @@ function getLocalDateFormatted(d = /* @__PURE__ */ new Date()) {
 }
 async function getAllServerAttendanceLogs() {
   const map = /* @__PURE__ */ new Map();
+  const localLogs = loadLocalAttendance();
+  localLogs.forEach((l) => map.set(l.id, l));
   attendanceLogs.forEach((l) => map.set(l.id, l));
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
     return Array.from(map.values());
@@ -781,6 +810,14 @@ async function saveFirestoreAttendance(record) {
   if (!checkOutVal && record.prevCheckOut) {
     checkOutVal = record.prevCheckOut;
   }
+  if (!checkInVal || checkInVal === "--:--") {
+    const existing = attendanceLogs.find(
+      (l) => (l.employeeId === record.employeeId || l.employeeName === record.employeeName) && (l.dateIso === dateIso || l.date === dateIso) && (l.action === "keldim" || l.checkIn && l.checkIn !== "--:--")
+    );
+    if (existing) {
+      checkInVal = existing.timeFormatted || existing.checkIn || existing.time;
+    }
+  }
   const fields = {
     id: { stringValue: String(docId) },
     employeeId: { stringValue: String(record.employeeId || "EMP") },
@@ -800,7 +837,7 @@ async function saveFirestoreAttendance(record) {
   if (record.capturedPhoto) fields.capturedPhoto = { stringValue: String(record.capturedPhoto) };
   if (record.faceVerified !== void 0) fields.faceVerified = { booleanValue: Boolean(record.faceVerified) };
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5e3);
+  const timeoutId = setTimeout(() => controller.abort(), 6e3);
   try {
     const res = await fetch(writeUrl, {
       method: "PATCH",
@@ -1496,25 +1533,30 @@ async function configureRoutes(appInstance = app) {
         faceConfidence: faceConfidence !== void 0 ? Number(faceConfidence) : 0.95
       };
       attendanceLogs.unshift(newLog);
+      saveLocalAttendance(attendanceLogs);
       if (insideZone) {
-        saveFirestoreAttendance({
-          id: `att-${emp.id}-${dateIso}`,
-          employeeId: emp.id,
-          employeeName: emp.fullName,
-          branch: targetBranch.name,
-          department: emp.department,
-          date: dateIso,
-          checkIn: action === "keldim" ? timeFormatted : checkInLog ? checkInLog.timeFormatted || checkInLog.checkIn : void 0,
-          checkOut: action === "ketdim" ? timeFormatted : void 0,
-          prevCheckIn: checkInLog ? checkInLog.timeFormatted || checkInLog.checkIn : void 0,
-          checkInTimestamp: action === "keldim" ? now.toISOString() : void 0,
-          checkOutTimestamp: action === "ketdim" ? now.toISOString() : void 0,
-          status: statusText,
-          delayMinutes,
-          capturedPhoto: capturedPhoto || "",
-          faceVerified: faceVerified !== void 0 ? faceVerified : true,
-          notes: `${targetBranch.name} (${distance} metr masofada GPS va Yuz tasdiqlandi)`
-        }).catch((err) => console.warn("Firestore attendance write notice:", err));
+        try {
+          await saveFirestoreAttendance({
+            id: `att-${emp.id}-${dateIso}`,
+            employeeId: emp.id,
+            employeeName: emp.fullName,
+            branch: targetBranch.name,
+            department: emp.department,
+            date: dateIso,
+            checkIn: action === "keldim" ? timeFormatted : checkInLog ? checkInLog.timeFormatted || checkInLog.checkIn : void 0,
+            checkOut: action === "ketdim" ? timeFormatted : void 0,
+            prevCheckIn: checkInLog ? checkInLog.timeFormatted || checkInLog.checkIn : void 0,
+            checkInTimestamp: action === "keldim" ? now.toISOString() : void 0,
+            checkOutTimestamp: action === "ketdim" ? now.toISOString() : void 0,
+            status: statusText,
+            delayMinutes,
+            capturedPhoto: capturedPhoto || "",
+            faceVerified: faceVerified !== void 0 ? faceVerified : true,
+            notes: `${targetBranch.name} (${distance} metr masofada GPS va Yuz tasdiqlandi)`
+          });
+        } catch (err) {
+          console.warn("Firestore attendance write error:", err);
+        }
       }
       if (insideZone) {
         return res.json({
