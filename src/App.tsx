@@ -25,7 +25,8 @@ import {
   subscribeFirebaseUsers,
   ensureCanonicalSuperAdminInFirebase,
   verifyUserCredentialsInFirebase,
-  CANONICAL_SUPER_ADMIN
+  CANONICAL_SUPER_ADMIN,
+  invalidateCache
 } from './firebase';
 import { 
   Menu, 
@@ -633,6 +634,27 @@ export default function App() {
 
   const [activeItem, setActiveItem] = useState<string>(getInitialTab);
 
+  // Tab Keep-Alive: bir marta ochilgan sahifani xotirada saqlab qolamiz (har doim unmount qilmaymiz)
+  const normalizedActiveTab = (activeItem === 'attendance') ? 'attendance_journal' : activeItem;
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([getInitialTab() === 'attendance' ? 'attendance_journal' : getInitialTab()]));
+
+  useEffect(() => {
+    setVisitedTabs(prev => {
+      if (prev.has(normalizedActiveTab)) return prev;
+      const next = new Set(prev);
+      next.add(normalizedActiveTab);
+      return next;
+    });
+  }, [normalizedActiveTab]);
+
+  // Profil o'zgarganda faqat joriy ruxsat etilgan boshlang'ich tabni qoldiramiz
+  useEffect(() => {
+    const initTab = getInitialTab() === 'attendance' ? 'attendance_journal' : getInitialTab();
+    setVisitedTabs(new Set([initTab]));
+  }, [currentUserId]);
+
+  const [isRefreshingCache, setIsRefreshingCache] = useState(false);
+
   // Save active tab on change
   useEffect(() => {
     if (activeItem) {
@@ -1175,6 +1197,22 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* GLOBAL REFRESH / CLEAR CACHE BUTTON */}
+            <button
+              onClick={() => {
+                setIsRefreshingCache(true);
+                invalidateCache();
+                setVisitedTabs(new Set([normalizedActiveTab]));
+                setToastMessage("Kesh tozalandi. Sahifa yangilanmoqda...");
+                setTimeout(() => setIsRefreshingCache(false), 800);
+              }}
+              title="Keshni yangilash va serverdan yangi ma'lumotlarni olish"
+              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isRefreshingCache ? 'animate-spin' : ''}`} />
+              <span className="hidden md:inline">Keshni yangilash</span>
+            </button>
+
             {/* GLOBAL DARK MODE TOGGLE */}
             <ThemeToggle />
 
@@ -1222,87 +1260,137 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              activeItem === 'users_management' ? (
-                <UsersManagement 
-                  users={users}
-                  setUsers={setUsers}
-                  currentUserId={currentUserId}
-                  setCurrentUserId={setCurrentUserId}
-                />
-              ) : activeItem === 'branches' ? (
-                <Branches onNavigateToVacancies={() => setActiveItem('vacancies')} />
-              ) : activeItem === 'statistics' ? (
-                <Statistics />
-              ) : activeItem === 'candidates' ? (
-                <Candidates />
-              ) : activeItem === 'employees' ? (
-                <Employees />
-              ) : activeItem === 'quality' ? (
-                <Quality />
-              ) : activeItem === 'transfers' ? (
-                <Transfers isSuperAdmin={isSuperAdmin} currentUser={currentUser} />
-              ) : activeItem === 'vacancies' ? (
-                <Vacancies 
-                  currentUser={currentUser} 
-                  isSuperAdmin={isSuperAdmin} 
-                  onNavigateToCandidates={() => setActiveItem('candidates')}
-                />
-              ) : activeItem === 'attendance_branches' ? (
-                <ModuleErrorBoundary moduleName="Filialni belgilash">
-                  <BranchGeozones />
-                </ModuleErrorBoundary>
-              ) : activeItem === 'attendance_credentials' ? (
-                <ModuleErrorBoundary moduleName="Xodimlar hisoblari (Login/Parol)">
-                  <EmployeeCredentials 
-                    currentUser={currentUser} 
-                    isSuperAdmin={isSuperAdmin} 
+              <>
+                {visitedTabs.has('users_management') && (
+                  <div className={normalizedActiveTab === 'users_management' ? 'block' : 'hidden'} key="tab-users-management">
+                    <UsersManagement 
+                      users={users}
+                      setUsers={setUsers}
+                      currentUserId={currentUserId}
+                      setCurrentUserId={setCurrentUserId}
+                    />
+                  </div>
+                )}
+                {visitedTabs.has('branches') && (
+                  <div className={normalizedActiveTab === 'branches' ? 'block' : 'hidden'} key="tab-branches">
+                    <Branches onNavigateToVacancies={() => setActiveItem('vacancies')} />
+                  </div>
+                )}
+                {visitedTabs.has('statistics') && (
+                  <div className={normalizedActiveTab === 'statistics' ? 'block' : 'hidden'} key="tab-statistics">
+                    <Statistics />
+                  </div>
+                )}
+                {visitedTabs.has('candidates') && (
+                  <div className={normalizedActiveTab === 'candidates' ? 'block' : 'hidden'} key="tab-candidates">
+                    <Candidates />
+                  </div>
+                )}
+                {visitedTabs.has('employees') && (
+                  <div className={normalizedActiveTab === 'employees' ? 'block' : 'hidden'} key="tab-employees">
+                    <Employees />
+                  </div>
+                )}
+                {visitedTabs.has('quality') && (
+                  <div className={normalizedActiveTab === 'quality' ? 'block' : 'hidden'} key="tab-quality">
+                    <Quality />
+                  </div>
+                )}
+                {visitedTabs.has('transfers') && (
+                  <div className={normalizedActiveTab === 'transfers' ? 'block' : 'hidden'} key="tab-transfers">
+                    <Transfers isSuperAdmin={isSuperAdmin} currentUser={currentUser} />
+                  </div>
+                )}
+                {visitedTabs.has('vacancies') && (
+                  <div className={normalizedActiveTab === 'vacancies' ? 'block' : 'hidden'} key="tab-vacancies">
+                    <Vacancies 
+                      currentUser={currentUser} 
+                      isSuperAdmin={isSuperAdmin} 
+                      onNavigateToCandidates={() => setActiveItem('candidates')}
+                    />
+                  </div>
+                )}
+                {visitedTabs.has('attendance_branches') && (
+                  <div className={`${normalizedActiveTab === 'attendance_branches' ? 'block' : 'hidden'} h-full flex-1 flex flex-col min-h-0`} key="tab-attendance-branches">
+                    <ModuleErrorBoundary moduleName="Filialni belgilash">
+                      <BranchGeozones />
+                    </ModuleErrorBoundary>
+                  </div>
+                )}
+                {visitedTabs.has('attendance_credentials') && (
+                  <div className={normalizedActiveTab === 'attendance_credentials' ? 'block' : 'hidden'} key="tab-attendance-credentials">
+                    <ModuleErrorBoundary moduleName="Xodimlar hisoblari (Login/Parol)">
+                      <EmployeeCredentials 
+                        currentUser={currentUser} 
+                        isSuperAdmin={isSuperAdmin} 
+                      />
+                    </ModuleErrorBoundary>
+                  </div>
+                )}
+                {visitedTabs.has('attendance_photo_requests') && (
+                  <div className={normalizedActiveTab === 'attendance_photo_requests' ? 'block' : 'hidden'} key="tab-attendance-photo-requests">
+                    <ModuleErrorBoundary moduleName="Surat so'rovlari & Rasmlar keldi-ketdisi">
+                      <PhotoRequestsManager 
+                        onNavigateToJournal={() => {
+                          setActiveItem('attendance_journal');
+                          setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                        }}
+                      />
+                    </ModuleErrorBoundary>
+                  </div>
+                )}
+                {visitedTabs.has('attendance_settings') && (
+                  <div className={normalizedActiveTab === 'attendance_settings' ? 'block' : 'hidden'} key="tab-attendance-settings">
+                    <ModuleErrorBoundary moduleName="Ish vaqti, jarima va dam kunlari sozlamalari">
+                      <AttendanceSettings />
+                    </ModuleErrorBoundary>
+                  </div>
+                )}
+                {visitedTabs.has('attendance_journal') && (
+                  <div className={normalizedActiveTab === 'attendance_journal' ? 'block' : 'hidden'} key="tab-attendance-journal">
+                    <ModuleErrorBoundary moduleName="Davomat jurnali">
+                      <AttendanceJournal 
+                        currentUser={currentUser} 
+                        isSuperAdmin={isSuperAdmin} 
+                        onNavigateToCredentials={() => {
+                          setActiveItem('attendance_credentials');
+                          setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                        }}
+                        onNavigateToBranches={() => {
+                          setActiveItem('attendance_branches');
+                          setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                        }}
+                        onNavigateToSettings={() => {
+                          setActiveItem('attendance_settings');
+                          setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                        }}
+                        onNavigateToPhotoRequests={() => {
+                          setActiveItem('attendance_photo_requests');
+                          setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
+                        }}
+                      />
+                    </ModuleErrorBoundary>
+                  </div>
+                )}
+                {visitedTabs.has('anketa') && (
+                  <div className={normalizedActiveTab === 'anketa' ? 'block w-full h-full' : 'hidden'} key="tab-anketa">
+                    <iframe src="/anketa.html" className="w-full h-full rounded-2xl border-0" title="Anketa" />
+                  </div>
+                )}
+                {![
+                  'users_management', 'branches', 'statistics', 'candidates', 
+                  'employees', 'quality', 'transfers', 'vacancies', 
+                  'attendance_branches', 'attendance_credentials', 
+                  'attendance_photo_requests', 'attendance_settings', 
+                  'attendance_journal', 'anketa'
+                ].includes(normalizedActiveTab) && (
+                  <GenericModule 
+                    activeItem={activeItem}
+                    label={navItems.find(item => item.id === activeItem)?.label || "Modul"}
+                    Icon={navItems.find(item => item.id === activeItem)?.icon || Users}
                   />
-                </ModuleErrorBoundary>
-              ) : activeItem === 'attendance_photo_requests' ? (
-                <ModuleErrorBoundary moduleName="Surat so'rovlari & Rasmlar keldi-ketdisi">
-                  <PhotoRequestsManager 
-                    onNavigateToJournal={() => {
-                      setActiveItem('attendance_journal');
-                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
-                    }}
-                  />
-                </ModuleErrorBoundary>
-              ) : activeItem === 'attendance_settings' ? (
-                <ModuleErrorBoundary moduleName="Ish vaqti, jarima va dam kunlari sozlamalari">
-                  <AttendanceSettings />
-                </ModuleErrorBoundary>
-              ) : (activeItem === 'attendance_journal' || activeItem === 'attendance') ? (
-                <ModuleErrorBoundary moduleName="Davomat jurnali">
-                  <AttendanceJournal 
-                    currentUser={currentUser} 
-                    isSuperAdmin={isSuperAdmin} 
-                    onNavigateToCredentials={() => {
-                      setActiveItem('attendance_credentials');
-                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
-                    }}
-                    onNavigateToBranches={() => {
-                      setActiveItem('attendance_branches');
-                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
-                    }}
-                    onNavigateToSettings={() => {
-                      setActiveItem('attendance_settings');
-                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
-                    }}
-                    onNavigateToPhotoRequests={() => {
-                      setActiveItem('attendance_photo_requests');
-                      setExpandedMenus(prev => prev.includes('attendance') ? prev : [...prev, 'attendance']);
-                    }}
-                  />
-                </ModuleErrorBoundary>
-              ) : activeItem === 'anketa' ? (
-                <iframe src="/anketa.html" className="w-full h-full rounded-2xl border-0" title="Anketa" />
-              ) : (
-                <GenericModule 
-                  activeItem={activeItem}
-                  label={navItems.find(item => item.id === activeItem)?.label || "Modul"}
-                  Icon={navItems.find(item => item.id === activeItem)?.icon || Users}
-                />
-              )
+                )}
+              </>
             )}
           </div>
         </div>

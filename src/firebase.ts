@@ -28,6 +28,8 @@ import {
   Unsubscribe
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { cachedFetch, invalidateCache } from './lib/cache';
+export { invalidateCache } from './lib/cache';
 
 // Suppress transient internal network retry warnings from clogging console
 setLogLevel('silent');
@@ -146,15 +148,17 @@ export async function resetPassword(email: string): Promise<{ success: boolean; 
 // 1. USERS COLLECTION
 // ----------------------------------------------------------------------
 
-export async function getFirebaseUsers(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'users'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'users');
-    return [];
-  }
+export async function getFirebaseUsers(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('users', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseUsers(callback: (users: any[]) => void): Unsubscribe {
@@ -178,6 +182,7 @@ export async function saveFirebaseUser(user: any): Promise<boolean> {
       ...user,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('users');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'users');
@@ -189,6 +194,7 @@ export async function deleteFirebaseUser(userId: string | number): Promise<boole
   try {
     const docId = String(userId).startsWith('user-') ? String(userId) : `user-${userId}`;
     await deleteDoc(doc(db, 'users', docId));
+    invalidateCache('users');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `users/${userId}`);
@@ -308,15 +314,17 @@ export interface DismissedEmployee {
   staffId: string;
 }
 
-export async function getFirebaseDismissedEmployees(): Promise<DismissedEmployee[]> {
-  try {
-    const snap = await getDocs(collection(db, 'dismissed_employees'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), id: d.id }) as DismissedEmployee);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'dismissed_employees');
-    return [];
-  }
+export async function getFirebaseDismissedEmployees(forceRefresh: boolean = false): Promise<DismissedEmployee[]> {
+  return cachedFetch('dismissed_employees', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'dismissed_employees'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), id: d.id }) as DismissedEmployee);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'dismissed_employees');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseDismissedEmployees(callback: (dismissed: DismissedEmployee[]) => void): Unsubscribe {
@@ -341,6 +349,7 @@ export async function saveFirebaseDismissedEmployee(dismissed: DismissedEmployee
       id: docId,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('dismissed_employees');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'dismissed_employees');
@@ -351,6 +360,7 @@ export async function saveFirebaseDismissedEmployee(dismissed: DismissedEmployee
 export async function deleteFirebaseDismissedEmployee(docId: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'dismissed_employees', docId));
+    invalidateCache('dismissed_employees');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `dismissed_employees/${docId}`);
@@ -358,15 +368,17 @@ export async function deleteFirebaseDismissedEmployee(docId: string): Promise<bo
   }
 }
 
-export async function getFirebaseEmployees(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'employees'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'employees');
-    return [];
-  }
+export async function getFirebaseEmployees(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('employees', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'employees'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'employees');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseEmployees(callback: (employees: any[]) => void): Unsubscribe {
@@ -391,6 +403,7 @@ export async function saveFirebaseEmployee(employee: any): Promise<boolean> {
       id: docId,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('employees');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'employees');
@@ -402,6 +415,7 @@ export async function deleteFirebaseEmployee(employeeId: string): Promise<boolea
   try {
     const docId = employeeId.startsWith('emp-') ? employeeId : `emp-${employeeId}`;
     await deleteDoc(doc(db, 'employees', docId));
+    invalidateCache('employees');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `employees/${employeeId}`);
@@ -766,15 +780,17 @@ export interface LeaveRequest {
   updatedAt: string;
 }
 
-export async function getFirebaseLeaveRequests(): Promise<LeaveRequest[]> {
-  try {
-    const snap = await getDocs(collection(db, 'leaveRequests'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), id: d.id }) as LeaveRequest);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'leaveRequests');
-    return [];
-  }
+export async function getFirebaseLeaveRequests(forceRefresh: boolean = false): Promise<LeaveRequest[]> {
+  return cachedFetch('leaveRequests', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'leaveRequests'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), id: d.id }) as LeaveRequest);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'leaveRequests');
+      return [];
+    }
+  }, 10 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseLeaveRequests(callback: (requests: LeaveRequest[]) => void): Unsubscribe {
@@ -813,6 +829,7 @@ export async function saveFirebaseLeaveRequest(req: Partial<LeaveRequest>): Prom
     };
 
     await setDoc(doc(db, 'leaveRequests', docId), data, { merge: true });
+    invalidateCache('leaveRequests');
 
     // Send notification to HR
     await sendHRNotification({
@@ -913,15 +930,17 @@ export interface WorkSchedule {
   updatedAt: string;
 }
 
-export async function getFirebaseWorkSchedules(): Promise<WorkSchedule[]> {
-  try {
-    const snap = await getDocs(collection(db, 'workSchedules'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), id: d.id }) as WorkSchedule);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'workSchedules');
-    return [];
-  }
+export async function getFirebaseWorkSchedules(forceRefresh: boolean = false): Promise<WorkSchedule[]> {
+  return cachedFetch('workSchedules', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'workSchedules'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), id: d.id }) as WorkSchedule);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'workSchedules');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseWorkSchedules(callback: (schedules: WorkSchedule[]) => void): Unsubscribe {
@@ -947,6 +966,7 @@ export async function saveFirebaseWorkSchedule(schedule: Partial<WorkSchedule>):
       id: docId,
       updatedAt: now
     }, { merge: true });
+    invalidateCache('workSchedules');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'workSchedules');
@@ -957,6 +977,7 @@ export async function saveFirebaseWorkSchedule(schedule: Partial<WorkSchedule>):
 export async function deleteFirebaseWorkSchedule(id: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'workSchedules', id));
+    invalidateCache('workSchedules');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `workSchedules/${id}`);
@@ -976,15 +997,17 @@ export interface HolidayItem {
   createdAt: string;
 }
 
-export async function getFirebaseHolidays(): Promise<HolidayItem[]> {
-  try {
-    const snap = await getDocs(collection(db, 'holidays'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), id: d.id }) as HolidayItem);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'holidays');
-    return [];
-  }
+export async function getFirebaseHolidays(forceRefresh: boolean = false): Promise<HolidayItem[]> {
+  return cachedFetch('holidays', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'holidays'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), id: d.id }) as HolidayItem);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'holidays');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseHolidays(callback: (holidays: HolidayItem[]) => void): Unsubscribe {
@@ -1009,6 +1032,7 @@ export async function saveFirebaseHoliday(holiday: Partial<HolidayItem>): Promis
       id: docId,
       createdAt: holiday.createdAt || new Date().toISOString()
     }, { merge: true });
+    invalidateCache('holidays');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'holidays');
@@ -1019,6 +1043,7 @@ export async function saveFirebaseHoliday(holiday: Partial<HolidayItem>): Promis
 export async function deleteFirebaseHoliday(id: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'holidays', id));
+    invalidateCache('holidays');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `holidays/${id}`);
@@ -1243,15 +1268,17 @@ export async function saveFirebaseSettings(settings: Partial<SystemSettings>): P
 // 10. BRANCHES, DEPARTMENTS & OTHER EXISTING ENTITIES
 // ----------------------------------------------------------------------
 
-export async function getFirebaseBranches(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'branches'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'branches');
-    return [];
-  }
+export async function getFirebaseBranches(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('branches', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'branches'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'branches');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseBranch(branch: any): Promise<boolean> {
@@ -1261,6 +1288,7 @@ export async function saveFirebaseBranch(branch: any): Promise<boolean> {
       ...branch,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('branches');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'branches');
@@ -1272,6 +1300,7 @@ export async function deleteFirebaseBranch(branchId: string): Promise<boolean> {
   try {
     const docId = branchId.startsWith('branch-') ? branchId : `branch-${branchId}`;
     await deleteDoc(doc(db, 'branches', docId));
+    invalidateCache('branches');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `branches/${branchId}`);
@@ -1281,15 +1310,17 @@ export async function deleteFirebaseBranch(branchId: string): Promise<boolean> {
 
 
 
-export async function getFirebaseCandidates(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'candidates'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'candidates');
-    return [];
-  }
+export async function getFirebaseCandidates(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('candidates', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'candidates'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'candidates');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseCandidate(candidate: any): Promise<boolean> {
@@ -1300,6 +1331,7 @@ export async function saveFirebaseCandidate(candidate: any): Promise<boolean> {
       id: docId,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('candidates');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'candidates');
@@ -1310,6 +1342,7 @@ export async function saveFirebaseCandidate(candidate: any): Promise<boolean> {
 export async function deleteFirebaseCandidate(candidateId: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'candidates', candidateId));
+    invalidateCache('candidates');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `candidates/${candidateId}`);
@@ -1319,15 +1352,17 @@ export async function deleteFirebaseCandidate(candidateId: string): Promise<bool
 
 
 
-export async function getFirebaseTransfers(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'transfers'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'transfers');
-    return [];
-  }
+export async function getFirebaseTransfers(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('transfers', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'transfers'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'transfers');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseTransfer(transfer: any): Promise<boolean> {
@@ -1337,6 +1372,7 @@ export async function saveFirebaseTransfer(transfer: any): Promise<boolean> {
       ...transfer,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('transfers');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'transfers');
@@ -1348,6 +1384,7 @@ export async function deleteFirebaseTransfer(transferId: string): Promise<boolea
   try {
     const docId = transferId.startsWith('tr-') ? transferId : `tr-${transferId}`;
     await deleteDoc(doc(db, 'transfers', docId));
+    invalidateCache('transfers');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `transfers/${transferId}`);
@@ -1355,15 +1392,17 @@ export async function deleteFirebaseTransfer(transferId: string): Promise<boolea
   }
 }
 
-export async function getFirebaseVacancies(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'vacancies'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'vacancies');
-    return [];
-  }
+export async function getFirebaseVacancies(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('vacancies', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'vacancies'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'vacancies');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseVacancies(callback: (vacancies: any[]) => void): Unsubscribe {
@@ -1387,6 +1426,7 @@ export async function saveFirebaseVacancy(vacancy: any): Promise<boolean> {
       ...vacancy,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('vacancies');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'vacancies');
@@ -1397,6 +1437,7 @@ export async function saveFirebaseVacancy(vacancy: any): Promise<boolean> {
 export async function deleteFirebaseVacancy(id: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'vacancies', id));
+    invalidateCache('vacancies');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, 'vacancies');
@@ -1404,15 +1445,17 @@ export async function deleteFirebaseVacancy(id: string): Promise<boolean> {
   }
 }
 
-export async function getFirebaseHistory(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'history'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'history');
-    return [];
-  }
+export async function getFirebaseHistory(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('history', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'history'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'history');
+      return [];
+    }
+  }, 5 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseHistory(entry: any): Promise<boolean> {
@@ -1422,6 +1465,7 @@ export async function saveFirebaseHistory(entry: any): Promise<boolean> {
       ...entry,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('history');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'history');
@@ -1432,6 +1476,7 @@ export async function saveFirebaseHistory(entry: any): Promise<boolean> {
 export async function deleteFirebaseHistory(id: string): Promise<boolean> {
   try {
     await deleteDoc(doc(db, 'history', id));
+    invalidateCache('history');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `history/${id}`);
@@ -1439,15 +1484,17 @@ export async function deleteFirebaseHistory(id: string): Promise<boolean> {
   }
 }
 
-export async function getFirebaseGeozones(): Promise<any[]> {
-  try {
-    const snap = await getDocs(collection(db, 'geozones'));
-    if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'geozones');
-    return [];
-  }
+export async function getFirebaseGeozones(forceRefresh: boolean = false): Promise<any[]> {
+  return cachedFetch('geozones', async () => {
+    try {
+      const snap = await getDocs(collection(db, 'geozones'));
+      if (snap.empty) return [];
+      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'geozones');
+      return [];
+    }
+  }, 15 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseGeozone(geozone: any): Promise<boolean> {
@@ -1457,6 +1504,7 @@ export async function saveFirebaseGeozone(geozone: any): Promise<boolean> {
       ...geozone,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('geozones');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'geozones');
@@ -1468,6 +1516,7 @@ export async function deleteFirebaseGeozone(geozoneId: string): Promise<boolean>
   try {
     const docId = geozoneId.startsWith('gz-') || geozoneId.startsWith('branch-') ? geozoneId : `gz-${geozoneId}`;
     await deleteDoc(doc(db, 'geozones', docId));
+    invalidateCache('geozones');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `geozones/${geozoneId}`);
@@ -1475,17 +1524,19 @@ export async function deleteFirebaseGeozone(geozoneId: string): Promise<boolean>
   }
 }
 
-export async function getFirebaseStats(): Promise<any | null> {
-  try {
-    const docSnap = await getDoc(doc(db, 'statistics', 'overview'));
-    if (docSnap.exists()) {
-      return docSnap.data();
+export async function getFirebaseStats(forceRefresh: boolean = false): Promise<any | null> {
+  return cachedFetch('stats', async () => {
+    try {
+      const docSnap = await getDoc(doc(db, 'statistics', 'overview'));
+      if (docSnap.exists()) {
+        return docSnap.data();
+      }
+      return null;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, 'statistics/overview');
+      return null;
     }
-    return null;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.GET, 'statistics/overview');
-    return null;
-  }
+  }, 10 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseStats(stats: any): Promise<boolean> {
@@ -1494,6 +1545,7 @@ export async function saveFirebaseStats(stats: any): Promise<boolean> {
       ...stats,
       lastCalculatedAt: new Date().toISOString()
     }, { merge: true });
+    invalidateCache('stats');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'statistics/overview');
