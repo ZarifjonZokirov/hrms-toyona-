@@ -229,9 +229,9 @@ let branchGeozones: BranchGeozone[] = [
   {
     id: 'branch-6',
     name: 'Bosh ofis',
-    lat: 40.563128390281896,
-    lon: 71.10360156678978,
-    radius: 260,
+    lat: 40.55441164458834,
+    lon: 71.10088818840296,
+    radius: 500,
     address: 'Qo\'qon shahar, Markaziy bino, Bosh ofis',
     updatedAt: new Date().toISOString()
   },
@@ -281,6 +281,81 @@ let branchGeozones: BranchGeozone[] = [
     updatedAt: new Date().toISOString()
   }
 ];
+
+const LOCAL_GEOZONES_FILE = path.join(process.cwd(), 'branch_geozones.json');
+const TMP_GEOZONES_FILE = path.join(os.tmpdir(), 'toyonasavdo_geozones.json');
+
+function saveLocalGeozones(zones: BranchGeozone[]) {
+  const data = JSON.stringify(zones);
+  try { fs.writeFileSync(LOCAL_GEOZONES_FILE, data, 'utf8'); } catch {}
+  try { fs.writeFileSync(TMP_GEOZONES_FILE, data, 'utf8'); } catch {}
+}
+
+function loadLocalGeozones(): BranchGeozone[] | null {
+  for (const p of [LOCAL_GEOZONES_FILE, TMP_GEOZONES_FILE]) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+const persistedGeozones = loadLocalGeozones();
+if (persistedGeozones && persistedGeozones.length > 0) {
+  const gzMap = new Map<string, BranchGeozone>();
+  branchGeozones.forEach(b => gzMap.set(b.id, b));
+  persistedGeozones.forEach(b => {
+    if (b && b.id) gzMap.set(b.id, b);
+  });
+  branchGeozones = Array.from(gzMap.values());
+}
+
+// Non-destructive Firestore document reader via PATCH no-op (works even when Free Tier Read Quota is 429)
+const firestoreDocFallbackCache = new Map<string, { fields: any | null; expiresAt: number }>();
+let firestoreReadQuotaExhaustedUntil = 0;
+
+async function readFirestoreDocViaPatch(collectionName: string, docId: string, forceRefresh = false): Promise<any | null> {
+  if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
+    return null;
+  }
+  const cacheKey = `${collectionName}/${docId}`;
+  const now = Date.now();
+  if (!forceRefresh) {
+    const cached = firestoreDocFallbackCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      return cached.fields;
+    }
+  }
+
+  const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/${collectionName}/${encodeURIComponent(docId)}?updateMask.fieldPaths=_ping&currentDocument.exists=true&key=${firebaseConfig.apiKey}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: {} }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const docData = await res.json();
+      const fields = docData?.fields || null;
+      firestoreDocFallbackCache.set(cacheKey, { fields, expiresAt: now + 5 * 60 * 1000 });
+      return fields;
+    } else if (res.status === 404) {
+      firestoreDocFallbackCache.set(cacheKey, { fields: null, expiresAt: now + 2 * 60 * 1000 });
+      return null;
+    }
+  } catch {
+    clearTimeout(timeoutId);
+  }
+  return null;
+}
 
 // Persistent attendance check-in logs (disk + memory + Firestore sync)
 const LOCAL_LOGS_FILE = path.join(process.cwd(), 'attendance_logs.json');
@@ -423,6 +498,17 @@ async function saveFirestoreEmployeePhoto(employeeId: string, photoUrl: string):
         body: JSON.stringify({ fields })
       });
     }
+    if (res.ok) {
+      try {
+        const saved = await res.json();
+        if (saved?.fields) {
+          firestoreDocFallbackCache.set(`employees/${employeeId}`, {
+            fields: saved.fields,
+            expiresAt: Date.now() + 10 * 60 * 1000
+          });
+        }
+      } catch {}
+    }
     return res.ok;
   } catch (e) {
     return false;
@@ -549,51 +635,81 @@ async function getAllServerEmployees(): Promise<ServerEmployee[]> {
     return Array.from(map.values()).filter(e => !deletedEmployeeIds.has(e.id));
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
+  let empQuerySucceeded = false;
+  if (Date.now() > firestoreReadQuotaExhaustedUntil) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-  try {
-    const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
-    const response = await fetch(firestoreUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: { from: [{ collectionId: 'employees' }] }
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
+    try {
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
+      const response = await fetch(firestoreUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: { from: [{ collectionId: 'employees' }] }
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-    if (response.ok) {
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
-          const f = item.document.fields;
-          const docId = item.document.name.split('/').pop() || '';
-          if (deletedEmployeeIds.has(docId)) return;
-          const existing = map.get(docId) || {} as Partial<ServerEmployee>;
-          const empName = f.fullName?.stringValue || existing.fullName || 'Xodim';
-          const defaultUser = empName.toLowerCase().replace(/['`ʻ’\s]/g, '.');
+      if (response.status === 429) {
+        firestoreReadQuotaExhaustedUntil = Date.now() + 60 * 1000;
+      } else if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
+            const f = item.document.fields;
+            const docId = item.document.name.split('/').pop() || '';
+            if (deletedEmployeeIds.has(docId)) return;
+            const existing = map.get(docId) || {} as Partial<ServerEmployee>;
+            const empName = f.fullName?.stringValue || existing.fullName || 'Xodim';
+            const defaultUser = empName.toLowerCase().replace(/['`ʻ’\s]/g, '.');
 
-          map.set(docId, {
-            id: docId,
-            staffId: f.staffId?.stringValue || existing.staffId || 'TS-0000',
-            fullName: empName,
-            position: f.position?.stringValue || existing.position || 'Mutaxassis',
-            department: f.department?.stringValue || existing.department || 'Savdo',
-            branch: f.branch?.stringValue || existing.branch || 'Bosh ofis',
-            phone: f.phone?.stringValue || existing.phone || '',
-            email: f.email?.stringValue || existing.email || '',
-            photoUrl: employeePhotoOverrides[docId] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
-            username: f.username?.stringValue || existing.username || defaultUser,
-            password: f.password?.stringValue || existing.password || 'Toyona#2026',
-            status: f.status?.stringValue || existing.status || 'active'
+            map.set(docId, {
+              id: docId,
+              staffId: f.staffId?.stringValue || existing.staffId || 'TS-0000',
+              fullName: empName,
+              position: f.position?.stringValue || existing.position || 'Mutaxassis',
+              department: f.department?.stringValue || existing.department || 'Savdo',
+              branch: f.branch?.stringValue || existing.branch || 'Bosh ofis',
+              phone: f.phone?.stringValue || existing.phone || '',
+              email: f.email?.stringValue || existing.email || '',
+              photoUrl: employeePhotoOverrides[docId] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
+              username: f.username?.stringValue || existing.username || defaultUser,
+              password: f.password?.stringValue || existing.password || 'Toyona#2026',
+              status: f.status?.stringValue || existing.status || 'active'
+            });
           });
+          empQuerySucceeded = true;
+        }
+      }
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  if (!empQuerySucceeded) {
+    try {
+      const f = await readFirestoreDocViaPatch('employees', 'emp-101');
+      if (f && !deletedEmployeeIds.has('emp-101')) {
+        const existing = map.get('emp-101') || {} as Partial<ServerEmployee>;
+        const empName = f.fullName?.stringValue || existing.fullName || 'Zarifjon Zokirov';
+        map.set('emp-101', {
+          id: 'emp-101',
+          staffId: f.staffId?.stringValue || existing.staffId || 'TS-0001',
+          fullName: empName,
+          position: f.position?.stringValue || existing.position || 'Bosh Direktor (CEO)',
+          department: f.department?.stringValue || existing.department || 'Ijroiya Boshqaruvi',
+          branch: f.branch?.stringValue || existing.branch || 'Bosh ofis',
+          phone: f.phone?.stringValue || existing.phone || '',
+          email: f.email?.stringValue || existing.email || '',
+          photoUrl: employeePhotoOverrides['emp-101'] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
+          username: f.username?.stringValue || existing.username || '20090915',
+          password: f.password?.stringValue || existing.password || 'ZZOKIROV20009@z',
+          status: f.status?.stringValue || existing.status || 'active'
         });
       }
-    }
-  } catch (err: any) {
-    clearTimeout(timeoutId);
+    } catch {}
   }
 
   // NOTE: Users collection is NOT merged here! Foydalanuvchilar (adminlar) va Xodimlar (davomat) 2 xil dunyo.
@@ -616,9 +732,9 @@ function findMatchingGeozone(
     return {
       id: 'branch-6',
       name: 'Bosh ofis',
-      lat: 40.563128390281896,
-      lon: 71.10360156678978,
-      radius: 260,
+      lat: 40.55441164458834,
+      lon: 71.10088818840296,
+      radius: 500,
       address: "Qo'qon shahar, Markaziy bino, Bosh ofis",
       updatedAt: new Date().toISOString()
     };
@@ -670,6 +786,44 @@ function findMatchingGeozone(
   return allBranches.find(b => b.id === 'branch-6') || allBranches[0];
 }
 
+let lastGeozonesFirestoreSync = 0;
+
+function applyFirestoreGeozoneFieldsToMap(map: Map<string, BranchGeozone>, docId: string, f: any) {
+  if (!f) return;
+  const name = f.name?.stringValue || 'Filial';
+  const description = f.description?.stringValue || '';
+  const rawLat = f.lat?.doubleValue ?? f.lat?.integerValue ?? f.lat?.stringValue;
+  const rawLon = f.lon?.doubleValue ?? f.lon?.integerValue ?? f.lon?.stringValue;
+  const rawRadius = f.radius?.integerValue ?? f.radius?.doubleValue ?? f.radius?.stringValue;
+  const lat = rawLat !== undefined ? Number(rawLat) : 40.5283;
+  const lon = rawLon !== undefined ? Number(rawLon) : 70.9425;
+  const radius = rawRadius !== undefined ? Number(rawRadius) : 100;
+  const address = f.address?.stringValue || '';
+
+  let targetKey = docId;
+  if (!map.has(docId)) {
+    for (const [k, existing] of map.entries()) {
+      if (normalizeBranchName(existing.name) === normalizeBranchName(name)) {
+        targetKey = k;
+        break;
+      }
+    }
+  }
+
+  const gzItem: BranchGeozone = {
+    id: targetKey,
+    name,
+    description: description || map.get(targetKey)?.description || '',
+    lat: !isNaN(lat) ? lat : 40.5283,
+    lon: !isNaN(lon) ? lon : 70.9425,
+    radius: !isNaN(radius) && radius > 0 ? radius : 100,
+    address,
+    updatedAt: f.updatedAt?.stringValue || new Date().toISOString()
+  };
+
+  map.set(targetKey, gzItem);
+}
+
 // Helper: Fetch all geozones from Firestore or fallback to default branches
 async function getAllServerGeozones(): Promise<BranchGeozone[]> {
   const map = new Map<string, BranchGeozone>();
@@ -679,66 +833,63 @@ async function getAllServerGeozones(): Promise<BranchGeozone[]> {
     return Array.from(map.values());
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  let syncedViaQuery = false;
+  if (Date.now() > firestoreReadQuotaExhaustedUntil) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
 
-  try {
-    const gzUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
-    const res = await fetch(gzUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: { from: [{ collectionId: 'geozones' }] }
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
-          const f = item.document.fields;
-          const docId = item.document.name.split('/').pop() || '';
-          const name = f.name?.stringValue || 'Filial';
-          const description = f.description?.stringValue || '';
-          const rawLat = f.lat?.doubleValue ?? f.lat?.integerValue ?? f.lat?.stringValue;
-          const rawLon = f.lon?.doubleValue ?? f.lon?.integerValue ?? f.lon?.stringValue;
-          const rawRadius = f.radius?.integerValue ?? f.radius?.doubleValue ?? f.radius?.stringValue;
-          const lat = rawLat !== undefined ? Number(rawLat) : 40.5283;
-          const lon = rawLon !== undefined ? Number(rawLon) : 70.9425;
-          const radius = rawRadius !== undefined ? Number(rawRadius) : 100;
-          const address = f.address?.stringValue || '';
-
-          // Match by docId or by existing branch name to prevent duplicate branch names
-          let targetKey = docId;
-          if (!map.has(docId)) {
-            for (const [k, existing] of map.entries()) {
-              if (normalizeBranchName(existing.name) === normalizeBranchName(name)) {
-                targetKey = k;
-                break;
-              }
-            }
-          }
-
-          const gzItem: BranchGeozone = {
-            id: targetKey,
-            name,
-            description: description || map.get(targetKey)?.description || '',
-            lat: !isNaN(lat) ? lat : 40.5283,
-            lon: !isNaN(lon) ? lon : 70.9425,
-            radius: !isNaN(radius) && radius > 0 ? radius : 100,
-            address,
-            updatedAt: f.updatedAt?.stringValue || new Date().toISOString()
-          };
-
-          map.set(targetKey, gzItem);
-        });
-        // Keep in-memory cache synced with latest Firestore data
-        branchGeozones = Array.from(map.values());
+    try {
+      const gzUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
+      const res = await fetch(gzUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: { from: [{ collectionId: 'geozones' }] }
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.status === 429) {
+        firestoreReadQuotaExhaustedUntil = Date.now() + 60 * 1000;
+      } else if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
+            const f = item.document.fields;
+            const docId = item.document.name.split('/').pop() || '';
+            applyFirestoreGeozoneFieldsToMap(map, docId, f);
+          });
+          branchGeozones = Array.from(map.values());
+          saveLocalGeozones(branchGeozones);
+          lastGeozonesFirestoreSync = Date.now();
+          syncedViaQuery = true;
+        }
       }
+    } catch (e) {
+      clearTimeout(timeoutId);
     }
-  } catch (e) {
-    clearTimeout(timeoutId);
+  }
+
+  // Fallback when Read Quota is 429: read branch-1..branch-11 via non-destructive PATCH (cached 5 min)
+  if (!syncedViaQuery && (Date.now() - lastGeozonesFirestoreSync > 5 * 60 * 1000)) {
+    try {
+      const branchIds = Array.from({ length: 11 }, (_, idx) => `branch-${idx + 1}`);
+      const results = await Promise.all(
+        branchIds.map(async (id) => ({ id, fields: await readFirestoreDocViaPatch('geozones', id) }))
+      );
+      let anyUpdated = false;
+      for (const item of results) {
+        if (item.fields) {
+          applyFirestoreGeozoneFieldsToMap(map, item.id, item.fields);
+          anyUpdated = true;
+        }
+      }
+      if (anyUpdated) {
+        branchGeozones = Array.from(map.values());
+        saveLocalGeozones(branchGeozones);
+        lastGeozonesFirestoreSync = Date.now();
+      }
+    } catch {}
   }
 
   return Array.from(map.values());
@@ -759,6 +910,7 @@ async function saveFirestoreGeozone(geozone: BranchGeozone): Promise<boolean> {
     address: { stringValue: String(geozone.address || '') },
     updatedAt: { stringValue: new Date().toISOString() }
   };
+  firestoreDocFallbackCache.set(`geozones/${geozone.id}`, { fields, expiresAt: Date.now() + 10 * 60 * 1000 });
   try {
     const res = await fetch(writeUrl, {
       method: 'PATCH',
@@ -775,6 +927,7 @@ async function deleteFirestoreGeozone(docId: string): Promise<boolean> {
   if (!firebaseConfig?.projectId || !firebaseConfig?.firestoreDatabaseId || !firebaseConfig?.apiKey) {
     return false;
   }
+  firestoreDocFallbackCache.delete(`geozones/${docId}`);
   const deleteUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/geozones/${docId}?key=${firebaseConfig.apiKey}`;
   try {
     const res = await fetch(deleteUrl, { method: 'DELETE' });
@@ -824,8 +977,58 @@ function getLocalDateFormatted(d: Date = new Date()): string {
   }
 }
 
+function applyFirestoreAttendanceDocToMap(map: Map<string, any>, docId: string, f: any) {
+  if (!f) return;
+  const empId = f.employeeId?.stringValue || '';
+  const empName = f.employeeName?.stringValue || 'Xodim';
+  const dateStr = f.date?.stringValue || getLocalIsoDate();
+  const checkIn = f.checkIn?.stringValue || '--:--';
+  const checkOut = f.checkOut?.stringValue || '--:--';
+  const status = f.status?.stringValue || 'Vaqtida kelgan';
+  const delayMinutes = f.delayMinutes?.integerValue ? Number(f.delayMinutes.integerValue) : 0;
+  const branchName = f.branch?.stringValue || 'Bosh ofis';
+
+  if (checkIn && checkIn !== '--:--') {
+    map.set(`${docId}_in`, {
+      id: `${docId}_in`,
+      docId,
+      action: 'keldim',
+      timestamp: f.checkInTimestamp?.stringValue || `${dateStr}T09:00:00.000Z`,
+      timeFormatted: checkIn,
+      dateFormatted: dateStr,
+      dateIso: dateStr,
+      employeeId: empId,
+      employeeName: empName,
+      branchName: branchName,
+      status,
+      success: true,
+      delayMinutes,
+      faceVerified: f.faceVerified?.booleanValue !== false
+    });
+  }
+
+  if (checkOut && checkOut !== '--:--') {
+    map.set(`${docId}_out`, {
+      id: `${docId}_out`,
+      docId,
+      action: 'ketdim',
+      timestamp: f.checkOutTimestamp?.stringValue || `${dateStr}T18:00:00.000Z`,
+      timeFormatted: checkOut,
+      dateFormatted: dateStr,
+      dateIso: dateStr,
+      employeeId: empId,
+      employeeName: empName,
+      branchName: branchName,
+      status: 'Ketdi (Ish yakunlandi)',
+      success: true,
+      delayMinutes: 0,
+      faceVerified: f.faceVerified?.booleanValue !== false
+    });
+  }
+}
+
 // Helper: Fetch all attendance logs from local storage and Firestore
-async function getAllServerAttendanceLogs(): Promise<any[]> {
+async function getAllServerAttendanceLogs(targetEmployeeId?: string): Promise<any[]> {
   const map = new Map<string, any>();
   
   // 1. Avval mahalliy fayl va xotiradagi davomat yozuvlarini yuklaymiz
@@ -837,74 +1040,74 @@ async function getAllServerAttendanceLogs(): Promise<any[]> {
     return Array.from(map.values());
   }
 
-  try {
-    const attUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
-    const res = await fetch(attUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: { from: [{ collectionId: 'attendance' }] }
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
-          const f = item.document.fields;
-          const docId = item.document.name.split('/').pop() || '';
-          const empId = f.employeeId?.stringValue || '';
-          const empName = f.employeeName?.stringValue || 'Xodim';
-          const dateStr = f.date?.stringValue || getLocalIsoDate();
-          const checkIn = f.checkIn?.stringValue || '--:--';
-          const checkOut = f.checkOut?.stringValue || '--:--';
-          const status = f.status?.stringValue || 'Vaqtida kelgan';
-          const delayMinutes = f.delayMinutes?.integerValue ? Number(f.delayMinutes.integerValue) : 0;
-          const branchName = f.branch?.stringValue || 'Bosh ofis';
+  let querySucceeded = false;
+  if (Date.now() > firestoreReadQuotaExhaustedUntil) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    try {
+      const attUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents:runQuery?key=${firebaseConfig.apiKey}`;
+      const res = await fetch(attUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: { from: [{ collectionId: 'attendance' }] }
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.status === 429) {
+        firestoreReadQuotaExhaustedUntil = Date.now() + 60 * 1000;
+      } else if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          data.filter((item: any) => item.document && item.document.fields).forEach((item: any) => {
+            const f = item.document.fields;
+            const docId = item.document.name.split('/').pop() || '';
+            applyFirestoreAttendanceDocToMap(map, docId, f);
+          });
+          querySucceeded = true;
+        }
+      }
+    } catch (e) {
+      clearTimeout(timeoutId);
+    }
+  }
 
-          // Keldim logi (agar checkIn mavjud bo'lsa)
-          if (checkIn && checkIn !== '--:--') {
-            map.set(`${docId}_in`, {
-              id: `${docId}_in`,
-              docId,
-              action: 'keldim',
-              timestamp: f.checkInTimestamp?.stringValue || `${dateStr}T09:00:00.000Z`,
-              timeFormatted: checkIn,
-              dateFormatted: dateStr,
-              dateIso: dateStr,
-              employeeId: empId,
-              employeeName: empName,
-              branchName: branchName,
-              status,
-              success: true,
-              delayMinutes,
-              faceVerified: f.faceVerified?.booleanValue !== false
-            });
-          }
-
-          // Ketdim logi (agar checkOut mavjud bo'lsa)
-          if (checkOut && checkOut !== '--:--') {
-            map.set(`${docId}_out`, {
-              id: `${docId}_out`,
-              docId,
-              action: 'ketdim',
-              timestamp: f.checkOutTimestamp?.stringValue || `${dateStr}T18:00:00.000Z`,
-              timeFormatted: checkOut,
-              dateFormatted: dateStr,
-              dateIso: dateStr,
-              employeeId: empId,
-              employeeName: empName,
-              branchName: branchName,
-              status: 'Ketdi (Ish yakunlandi)',
-              success: true,
-              delayMinutes: 0,
-              faceVerified: f.faceVerified?.booleanValue !== false
-            });
-          }
-        });
+  // 2. Agar Firestore Read Quota (429) tugagan bo'lsa, oxirgi 7 kunlik davomat hujjatlarini
+  // bevosita ID bo'yicha (att-<empId>-<YYYY-MM-DD>) o'qiymiz va keshlaymiz!
+  if (!querySucceeded) {
+    const empIdsToCheck = new Set<string>(['emp-101']);
+    if (targetEmployeeId && targetEmployeeId !== 'all') {
+      empIdsToCheck.add(targetEmployeeId);
+    }
+    const baseNow = Date.now();
+    const docIdsToFetch: string[] = [];
+    for (const empId of empIdsToCheck) {
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const d = new Date(baseNow - dayOffset * 24 * 60 * 60 * 1000);
+        const iso = getLocalIsoDate(d);
+        docIdsToFetch.push(`att-${empId}-${iso}`);
       }
     }
-  } catch (e) {
-    // non-fatal
+    try {
+      const results = await Promise.all(
+        docIdsToFetch.map(async (docId) => ({
+          docId,
+          fields: await readFirestoreDocViaPatch('attendance', docId)
+        }))
+      );
+      let anyRecovered = false;
+      for (const r of results) {
+        if (r.fields) {
+          applyFirestoreAttendanceDocToMap(map, r.docId, r.fields);
+          anyRecovered = true;
+        }
+      }
+      if (anyRecovered) {
+        attendanceLogs = Array.from(map.values()).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+        saveLocalAttendance(attendanceLogs);
+      }
+    } catch {}
   }
 
   return Array.from(map.values()).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
@@ -917,7 +1120,6 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
   }
   const dateIso = record.date || getLocalIsoDate();
   const docId = record.id || `att-${record.employeeId}-${dateIso}`;
-  const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/attendance/${docId}?key=${firebaseConfig.apiKey}`;
 
   let checkInVal = record.checkIn || record.checkInTime;
   let checkOutVal = record.checkOut || record.checkOutTime;
@@ -928,15 +1130,20 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
     checkOutVal = record.prevCheckOut;
   }
 
-  // Agar checkIn hali bo'lmasa, mavjud xotiradan to'ldiramiz
+  // Agar checkIn hali bo'lmasa, mavjud xotiradan yoki keshdan to'ldiramiz
   if (!checkInVal || checkInVal === '--:--') {
-    const existing = attendanceLogs.find(l => 
-      (l.employeeId === record.employeeId || l.employeeName === record.employeeName) &&
-      (l.dateIso === dateIso || l.date === dateIso) &&
-      (l.action === 'keldim' || (l.checkIn && l.checkIn !== '--:--'))
-    );
-    if (existing) {
-      checkInVal = existing.timeFormatted || existing.checkIn || existing.time;
+    const cachedDoc = firestoreDocFallbackCache.get(`attendance/${docId}`)?.fields;
+    if (cachedDoc?.checkIn?.stringValue && cachedDoc.checkIn.stringValue !== '--:--') {
+      checkInVal = cachedDoc.checkIn.stringValue;
+    } else {
+      const existing = attendanceLogs.find(l => 
+        (l.employeeId === record.employeeId || l.employeeName === record.employeeName) &&
+        (l.dateIso === dateIso || l.date === dateIso) &&
+        (l.action === 'keldim' || (l.checkIn && l.checkIn !== '--:--'))
+      );
+      if (existing) {
+        checkInVal = existing.timeFormatted || existing.checkIn || existing.time;
+      }
     }
   }
 
@@ -945,8 +1152,6 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
     employeeId: { stringValue: String(record.employeeId || 'EMP') },
     employeeName: { stringValue: String(record.employeeName || 'Xodim') },
     date: { stringValue: String(dateIso) },
-    checkIn: { stringValue: String(checkInVal || '--:--') },
-    checkOut: { stringValue: String(checkOutVal || '--:--') },
     status: { stringValue: String(record.status || 'Vaqtida kelgan') },
     delayMinutes: { integerValue: String(record.delayMinutes || 0) },
     branch: { stringValue: String(record.branch || record.branchName || 'Bosh ofis') },
@@ -955,10 +1160,22 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
     updatedAt: { stringValue: new Date().toISOString() }
   };
 
+  if (checkInVal && checkInVal !== '--:--') {
+    fields.checkIn = { stringValue: String(checkInVal) };
+  }
+  if (checkOutVal && checkOutVal !== '--:--') {
+    fields.checkOut = { stringValue: String(checkOutVal) };
+  }
   if (record.checkInTimestamp) fields.checkInTimestamp = { stringValue: String(record.checkInTimestamp) };
   if (record.checkOutTimestamp) fields.checkOutTimestamp = { stringValue: String(record.checkOutTimestamp) };
   if (record.capturedPhoto) fields.capturedPhoto = { stringValue: String(record.capturedPhoto) };
   if (record.faceVerified !== undefined) fields.faceVerified = { booleanValue: Boolean(record.faceVerified) };
+
+  // Faqat yuborilayotgan maydonlarni yangilaymiz (updateMask), shunda 'ketdim' bosilganda avvalgi 'checkIn' hech qachon o'chib ketmaydi!
+  const maskParams = Object.keys(fields)
+    .map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`)
+    .join('&');
+  const writeUrl = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/${firebaseConfig.firestoreDatabaseId}/documents/attendance/${docId}?${maskParams}&key=${firebaseConfig.apiKey}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -971,6 +1188,17 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
+    if (res.ok) {
+      try {
+        const savedDoc = await res.json();
+        if (savedDoc?.fields) {
+          firestoreDocFallbackCache.set(`attendance/${docId}`, {
+            fields: savedDoc.fields,
+            expiresAt: Date.now() + 10 * 60 * 1000
+          });
+        }
+      } catch {}
+    }
     return res.ok;
   } catch (err) {
     clearTimeout(timeoutId);
@@ -1165,6 +1393,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
       branchGeozones.push(updatedItem);
     }
 
+    saveLocalGeozones(branchGeozones);
     const saved = await saveFirestoreGeozone(updatedItem);
 
     res.json({ success: true, savedToFirestore: saved, geozone: updatedItem });
@@ -1177,6 +1406,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
   app.delete("/api/branch-geozones/:id", async (req, res) => {
     const id = req.params.id;
     branchGeozones = branchGeozones.filter(b => b.id !== id);
+    saveLocalGeozones(branchGeozones);
     await deleteFirestoreGeozone(id);
     res.json({ success: true });
   });
@@ -1568,7 +1798,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const matched = employeeId ? findServerEmployee(allEmployees, employeeId) : null;
       const targetEmpId = matched ? matched.id : employeeId;
 
-      const allLogs = await getAllServerAttendanceLogs();
+      const allLogs = await getAllServerAttendanceLogs(targetEmpId);
       const empLogs = allLogs.filter(l => {
         const matchesEmp = !targetEmpId || 
           l.employeeId === targetEmpId || 
@@ -1735,7 +1965,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const dateFormatted = getLocalDateFormatted(now);
 
       // Bugungi mavjud yozuvlarni tekshiramiz (memory va Firestore)
-      const allLogs = await getAllServerAttendanceLogs();
+      const allLogs = await getAllServerAttendanceLogs(emp.id);
       const empLogsToday = allLogs.filter(l => {
         const matchesEmp = l.employeeId === emp.id || 
           (emp.username && l.username && l.username.toLowerCase() === emp.username.toLowerCase()) ||
@@ -2102,7 +2332,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
     const month = (req.query.month || '').toString(); // masalan "2026-10" yoki "10"
     const year = (req.query.year || '2026').toString();
 
-    const allLogs = await getAllServerAttendanceLogs();
+    const allLogs = await getAllServerAttendanceLogs(employeeId);
     let filtered = [...allLogs];
 
     if (employeeId && employeeId !== 'all') {

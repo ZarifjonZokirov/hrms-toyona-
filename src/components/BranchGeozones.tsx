@@ -138,9 +138,9 @@ export const DEFAULT_GEOZONES: BranchGeozone[] = [
     id: 'branch-6',
     name: 'Bosh ofis',
     description: 'Toyona Savdo bosh boshqarmasi, ma\'muriyat va omborxona',
-    lat: 40.563128390281896,
-    lon: 71.10360156678978,
-    radius: 260,
+    lat: 40.55441164458834,
+    lon: 71.10088818840296,
+    radius: 500,
     address: 'Qo\'qon shahar, Markaziy bino, Bosh ofis'
   },
   {
@@ -232,9 +232,34 @@ export function deduplicateGeozones(items: BranchGeozone[]): BranchGeozone[] {
   return result;
 }
 
+function loadSavedLocalGeozones(): BranchGeozone[] {
+  try {
+    const raw = localStorage.getItem('toyonasavdo_branch_geozones');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Eski Bosh ofis test koordinatasini yangi Bosh ofis koordinatasiga avtomatik to'g'rilash
+        const fixed = parsed.map((b: BranchGeozone) => {
+          if (b.id === 'branch-6' && Math.abs(Number(b.lat) - 40.563128) < 0.0001 && Number(b.radius) === 260) {
+            return {
+              ...b,
+              lat: 40.55441164458834,
+              lon: 71.10088818840296,
+              radius: 500
+            };
+          }
+          return b;
+        });
+        return deduplicateGeozones(fixed);
+      }
+    }
+  } catch {}
+  return deduplicateGeozones(DEFAULT_GEOZONES);
+}
+
 export default function BranchGeozones() {
-  // Load initial geozones
-  const [geozones, setGeozones] = useState<BranchGeozone[]>(() => deduplicateGeozones(DEFAULT_GEOZONES));
+  // Load initial geozones (localStorage + DEFAULT_GEOZONES)
+  const [geozones, setGeozones] = useState<BranchGeozone[]>(() => loadSavedLocalGeozones());
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedBranchId, setSelectedBranchId] = useState<string>(DEFAULT_GEOZONES[0].id);
@@ -243,6 +268,7 @@ export default function BranchGeozones() {
   useEffect(() => {
     async function initData() {
       try {
+        const localSaved = loadSavedLocalGeozones();
         let fetchedGeozones: BranchGeozone[] = [];
         try {
           const res = await fetch('/api/geozones');
@@ -263,11 +289,11 @@ export default function BranchGeozones() {
           }
         }
 
-        if (fetchedGeozones.length > 0) {
-          // Overlay fetched geozones onto DEFAULT_GEOZONES to preserve canonical ordering while keeping latest coordinates
-          const map = new Map<string, BranchGeozone>();
-          DEFAULT_GEOZONES.forEach(def => map.set(def.id, { ...def }));
+        const map = new Map<string, BranchGeozone>();
+        DEFAULT_GEOZONES.forEach(def => map.set(def.id, { ...def }));
+        localSaved.forEach(loc => map.set(loc.id, { ...map.get(loc.id), ...loc }));
 
+        if (fetchedGeozones.length > 0) {
           fetchedGeozones.forEach(item => {
             const rawId = item.id || (item as any).firestoreId || '';
             const normName = (item.name || '').trim().toLowerCase();
@@ -281,37 +307,43 @@ export default function BranchGeozones() {
               }
             }
             const prev = map.get(targetKey);
-            map.set(targetKey || `branch-${map.size + 1}`, {
-              ...prev,
-              ...item,
-              id: targetKey || item.id,
-              description: item.description || prev?.description || '',
-              lat: Number(item.lat) || prev?.lat || 40.5283,
-              lon: Number(item.lon) || prev?.lon || 70.9425,
-              radius: Number(item.radius) || prev?.radius || 100
-            });
+            // Eski default Bosh ofis koordinatasi kelib qolsa, foydalanuvchi o'zgartirgan yangi koordinatani ustidan yozib yubormaslik:
+            const isStaleDefaultBoshOfis =
+              targetKey === 'branch-6' &&
+              Math.abs(Number(item.lat) - 40.563128) < 0.0001 &&
+              Number(item.radius) === 260;
+
+            if (!isStaleDefaultBoshOfis) {
+              map.set(targetKey || `branch-${map.size + 1}`, {
+                ...prev,
+                ...item,
+                id: targetKey || item.id,
+                description: item.description || prev?.description || '',
+                lat: Number(item.lat) || prev?.lat || 40.5283,
+                lon: Number(item.lon) || prev?.lon || 70.9425,
+                radius: Number(item.radius) || prev?.radius || 100
+              });
+            }
           });
-
-          const merged = deduplicateGeozones(Array.from(map.values()));
-          setGeozones(merged);
-          try {
-            localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(merged));
-          } catch {}
-
-          const first = merged.find(b => b.id === selectedBranchId) || merged[0] || DEFAULT_GEOZONES[0];
-          setSelectedBranchId(first.id);
-          setEditName(first.name);
-          setEditDescription(first.description || '');
-          setEditLat(first.lat);
-          setEditLon(first.lon);
-          setEditRadius(first.radius);
-          setEditAddress(first.address);
-        } else {
-          setGeozones(deduplicateGeozones(DEFAULT_GEOZONES));
         }
+
+        const merged = deduplicateGeozones(Array.from(map.values()));
+        setGeozones(merged);
+        try {
+          localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(merged));
+        } catch {}
+
+        const first = merged.find(b => b.id === selectedBranchId) || merged[0] || DEFAULT_GEOZONES[0];
+        setSelectedBranchId(first.id);
+        setEditName(first.name);
+        setEditDescription(first.description || '');
+        setEditLat(first.lat);
+        setEditLon(first.lon);
+        setEditRadius(first.radius);
+        setEditAddress(first.address);
       } catch (error) {
         console.warn("Geozones sync notice:", error);
-        setGeozones(deduplicateGeozones(DEFAULT_GEOZONES));
+        setGeozones(loadSavedLocalGeozones());
       } finally {
         setIsLoading(false);
       }

@@ -437,19 +437,23 @@ export default function AttendanceJournal({
     showToast(`${emp.fullName} uchun ${config.durationDays} kunlik ${isLeave ? "ta'til (Samolyot ✈️)" : "xizmat safari (Barg 🍃)"} muvaffaqiyatli saqlandi!`);
   };
 
-  // Sync with Firebase on mount
+  // Sync with Firebase & Backend API on mount
   useEffect(() => {
     let active = true;
     async function initData() {
       try {
-        const [fbEmployees, fbAttendance, fbGeozones] = await Promise.all([
+        const [fbEmployees, fbAttendance, fbGeozones, apiGeozonesRes, apiLogsRes] = await Promise.all([
           getFirebaseEmployees(),
           getFirebaseAttendance(),
-          getFirebaseGeozones()
+          getFirebaseGeozones(),
+          fetch('/api/geozones').then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch('/api/attendance/logs').then(r => r.ok ? r.json() : []).catch(() => [])
         ]);
         if (!active) return;
 
-        if (fbGeozones && fbGeozones.length > 0) {
+        if (Array.isArray(apiGeozonesRes) && apiGeozonesRes.length > 0) {
+          setGeozones(apiGeozonesRes);
+        } else if (fbGeozones && fbGeozones.length > 0) {
           setGeozones(fbGeozones);
         }
 
@@ -475,12 +479,45 @@ export default function AttendanceJournal({
         }
         setEmployees(finalEmployees);
 
-        if (fbAttendance && fbAttendance.length > 0) {
-          setAttendanceRecords(fbAttendance as DailyAttendance[]);
-        } else {
-          const seeds = generateSeedAttendance(finalEmployees);
-          setAttendanceRecords(seeds);
+        const recMap = new Map<string, DailyAttendance>();
+        const baseRecords = (fbAttendance && fbAttendance.length > 0)
+          ? (fbAttendance as DailyAttendance[])
+          : generateSeedAttendance(finalEmployees);
+        baseRecords.forEach(r => recMap.set(r.id, r));
+
+        if (Array.isArray(apiLogsRes) && apiLogsRes.length > 0) {
+          apiLogsRes.forEach((log: any) => {
+            if (!log || !log.employeeId) return;
+            const dateStr = String(log.dateIso || log.dateFormatted || '').slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+            const recId = `att-${log.employeeId}-${dateStr}`;
+            const existing = recMap.get(recId) || {
+              id: recId,
+              employeeId: log.employeeId,
+              date: dateStr,
+              checkIn: '--:--',
+              checkOut: '--:--',
+              status: 'Vaqtida kelgan' as const,
+              delayMinutes: Number(log.delayMinutes) || 0,
+              workedTime: 'Ish davom etmoqda',
+              penalty: log.penaltyFormatted && log.penaltyFormatted !== "0 so'm" ? `- ${log.penaltyFormatted}` : '-',
+              bonus: '-',
+              netPay: '280 000 so\'m',
+              notes: log.status || ''
+            };
+            if (log.action === 'keldim' && log.timeFormatted && log.timeFormatted !== '--:--') {
+              existing.checkIn = log.timeFormatted;
+              existing.delayMinutes = Number(log.delayMinutes) || 0;
+              existing.status = existing.delayMinutes > 0 ? 'Kech qolgan' : 'Vaqtida kelgan';
+            } else if (log.action === 'ketdim' && log.timeFormatted && log.timeFormatted !== '--:--') {
+              existing.checkOut = log.timeFormatted;
+              existing.status = 'Ketdi';
+            }
+            recMap.set(recId, existing);
+          });
         }
+
+        setAttendanceRecords(Array.from(recMap.values()));
       } catch (error) {
         console.error("Firebase sync error:", error);
       } finally {
