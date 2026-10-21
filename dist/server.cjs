@@ -659,15 +659,40 @@ async function deleteFirestoreGeozone(docId) {
   }
 }
 function getLocalIsoDate(d = /* @__PURE__ */ new Date()) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Tashkent",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(d);
+  } catch (e) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
 }
 function getLocalTimeString(d = /* @__PURE__ */ new Date()) {
-  const hour = String(d.getHours()).padStart(2, "0");
-  const minute = String(d.getMinutes()).padStart(2, "0");
-  return `${hour}:${minute}`;
+  try {
+    return d.toLocaleTimeString("en-GB", {
+      timeZone: "Asia/Tashkent",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+  } catch (e) {
+    const hour = String(d.getHours()).padStart(2, "0");
+    const minute = String(d.getMinutes()).padStart(2, "0");
+    return `${hour}:${minute}`;
+  }
+}
+function getLocalDateFormatted(d = /* @__PURE__ */ new Date()) {
+  try {
+    return d.toLocaleDateString("uz-UZ", { timeZone: "Asia/Tashkent" });
+  } catch (e) {
+    return d.toLocaleDateString("uz-UZ");
+  }
 }
 async function getAllServerAttendanceLogs() {
   const map = /* @__PURE__ */ new Map();
@@ -698,21 +723,42 @@ async function getAllServerAttendanceLogs() {
           const status = f.status?.stringValue || "Vaqtida kelgan";
           const delayMinutes = f.delayMinutes?.integerValue ? Number(f.delayMinutes.integerValue) : 0;
           const branchName = f.branch?.stringValue || "Bosh ofis";
-          map.set(docId, {
-            id: docId,
-            action: checkOut !== "--:--" ? "ketdim" : "keldim",
-            timestamp: f.checkInTimestamp?.stringValue || f.updatedAt?.stringValue || `${dateStr}T09:00:00.000Z`,
-            timeFormatted: checkIn !== "--:--" ? checkIn : checkOut,
-            dateFormatted: dateStr,
-            dateIso: dateStr,
-            employeeId: empId,
-            employeeName: empName,
-            branchName,
-            status,
-            success: true,
-            delayMinutes,
-            faceVerified: f.faceVerified?.booleanValue !== false
-          });
+          if (checkIn && checkIn !== "--:--") {
+            map.set(`${docId}_in`, {
+              id: `${docId}_in`,
+              docId,
+              action: "keldim",
+              timestamp: f.checkInTimestamp?.stringValue || `${dateStr}T09:00:00.000Z`,
+              timeFormatted: checkIn,
+              dateFormatted: dateStr,
+              dateIso: dateStr,
+              employeeId: empId,
+              employeeName: empName,
+              branchName,
+              status,
+              success: true,
+              delayMinutes,
+              faceVerified: f.faceVerified?.booleanValue !== false
+            });
+          }
+          if (checkOut && checkOut !== "--:--") {
+            map.set(`${docId}_out`, {
+              id: `${docId}_out`,
+              docId,
+              action: "ketdim",
+              timestamp: f.checkOutTimestamp?.stringValue || `${dateStr}T18:00:00.000Z`,
+              timeFormatted: checkOut,
+              dateFormatted: dateStr,
+              dateIso: dateStr,
+              employeeId: empId,
+              employeeName: empName,
+              branchName,
+              status: "Ketdi (Ish yakunlandi)",
+              success: true,
+              delayMinutes: 0,
+              faceVerified: f.faceVerified?.booleanValue !== false
+            });
+          }
         });
       }
     }
@@ -1253,7 +1299,7 @@ async function configureRoutes(appInstance = app) {
       const employeeId = (req.query.employeeId || req.query.id || req.query.username || req.query.login || "").toString().trim();
       const now = /* @__PURE__ */ new Date();
       const todayIso = getLocalIsoDate(now);
-      const todayStr = now.toLocaleDateString("uz-UZ");
+      const todayStr = getLocalDateFormatted(now);
       const allEmployees = await getAllServerEmployees();
       const matched = employeeId ? findServerEmployee(allEmployees, employeeId) : null;
       const targetEmpId = matched ? matched.id : employeeId;
@@ -1372,8 +1418,8 @@ async function configureRoutes(appInstance = app) {
       const distance = !isNaN(numLat) && !isNaN(numLon) ? calculateDistanceMeters(numLat, numLon, targetBranch.lat, targetBranch.lon) : 0;
       const insideZone = req.body?.skipGeoCheck === true ? true : distance <= targetBranch.radius;
       const now = /* @__PURE__ */ new Date();
-      const currentHours = now.getHours();
-      const currentMinutes = now.getMinutes();
+      const currentHours = Number(now.toLocaleTimeString("en-GB", { timeZone: "Asia/Tashkent", hour: "2-digit", hour12: false }));
+      const currentMinutes = Number(now.toLocaleTimeString("en-GB", { timeZone: "Asia/Tashkent", minute: "2-digit", hour12: false }));
       const currentTotalMin = currentHours * 60 + currentMinutes;
       const [schedH, schedM] = (penaltySettings.workStartTime || "09:00").split(":").map(Number);
       const scheduledTotalMin = (schedH || 9) * 60 + (schedM || 0);
@@ -1389,7 +1435,7 @@ async function configureRoutes(appInstance = app) {
       }
       const statusText = isRestDay ? action === "keldim" ? "Dam olish kunida kelgan" : "Dam olish kunida ketdi" : action === "ketdim" ? "Ketdi (Ish yakunlandi)" : delayMinutes > 0 ? `Kech qolgan (${delayMinutes} daqiqa)` : "Vaqtida kelgan";
       const timeFormatted = getLocalTimeString(now);
-      const dateFormatted = now.toLocaleDateString("uz-UZ");
+      const dateFormatted = getLocalDateFormatted(now);
       const allLogs = await getAllServerAttendanceLogs();
       const empLogsToday = allLogs.filter((l) => {
         const matchesEmp = l.employeeId === emp.id || emp.username && l.username && l.username.toLowerCase() === emp.username.toLowerCase() || l.employeeName && l.employeeName.toLowerCase() === emp.fullName.toLowerCase();

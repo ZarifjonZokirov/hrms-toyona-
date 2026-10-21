@@ -757,18 +757,44 @@ async function deleteFirestoreGeozone(docId: string): Promise<boolean> {
   }
 }
 
-// Helper: Toshkent (UTC+5) vaqti bilan to'g'ri ISO sana (YYYY-MM-DD) olish (UTC toISOString() xatosini oldini oladi)
+// Helper: Toshkent (Asia/Tashkent, UTC+5) vaqti bilan to'g'ri ISO sana (YYYY-MM-DD) olish (Vercel/server UTC bo'lganda ham xato bo'lmaydi)
 function getLocalIsoDate(d: Date = new Date()): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Tashkent',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(d);
+  } catch (e) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 }
 
 function getLocalTimeString(d: Date = new Date()): string {
-  const hour = String(d.getHours()).padStart(2, '0');
-  const minute = String(d.getMinutes()).padStart(2, '0');
-  return `${hour}:${minute}`;
+  try {
+    return d.toLocaleTimeString('en-GB', {
+      timeZone: 'Asia/Tashkent',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (e) {
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+    return `${hour}:${minute}`;
+  }
+}
+
+function getLocalDateFormatted(d: Date = new Date()): string {
+  try {
+    return d.toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' });
+  } catch (e) {
+    return d.toLocaleDateString('uz-UZ');
+  }
 }
 
 // Helper: Fetch all attendance logs from Firestore and merge with memory logs
@@ -804,21 +830,45 @@ async function getAllServerAttendanceLogs(): Promise<any[]> {
           const delayMinutes = f.delayMinutes?.integerValue ? Number(f.delayMinutes.integerValue) : 0;
           const branchName = f.branch?.stringValue || 'Bosh ofis';
 
-          map.set(docId, {
-            id: docId,
-            action: checkOut !== '--:--' ? 'ketdim' : 'keldim',
-            timestamp: f.checkInTimestamp?.stringValue || f.updatedAt?.stringValue || `${dateStr}T09:00:00.000Z`,
-            timeFormatted: checkIn !== '--:--' ? checkIn : checkOut,
-            dateFormatted: dateStr,
-            dateIso: dateStr,
-            employeeId: empId,
-            employeeName: empName,
-            branchName: branchName,
-            status,
-            success: true,
-            delayMinutes,
-            faceVerified: f.faceVerified?.booleanValue !== false
-          });
+          // Keldim logi (agar checkIn mavjud bo'lsa)
+          if (checkIn && checkIn !== '--:--') {
+            map.set(`${docId}_in`, {
+              id: `${docId}_in`,
+              docId,
+              action: 'keldim',
+              timestamp: f.checkInTimestamp?.stringValue || `${dateStr}T09:00:00.000Z`,
+              timeFormatted: checkIn,
+              dateFormatted: dateStr,
+              dateIso: dateStr,
+              employeeId: empId,
+              employeeName: empName,
+              branchName: branchName,
+              status,
+              success: true,
+              delayMinutes,
+              faceVerified: f.faceVerified?.booleanValue !== false
+            });
+          }
+
+          // Ketdim logi (agar checkOut mavjud bo'lsa)
+          if (checkOut && checkOut !== '--:--') {
+            map.set(`${docId}_out`, {
+              id: `${docId}_out`,
+              docId,
+              action: 'ketdim',
+              timestamp: f.checkOutTimestamp?.stringValue || `${dateStr}T18:00:00.000Z`,
+              timeFormatted: checkOut,
+              dateFormatted: dateStr,
+              dateIso: dateStr,
+              employeeId: empId,
+              employeeName: empName,
+              branchName: branchName,
+              status: 'Ketdi (Ish yakunlandi)',
+              success: true,
+              delayMinutes: 0,
+              faceVerified: f.faceVerified?.booleanValue !== false
+            });
+          }
         });
       }
     }
@@ -1469,7 +1519,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const employeeId = (req.query.employeeId || req.query.id || req.query.username || req.query.login || '').toString().trim();
       const now = new Date();
       const todayIso = getLocalIsoDate(now);
-      const todayStr = now.toLocaleDateString('uz-UZ');
+      const todayStr = getLocalDateFormatted(now);
 
       const allEmployees = await getAllServerEmployees();
       const matched = employeeId ? findServerEmployee(allEmployees, employeeId) : null;
@@ -1611,8 +1661,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
 
       // Vaqt va kechikish hisobi (reja 09:00 yoki penaltySettings bo'yicha)
       const now = new Date();
-      const currentHours = now.getHours();
-      const currentMinutes = now.getMinutes();
+      const currentHours = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', hour12: false }));
+      const currentMinutes = Number(now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', minute: '2-digit', hour12: false }));
       const currentTotalMin = currentHours * 60 + currentMinutes;
 
       // Rejali boshlanish vaqti
@@ -1639,7 +1689,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
             : (delayMinutes > 0 ? `Kech qolgan (${delayMinutes} daqiqa)` : 'Vaqtida kelgan'));
 
       const timeFormatted = getLocalTimeString(now);
-      const dateFormatted = now.toLocaleDateString('uz-UZ');
+      const dateFormatted = getLocalDateFormatted(now);
 
       // Bugungi mavjud yozuvlarni tekshiramiz (memory va Firestore)
       const allLogs = await getAllServerAttendanceLogs();
