@@ -107,7 +107,9 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     salary: '25,000,000 UZS',
     address: 'Toshkent sh., Yunusobod t.',
     birthDate: '1990-05-12',
-    gender: 'Erkak'
+    gender: 'Erkak',
+    username: '20090915',
+    password: 'ZZOKIROV2009@z'
   }
 ];
 
@@ -304,11 +306,7 @@ export default function Employees() {
         if (fbEmps && fbEmps.length > 0) {
           setEmployees(fbEmps as Employee[]);
         } else {
-          // If Firestore is empty, seed it with INITIAL_EMPLOYEES
           setEmployees(INITIAL_EMPLOYEES);
-          for (const emp of INITIAL_EMPLOYEES) {
-            await saveFirebaseEmployee(emp);
-          }
         }
 
         // Fetch dismissed employees

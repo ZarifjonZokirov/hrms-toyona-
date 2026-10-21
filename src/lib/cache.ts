@@ -81,11 +81,13 @@ export async function cachedFetch<T>(
 ): Promise<T> {
   if (!forceRefresh) {
     const cached = getCachedData<T>(key, ttlMs);
-    if (cached !== null) {
+    if (cached !== null && (!Array.isArray(cached) || cached.length > 0)) {
       return cached;
     }
   }
   const freshData = await fetcher();
-  setCachedData(key, freshData);
+  if (freshData !== null && freshData !== undefined && (!Array.isArray(freshData) || freshData.length > 0)) {
+    setCachedData(key, freshData);
+  }
   return freshData;
 }

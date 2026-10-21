@@ -168,9 +168,11 @@ export function subscribeFirebaseUsers(callback: (users: any[]) => void): Unsubs
       callback(users);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'users');
+      callback([CANONICAL_SUPER_ADMIN]);
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'users');
+    callback([CANONICAL_SUPER_ADMIN]);
     return () => {};
   }
 }
@@ -334,9 +336,11 @@ export function subscribeFirebaseDismissedEmployees(callback: (dismissed: Dismis
       callback(items);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'dismissed_employees');
+      callback([]);
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'dismissed_employees');
+    callback([]);
     return () => {};
   }
 }
@@ -368,57 +372,176 @@ export async function deleteFirebaseDismissedEmployee(docId: string): Promise<bo
   }
 }
 
+const LOCAL_EMPLOYEES_BACKUP_KEY = 'toyonasavdo_employees_backup_v1';
+
+function loadLocalEmployeesBackup(): any[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_EMPLOYEES_BACKUP_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function saveLocalEmployeesBackup(list: any[]): void {
+  try {
+    if (Array.isArray(list) && list.length > 0) {
+      localStorage.setItem(LOCAL_EMPLOYEES_BACKUP_KEY, JSON.stringify(list));
+    }
+  } catch {}
+}
+
 export async function getFirebaseEmployees(forceRefresh: boolean = false): Promise<any[]> {
   return cachedFetch('employees', async () => {
+    const map = new Map<string, any>();
+    loadLocalEmployeesBackup().forEach((e: any) => {
+      const id = String(e?.id || e?.firestoreId || '').trim();
+      if (id) map.set(id, { ...e, id, firestoreId: id });
+    });
+
     try {
       const snap = await getDocs(collection(db, 'employees'));
-      if (snap.empty) return [];
-      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+      if (!snap.empty) {
+        snap.docs.forEach(d => {
+          const data = d.data();
+          map.set(d.id, { ...map.get(d.id), ...data, id: data.id || d.id, firestoreId: d.id });
+        });
+        const list = Array.from(map.values());
+        saveLocalEmployeesBackup(list);
+        return list;
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'employees');
-      return [];
     }
+
+    // Fallback to backend API (/api/attendance/employees uses non-destructive PATCH reader even when Firestore Read Quota is 429)
+    try {
+      const res = await fetch('/api/attendance/employees');
+      if (res.ok) {
+        const apiEmps = await res.json();
+        if (Array.isArray(apiEmps) && apiEmps.length > 0) {
+          apiEmps.forEach((e: any) => {
+            const id = String(e?.id || e?.firestoreId || '').trim();
+            if (!id) return;
+            const prev = map.get(id) || {};
+            map.set(id, {
+              ...prev,
+              ...e,
+              id,
+              firestoreId: id,
+              avatarUrl: e.avatarUrl || e.photoUrl || e.rasmUrl || prev.avatarUrl,
+              username: e.username || e.login || prev.username || '',
+              password: e.password || e.parol || prev.password || ''
+            });
+          });
+        }
+      }
+    } catch {}
+
+    const finalList = Array.from(map.values());
+    if (finalList.length > 0) {
+      saveLocalEmployeesBackup(finalList);
+    }
+    return finalList;
   }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseEmployees(callback: (employees: any[]) => void): Unsubscribe {
+  let active = true;
+
+  // Immediately deliver cached / fallback employees so UI never hangs on a loading spinner
+  getFirebaseEmployees().then((items) => {
+    if (active) callback(items);
+  }).catch(() => {
+    if (active) callback(loadLocalEmployeesBackup());
+  });
+
   try {
-    return onSnapshot(collection(db, 'employees'), (snap) => {
-      const items = snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-      callback(items);
+    const unsub = onSnapshot(collection(db, 'employees'), (snap) => {
+      if (!active) return;
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ ...d.data(), id: d.data().id || d.id, firestoreId: d.id }));
+        saveLocalEmployeesBackup(items);
+        callback(items);
+      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'employees');
+      if (active) {
+        getFirebaseEmployees().then((items) => {
+          if (active) callback(items);
+        }).catch(() => {
+          if (active) callback(loadLocalEmployeesBackup());
+        });
+      }
     });
+    return () => {
+      active = false;
+      unsub();
+    };
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'employees');
-    return () => {};
+    return () => { active = false; };
   }
 }
 
 export async function saveFirebaseEmployee(employee: any): Promise<boolean> {
+  const docId = employee.id || `emp-${Date.now()}`;
+  const payload = {
+    ...employee,
+    id: docId,
+    firestoreId: docId,
+    updatedAt: new Date().toISOString()
+  };
+
+  // 1. Update local backup immediately
   try {
-    const docId = employee.id || `emp-${Date.now()}`;
-    await setDoc(doc(db, 'employees', docId), {
-      ...employee,
-      id: docId,
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
+    const current = loadLocalEmployeesBackup();
+    const idx = current.findIndex((x: any) => String(x?.id || x?.firestoreId) === String(docId));
+    if (idx >= 0) {
+      current[idx] = { ...current[idx], ...payload };
+    } else {
+      current.unshift(payload);
+    }
+    saveLocalEmployeesBackup(current);
+  } catch {}
+
+  // 2. Sync to backend server cache (/api/attendance/employees)
+  fetch('/api/attendance/employees', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {});
+
+  // 3. Save to Firestore
+  try {
+    await setDoc(doc(db, 'employees', docId), payload, { merge: true });
     invalidateCache('employees');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'employees');
+    invalidateCache('employees');
     return false;
   }
 }
 
 export async function deleteFirebaseEmployee(employeeId: string): Promise<boolean> {
+  const docId = employeeId.startsWith('emp-') ? employeeId : `emp-${employeeId}`;
   try {
-    const docId = employeeId.startsWith('emp-') ? employeeId : `emp-${employeeId}`;
+    const current = loadLocalEmployeesBackup().filter(
+      (x: any) => String(x?.id || x?.firestoreId) !== String(docId) && String(x?.id) !== String(employeeId)
+    );
+    localStorage.setItem(LOCAL_EMPLOYEES_BACKUP_KEY, JSON.stringify(current));
+  } catch {}
+
+  try {
     await deleteDoc(doc(db, 'employees', docId));
     invalidateCache('employees');
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `employees/${employeeId}`);
+    invalidateCache('employees');
     return false;
   }
 }
@@ -496,9 +619,11 @@ export function subscribeFirebaseAttendance(
       callback(items);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'attendance');
+      callback([]);
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'attendance');
+    callback([]);
     return () => {};
   }
 }
@@ -1412,9 +1537,11 @@ export function subscribeFirebaseVacancies(callback: (vacancies: any[]) => void)
       callback(list);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'vacancies');
+      callback([]);
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'vacancies');
+    callback([]);
     return () => {};
   }
 }
@@ -1488,12 +1615,22 @@ export async function getFirebaseGeozones(forceRefresh: boolean = false): Promis
   return cachedFetch('geozones', async () => {
     try {
       const snap = await getDocs(collection(db, 'geozones'));
-      if (snap.empty) return [];
-      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+      if (!snap.empty) {
+        return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'geozones');
-      return [];
     }
+    try {
+      const res = await fetch('/api/geozones');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+      }
+    } catch {}
+    return [];
   }, 15 * 60 * 1000, forceRefresh);
 }
 

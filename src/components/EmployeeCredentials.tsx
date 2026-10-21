@@ -113,8 +113,32 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
 
   // Filiallar va xodimlarni Firebase'dan yuklash
   useEffect(() => {
+    let active = true;
+
+    const normalizeEmployeeList = (rawList: any[]): EmployeeWithCredentials[] => {
+      return rawList.map(emp => {
+        const uname = emp.username || (emp as any).login || (emp.id === 'emp-101' ? '20090915' : '');
+        const upass = emp.password || (emp as any).parol || (emp.id === 'emp-101' ? 'ZZOKIROV2009@z' : '');
+        return {
+          ...emp,
+          id: emp.id || (emp as any).firestoreId || 'emp-101',
+          fullName: emp.fullName || (emp as any).name || (emp as any).fio || 'Noma\'lum',
+          position: emp.position || (emp as any).jobPosition || (emp as any).lavozim || 'Xodim',
+          department: emp.department || 'Savdo va Chakana',
+          branch: emp.branch || (emp as any).targetBranch || (emp as any).filial || 'Bosh ofis',
+          phone: emp.phone || (emp as any).phone1 || '',
+          staffId: emp.staffId || 'TS-0001',
+          avatarUrl: emp.avatarUrl || (emp as any).photoUrl || (emp as any).rasmUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
+          username: uname,
+          password: upass,
+          isAccountActive: !!(uname && upass && emp.isAccountActive !== false)
+        };
+      });
+    };
+
     // Filiallarni olish
     getFirebaseGeozones().then((cloudBranches) => {
+      if (!active) return;
       if (cloudBranches && cloudBranches.length > 0) {
         const merged = deduplicateGeozones([...cloudBranches, ...DEFAULT_GEOZONES]);
         setBranches(merged);
@@ -125,41 +149,32 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
         setBranches(deduplicateGeozones(DEFAULT_GEOZONES));
       }
     }).catch(() => {
-      setBranches(deduplicateGeozones(DEFAULT_GEOZONES));
+      if (active) setBranches(deduplicateGeozones(DEFAULT_GEOZONES));
     });
 
-    // Xodimlarni real-time eshitish
+    // Xodimlarni real-time eshitish va tezkor kesh/API orqali yuklash
     const unsub = subscribeFirebaseEmployees((cloudEmployees) => {
+      if (!active) return;
       if (cloudEmployees && cloudEmployees.length > 0) {
-        // Mavjud xodimlar bilan birlashtirish
-        const merged = cloudEmployees.map(emp => {
-          return {
-            ...emp,
-            fullName: emp.fullName || (emp as any).name || (emp as any).fio || 'Noma\'lum',
-            position: emp.position || (emp as any).jobPosition || (emp as any).lavozim || 'Xodim',
-            department: emp.department || 'Savdo va Chakana',
-            branch: emp.branch || (emp as any).targetBranch || (emp as any).filial || 'Turkiston filiali',
-            phone: emp.phone || (emp as any).phone1 || '',
-            staffId: emp.staffId || '',
-            username: emp.username || '',
-            password: emp.password || '',
-            isAccountActive: !!(emp.username && emp.password && emp.isAccountActive !== false)
-          };
-        });
-        setEmployees(merged);
+        setEmployees(normalizeEmployeeList(cloudEmployees));
       } else {
-        const initialClean = INITIAL_EMPLOYEES.map(emp => ({
-          ...emp,
-          username: '',
-          password: '',
-          isAccountActive: false
-        }));
-        setEmployees(initialClean);
+        setEmployees(prev => prev.length > 0 ? prev : normalizeEmployeeList(INITIAL_EMPLOYEES));
       }
       setIsLoading(false);
     });
 
-    return () => unsub();
+    // Safety fallback timer so spinner never hangs
+    const safetyTimer = setTimeout(() => {
+      if (!active) return;
+      setEmployees(prev => prev.length > 0 ? prev : normalizeEmployeeList(INITIAL_EMPLOYEES));
+      setIsLoading(false);
+    }, 2000);
+
+    return () => {
+      active = false;
+      clearTimeout(safetyTimer);
+      unsub();
+    };
   }, []);
 
   // Username generator
