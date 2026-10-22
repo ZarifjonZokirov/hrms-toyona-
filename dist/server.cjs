@@ -420,6 +420,32 @@ function formatDelayText(delayMinutes) {
   if (remainingMins === 0) return `${hours} soat`;
   return `${hours} soat ${remainingMins} daqiqa`;
 }
+var LOCAL_EMPLOYEES_FILE = import_path.default.join(process.cwd(), "employees_cache.json");
+var TMP_EMPLOYEES_FILE = import_path.default.join(import_os.default.tmpdir(), "toyonasavdo_employees_cache.json");
+function saveLocalEmployees(list) {
+  const data = JSON.stringify(list);
+  try {
+    import_fs.default.writeFileSync(LOCAL_EMPLOYEES_FILE, data, "utf8");
+  } catch {
+  }
+  try {
+    import_fs.default.writeFileSync(TMP_EMPLOYEES_FILE, data, "utf8");
+  } catch {
+  }
+}
+function loadLocalEmployees() {
+  for (const p of [LOCAL_EMPLOYEES_FILE, TMP_EMPLOYEES_FILE]) {
+    try {
+      if (import_fs.default.existsSync(p)) {
+        const raw = import_fs.default.readFileSync(p, "utf8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+    }
+  }
+  return [];
+}
 var defaultEmployees = [
   {
     id: "emp-101",
@@ -431,9 +457,17 @@ var defaultEmployees = [
     phone: "+998 90 123 45 67",
     email: "zarifjon@toyona.uz",
     photoUrl: "https://hrms-toyona.vercel.app/zarifjon.jpg",
+    avatarUrl: "https://hrms-toyona.vercel.app/zarifjon.jpg",
     username: "20090915",
-    password: "ZZOKIROV20009@z",
-    status: "active"
+    password: "ZZOKIROV2009@z",
+    status: "active",
+    isAccountActive: true,
+    accountCreatedAt: "2026-10-12",
+    salary: "25,000,000 UZS",
+    hireDate: "2020-03-15",
+    birthDate: "1990-05-12",
+    gender: "Erkak",
+    address: "Toshkent sh., Yunusobod t."
   }
 ];
 var deletedEmployeeIds = /* @__PURE__ */ new Set();
@@ -567,6 +601,37 @@ async function saveFirestorePhotoRequest(req) {
     return false;
   }
 }
+function applyFirestoreEmployeeFieldsToMap(map, docId, f) {
+  if (!f || deletedEmployeeIds.has(docId)) return;
+  const existing = map.get(docId) || {};
+  const empName = f.fullName?.stringValue || existing.fullName || "Xodim";
+  const defaultUser = empName.toLowerCase().replace(/['`ʻ’\s]/g, ".");
+  const preferredDataPhoto = (f.photoUrl?.stringValue?.startsWith("data:image/") ? f.photoUrl.stringValue : "") || (f.rasmUrl?.stringValue?.startsWith("data:image/") ? f.rasmUrl.stringValue : "") || (f.avatarUrl?.stringValue?.startsWith("data:image/") ? f.avatarUrl.stringValue : "");
+  const resolvedPhoto = employeePhotoOverrides[docId] || preferredDataPhoto || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || f.rasmUrl?.stringValue || existing.photoUrl || "https://hrms-toyona.vercel.app/zarifjon.jpg";
+  map.set(docId, {
+    id: docId,
+    staffId: f.staffId?.stringValue || existing.staffId || "TS-0001",
+    fullName: empName,
+    position: f.position?.stringValue || existing.position || "Mutaxassis",
+    department: f.department?.stringValue || existing.department || "Savdo",
+    branch: f.branch?.stringValue || existing.branch || "Bosh ofis",
+    phone: f.phone?.stringValue || existing.phone || "",
+    email: f.email?.stringValue || existing.email || "",
+    photoUrl: resolvedPhoto,
+    avatarUrl: resolvedPhoto,
+    rasmUrl: resolvedPhoto,
+    username: f.username?.stringValue || existing.username || defaultUser,
+    password: f.password?.stringValue || existing.password || "Toyona#2026",
+    status: f.status?.stringValue || existing.status || "active",
+    isAccountActive: f.isAccountActive?.booleanValue !== void 0 ? f.isAccountActive.booleanValue : existing.isAccountActive ?? true,
+    accountCreatedAt: f.accountCreatedAt?.stringValue || existing.accountCreatedAt || "2026-10-12",
+    salary: f.salary?.stringValue || existing.salary || "4,000,000 UZS",
+    hireDate: f.hireDate?.stringValue || existing.hireDate || "2026-01-01",
+    birthDate: f.birthDate?.stringValue || existing.birthDate || "",
+    gender: f.gender?.stringValue || existing.gender || "Erkak",
+    address: f.address?.stringValue || existing.address || ""
+  });
+}
 async function getAllServerEmployees() {
   const map = /* @__PURE__ */ new Map();
   defaultEmployees.forEach((e) => {
@@ -574,7 +639,20 @@ async function getAllServerEmployees() {
       const customPhoto = employeePhotoOverrides[e.id];
       map.set(e.id, {
         ...e,
-        photoUrl: customPhoto || e.photoUrl
+        photoUrl: customPhoto || e.photoUrl,
+        avatarUrl: customPhoto || e.avatarUrl || e.photoUrl
+      });
+    }
+  });
+  const localSaved = loadLocalEmployees();
+  localSaved.forEach((e) => {
+    if (e && e.id && !deletedEmployeeIds.has(e.id)) {
+      const customPhoto = employeePhotoOverrides[e.id];
+      map.set(e.id, {
+        ...map.get(e.id),
+        ...e,
+        photoUrl: customPhoto || e.photoUrl || e.avatarUrl || "https://hrms-toyona.vercel.app/zarifjon.jpg",
+        avatarUrl: customPhoto || e.avatarUrl || e.photoUrl || "https://hrms-toyona.vercel.app/zarifjon.jpg"
       });
     }
   });
@@ -604,24 +682,7 @@ async function getAllServerEmployees() {
           data.filter((item) => item.document && item.document.fields).forEach((item) => {
             const f = item.document.fields;
             const docId = item.document.name.split("/").pop() || "";
-            if (deletedEmployeeIds.has(docId)) return;
-            const existing = map.get(docId) || {};
-            const empName = f.fullName?.stringValue || existing.fullName || "Xodim";
-            const defaultUser = empName.toLowerCase().replace(/['`ʻ’\s]/g, ".");
-            map.set(docId, {
-              id: docId,
-              staffId: f.staffId?.stringValue || existing.staffId || "TS-0000",
-              fullName: empName,
-              position: f.position?.stringValue || existing.position || "Mutaxassis",
-              department: f.department?.stringValue || existing.department || "Savdo",
-              branch: f.branch?.stringValue || existing.branch || "Bosh ofis",
-              phone: f.phone?.stringValue || existing.phone || "",
-              email: f.email?.stringValue || existing.email || "",
-              photoUrl: employeePhotoOverrides[docId] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || "https://hrms-toyona.vercel.app/zarifjon.jpg",
-              username: f.username?.stringValue || existing.username || defaultUser,
-              password: f.password?.stringValue || existing.password || "Toyona#2026",
-              status: f.status?.stringValue || existing.status || "active"
-            });
+            applyFirestoreEmployeeFieldsToMap(map, docId, f);
           });
           empQuerySucceeded = true;
         }
@@ -632,29 +693,24 @@ async function getAllServerEmployees() {
   }
   if (!empQuerySucceeded) {
     try {
-      const f = await readFirestoreDocViaPatch("employees", "emp-101");
-      if (f && !deletedEmployeeIds.has("emp-101")) {
-        const existing = map.get("emp-101") || {};
-        const empName = f.fullName?.stringValue || existing.fullName || "Zarifjon Zokirov";
-        map.set("emp-101", {
-          id: "emp-101",
-          staffId: f.staffId?.stringValue || existing.staffId || "TS-0001",
-          fullName: empName,
-          position: f.position?.stringValue || existing.position || "Bosh Direktor (CEO)",
-          department: f.department?.stringValue || existing.department || "Ijroiya Boshqaruvi",
-          branch: f.branch?.stringValue || existing.branch || "Bosh ofis",
-          phone: f.phone?.stringValue || existing.phone || "",
-          email: f.email?.stringValue || existing.email || "",
-          photoUrl: employeePhotoOverrides["emp-101"] || f.avatarUrl?.stringValue || f.photoUrl?.stringValue || existing.photoUrl || "https://hrms-toyona.vercel.app/zarifjon.jpg",
-          username: f.username?.stringValue || existing.username || "20090915",
-          password: f.password?.stringValue || existing.password || "ZZOKIROV20009@z",
-          status: f.status?.stringValue || existing.status || "active"
-        });
+      const candidateIds = Array.from(/* @__PURE__ */ new Set(["emp-101", ...Array.from(map.keys())]));
+      const results = await Promise.all(
+        candidateIds.map(async (id) => ({
+          id,
+          fields: await readFirestoreDocViaPatch("employees", id)
+        }))
+      );
+      for (const item of results) {
+        if (item.fields) {
+          applyFirestoreEmployeeFieldsToMap(map, item.id, item.fields);
+        }
       }
     } catch {
     }
   }
-  return Array.from(map.values()).filter((e) => !deletedEmployeeIds.has(e.id));
+  const finalResult = Array.from(map.values()).filter((e) => !deletedEmployeeIds.has(e.id));
+  saveLocalEmployees(finalResult);
+  return finalResult;
 }
 function normalizeBranchName(name) {
   if (!name) return "";
@@ -1840,6 +1896,7 @@ async function configureRoutes(appInstance = app) {
         else if (leave.isTrip) leaveBadge = "\u{1F343} Ish safarida";
         return {
           id: e.id,
+          firestoreId: e.id,
           staffId: e.staffId,
           fullName: e.fullName,
           position: e.position,
@@ -1847,11 +1904,22 @@ async function configureRoutes(appInstance = app) {
           branch: e.branch,
           filial: e.branch,
           department: e.department,
+          phone: e.phone || "",
+          email: e.email || "",
+          avatarUrl: e.avatarUrl || e.photoUrl,
           photoUrl: e.photoUrl,
-          rasmUrl: e.photoUrl,
+          rasmUrl: e.rasmUrl || e.photoUrl,
           username: e.username,
           login: e.username,
+          password: e.password || "Toyona#2026",
           parol: e.password || "Toyona#2026",
+          isAccountActive: e.isAccountActive !== false,
+          accountCreatedAt: e.accountCreatedAt || "2026-10-12",
+          salary: e.salary || "4,000,000 UZS",
+          hireDate: e.hireDate || "2026-01-01",
+          birthDate: e.birthDate || "",
+          gender: e.gender || "Erkak",
+          address: e.address || "",
           status: e.status,
           isVacationActive: leave.isVacation,
           isTripActive: leave.isTrip,
@@ -1862,6 +1930,56 @@ async function configureRoutes(appInstance = app) {
       res.json(sanitized);
     } catch (err) {
       res.status(500).json([]);
+    }
+  });
+  app.post("/api/attendance/employees", async (req, res) => {
+    try {
+      const emp = req.body || {};
+      const id = String(emp.id || emp.firestoreId || `emp-${Date.now()}`).trim();
+      deletedEmployeeIds.delete(id);
+      const currentList = loadLocalEmployees();
+      const existingIdx = currentList.findIndex((x) => x.id === id);
+      const existing = existingIdx >= 0 ? currentList[existingIdx] : defaultEmployees.find((x) => x.id === id) || {};
+      const photo = emp.avatarUrl || emp.photoUrl || emp.rasmUrl || existing.photoUrl || "https://hrms-toyona.vercel.app/zarifjon.jpg";
+      const merged = {
+        id,
+        staffId: emp.staffId || existing.staffId || "TS-0001",
+        fullName: emp.fullName || existing.fullName || "Xodim",
+        position: emp.position || existing.position || "Mutaxassis",
+        department: emp.department || existing.department || "Savdo",
+        branch: emp.branch || existing.branch || "Bosh ofis",
+        phone: emp.phone ?? existing.phone ?? "",
+        email: emp.email ?? existing.email ?? "",
+        photoUrl: photo,
+        avatarUrl: photo,
+        rasmUrl: photo,
+        username: emp.username !== void 0 ? emp.username : existing.username || "",
+        password: emp.password !== void 0 ? emp.password : existing.password || "",
+        status: emp.status || existing.status || "active",
+        isAccountActive: emp.isAccountActive !== void 0 ? Boolean(emp.isAccountActive) : existing.isAccountActive ?? true,
+        accountCreatedAt: emp.accountCreatedAt || existing.accountCreatedAt || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+        salary: emp.salary || existing.salary || "4,000,000 UZS",
+        hireDate: emp.hireDate || existing.hireDate || (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+        birthDate: emp.birthDate || existing.birthDate || "",
+        gender: emp.gender || existing.gender || "Erkak",
+        address: emp.address || existing.address || ""
+      };
+      const defIdx = defaultEmployees.findIndex((x) => x.id === id);
+      if (defIdx >= 0) {
+        defaultEmployees[defIdx] = merged;
+      } else {
+        defaultEmployees.push(merged);
+      }
+      if (existingIdx >= 0) {
+        currentList[existingIdx] = merged;
+      } else {
+        currentList.push(merged);
+      }
+      saveLocalEmployees(currentList);
+      firestoreDocFallbackCache.delete(`employees/${id}`);
+      res.json({ success: true, employee: merged });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
   });
   app.delete("/api/attendance/employees/:id", async (req, res) => {

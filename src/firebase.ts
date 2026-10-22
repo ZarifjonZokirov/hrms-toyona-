@@ -252,41 +252,64 @@ export async function verifyUserCredentialsInFirebase(username: string, password
   }
 
   try {
-    // 2. Check in 'users' collection
-    const usersSnap = await getDocs(collection(db, 'users'));
-    for (const docSnap of usersSnap.docs) {
+    const userVariations = Array.from(new Set([username.trim(), cleanUsername])).filter(Boolean);
+
+    // 2. Fast targeted query in 'users' collection (consumes only matching doc, saving quota)
+    try {
+      const qUsers = query(collection(db, 'users'), where('username', 'in', userVariations), limit(5));
+      const usersSnap = await getDocs(qUsers);
+      for (const docSnap of usersSnap.docs) {
+        const u = docSnap.data();
+        const uUser = (u.username || '').trim().toLowerCase();
+        const uPass = (u.password || '').trim();
+        if (uUser === cleanUsername && uPass === cleanPassword) {
+          return { ...u, firestoreId: docSnap.id };
+        }
+      }
+    } catch (e) {
+      // Query fallback handled below
+    }
+
+    // 3. Fast targeted query in 'employees' collection
+    try {
+      const qEmps = query(collection(db, 'employees'), where('username', 'in', userVariations), limit(5));
+      const employeesSnap = await getDocs(qEmps);
+      for (const docSnap of employeesSnap.docs) {
+        const emp = docSnap.data();
+        const empUser = (emp.username || '').trim().toLowerCase();
+        const empPass = (emp.password || '').trim();
+        if (empUser === cleanUsername && empPass === cleanPassword && emp.isAccountActive !== false) {
+          const generatedUser = {
+            id: emp.staffId ? parseInt(emp.staffId.replace(/\D/g, '')) || Date.now() : Date.now(),
+            name: emp.fullName || 'Xodim',
+            username: emp.username,
+            password: emp.password,
+            email: emp.email || `${emp.username}@toyonasavdo.uz`,
+            role: 'Xodim',
+            branch: emp.branch || 'Bosh Idora',
+            status: 'Faol',
+            isOnline: true,
+            lastActive: 'Hozir',
+            allowedModules: ['employee_portal'],
+            firestoreId: docSnap.id
+          };
+          // Also save to users collection for faster access next time
+          saveFirebaseUser(generatedUser).catch(() => {});
+          return generatedUser;
+        }
+      }
+    } catch (e) {
+      // Query fallback handled below
+    }
+
+    // 4. Safe fallback for edge cases where username might have different casing or field names
+    const fallbackUsersSnap = await getDocs(query(collection(db, 'users'), limit(50)));
+    for (const docSnap of fallbackUsersSnap.docs) {
       const u = docSnap.data();
       const uUser = (u.username || '').trim().toLowerCase();
       const uPass = (u.password || '').trim();
       if (uUser === cleanUsername && uPass === cleanPassword) {
         return { ...u, firestoreId: docSnap.id };
-      }
-    }
-
-    // 3. Fallback check in 'employees' collection
-    const employeesSnap = await getDocs(collection(db, 'employees'));
-    for (const docSnap of employeesSnap.docs) {
-      const emp = docSnap.data();
-      const empUser = (emp.username || '').trim().toLowerCase();
-      const empPass = (emp.password || '').trim();
-      if (empUser === cleanUsername && empPass === cleanPassword && emp.isAccountActive !== false) {
-        const generatedUser = {
-          id: emp.staffId ? parseInt(emp.staffId.replace(/\D/g, '')) || Date.now() : Date.now(),
-          name: emp.fullName || 'Xodim',
-          username: emp.username,
-          password: emp.password,
-          email: emp.email || `${emp.username}@toyonasavdo.uz`,
-          role: 'Xodim',
-          branch: emp.branch || 'Bosh Idora',
-          status: 'Faol',
-          isOnline: true,
-          lastActive: 'Hozir',
-          allowedModules: ['employee_portal'],
-          firestoreId: docSnap.id
-        };
-        // Also save to users collection for faster access next time
-        saveFirebaseUser(generatedUser).catch(() => {});
-        return generatedUser;
       }
     }
 
@@ -584,7 +607,16 @@ export interface AttendanceRecord {
 
 export async function getFirebaseAttendance(date?: string, employeeId?: string): Promise<AttendanceRecord[]> {
   try {
-    const snap = await getDocs(collection(db, 'attendance'));
+    let qRef: any = collection(db, 'attendance');
+    if (date) {
+      qRef = query(collection(db, 'attendance'), where('date', '==', date));
+    } else if (employeeId) {
+      qRef = query(collection(db, 'attendance'), where('employeeId', '==', String(employeeId)));
+    } else {
+      qRef = query(collection(db, 'attendance'), limit(500));
+    }
+
+    const snap = await getDocs(qRef);
     if (snap.empty) return [];
     let records = snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id } as unknown as AttendanceRecord));
     
@@ -608,13 +640,20 @@ export function subscribeFirebaseAttendance(
   filterEmployeeId?: string
 ): Unsubscribe {
   try {
-    return onSnapshot(collection(db, 'attendance'), (snap) => {
-      let items = snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id } as unknown as AttendanceRecord));
+    let qRef: any = collection(db, 'attendance');
+    if (filterDate) {
+      qRef = query(collection(db, 'attendance'), where('date', '==', filterDate));
+    } else if (filterEmployeeId) {
+      qRef = query(collection(db, 'attendance'), where('employeeId', '==', String(filterEmployeeId)));
+    }
+
+    return onSnapshot(qRef, (snap: any) => {
+      let items = snap.docs.map((d: any) => ({ ...d.data(), id: d.id, firestoreId: d.id } as unknown as AttendanceRecord));
       if (filterDate) {
-        items = items.filter(r => r.date === filterDate);
+        items = items.filter((r: any) => r.date === filterDate);
       }
       if (filterEmployeeId) {
-        items = items.filter(r => String(r.employeeId) === String(filterEmployeeId));
+        items = items.filter((r: any) => String(r.employeeId) === String(filterEmployeeId));
       }
       callback(items);
     }, (error) => {
@@ -1194,7 +1233,13 @@ export interface HRNotification {
 
 export async function getFirebaseNotifications(targetUserId?: string): Promise<HRNotification[]> {
   try {
-    const snap = await getDocs(collection(db, 'notifications'));
+    let qRef: any = query(collection(db, 'notifications'), limit(100));
+    if (targetUserId) {
+      try {
+        qRef = query(collection(db, 'notifications'), where('targetUserId', '==', targetUserId), limit(50));
+      } catch {}
+    }
+    const snap = await getDocs(qRef);
     if (snap.empty) return [];
     let list = snap.docs.map(d => ({ ...d.data(), id: d.id }) as HRNotification);
     if (targetUserId) {
@@ -1213,10 +1258,17 @@ export function subscribeFirebaseNotifications(
   targetUserId?: string
 ): Unsubscribe {
   try {
-    return onSnapshot(collection(db, 'notifications'), (snap) => {
-      let list = snap.docs.map(d => ({ ...d.data(), id: d.id }) as HRNotification);
+    let qRef: any = query(collection(db, 'notifications'), limit(50));
+    if (targetUserId) {
+      try {
+        qRef = query(collection(db, 'notifications'), where('targetUserId', '==', targetUserId), limit(50));
+      } catch {}
+    }
+
+    return onSnapshot(qRef, (snap: any) => {
+      let list = snap.docs.map((d: any) => ({ ...d.data(), id: d.id }) as HRNotification);
       if (targetUserId) {
-        list = list.filter(n => !n.targetUserId || n.targetUserId === targetUserId);
+        list = list.filter((n: any) => !n.targetUserId || n.targetUserId === targetUserId);
       }
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       callback(list);
@@ -1298,7 +1350,7 @@ export interface AuditLogItem {
 
 export async function getFirebaseAuditLogs(): Promise<AuditLogItem[]> {
   try {
-    const snap = await getDocs(collection(db, 'auditLogs'));
+    const snap = await getDocs(query(collection(db, 'auditLogs'), limit(150)));
     if (snap.empty) return [];
     const list = snap.docs.map(d => ({ ...d.data(), id: d.id }) as AuditLogItem);
     return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -1310,9 +1362,9 @@ export async function getFirebaseAuditLogs(): Promise<AuditLogItem[]> {
 
 export function subscribeFirebaseAuditLogs(callback: (logs: AuditLogItem[]) => void): Unsubscribe {
   try {
-    return onSnapshot(collection(db, 'auditLogs'), (snap) => {
-      const list = snap.docs.map(d => ({ ...d.data(), id: d.id }) as AuditLogItem);
-      list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return onSnapshot(query(collection(db, 'auditLogs'), limit(150)), (snap: any) => {
+      const list = snap.docs.map((d: any) => ({ ...d.data(), id: d.id }) as AuditLogItem);
+      list.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       callback(list);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'auditLogs');
@@ -1616,7 +1668,7 @@ export async function deleteFirebaseVacancy(id: string): Promise<boolean> {
 export async function getFirebaseHistory(forceRefresh: boolean = false): Promise<any[]> {
   return cachedFetch('history', async () => {
     try {
-      const snap = await getDocs(collection(db, 'history'));
+      const snap = await getDocs(query(collection(db, 'history'), limit(150)));
       if (snap.empty) return [];
       return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
     } catch (error) {
@@ -1731,9 +1783,15 @@ export async function saveFirebaseStats(stats: any): Promise<boolean> {
   }
 }
 
-export async function getFirebaseAttendanceLogs(): Promise<any[]> {
+export async function getFirebaseAttendanceLogs(date?: string): Promise<any[]> {
   try {
-    const snap = await getDocs(collection(db, 'attendance_logs'));
+    let qRef: any = query(collection(db, 'attendance_logs'), limit(300));
+    if (date) {
+      try {
+        qRef = query(collection(db, 'attendance_logs'), where('date', '==', date), limit(300));
+      } catch {}
+    }
+    const snap = await getDocs(qRef);
     if (snap.empty) return [];
     return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
   } catch (error) {
