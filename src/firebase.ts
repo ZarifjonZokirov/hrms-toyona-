@@ -1483,11 +1483,7 @@ export async function getFirebaseTransfers(forceRefresh: boolean = false): Promi
       const snap = await getDocs(collection(db, 'transfers'));
       if (snap.empty) {
         try {
-          const saved = localStorage.getItem('hrms_transfers_v3');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) return parsed;
-          }
+          localStorage.removeItem('hrms_transfers_v3');
         } catch {}
         return [];
       }
@@ -1498,16 +1494,9 @@ export async function getFirebaseTransfers(forceRefresh: boolean = false): Promi
       return list;
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'transfers');
-      try {
-        const saved = localStorage.getItem('hrms_transfers_v3');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch {}
       return [];
     }
-  }, 15 * 60 * 1000, forceRefresh);
+  }, 5 * 60 * 1000, forceRefresh);
 }
 
 export async function saveFirebaseTransfer(transfer: any): Promise<boolean> {
