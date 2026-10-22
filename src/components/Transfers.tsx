@@ -73,136 +73,7 @@ export interface TransferItem {
   tasdiqlovchi?: string;
 }
 
-const INITIAL_TRANSFERS: TransferItem[] = [
-  {
-    id: 'tr-1',
-    num: 1,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Yakunlangan",
-    sana: "14.9.2026",
-    boshlanganSana: "10.09.2026, 09:15",
-    yakunlanganSana: "14.09.2026, 17:30",
-    sababi: "Ichki rotatsiya va ombor jarayonlarini tezlashtirish",
-    tasdiqlovchi: "Zarifjon Zokirov"
-  },
-  {
-    id: 'tr-2',
-    num: 2,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Kutilmoqda",
-    sana: "14.9.2026",
-    boshlanganSana: "13.09.2026, 11:20",
-    yakunlanganSana: "",
-    sababi: "Yangi filial ehtiyoji uchun arizasi asosida",
-    tasdiqlovchi: "HR Departamenti"
-  },
-  {
-    id: 'tr-3',
-    num: 3,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Hujjatlashtirish",
-    sana: "14.9.2026",
-    boshlanganSana: "12.09.2026, 14:00",
-    yakunlanganSana: "",
-    sababi: "Mehnat shartnomasiga qo'shimcha kiritish jarayonida",
-    tasdiqlovchi: "Yurist"
-  },
-  {
-    id: 'tr-4',
-    num: 4,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Bekor qilingan",
-    sana: "14.9.2026",
-    boshlanganSana: "11.09.2026, 10:00",
-    yakunlanganSana: "14.09.2026, 12:00 (Bekor qilindi)",
-    sababi: "Filial rahbariyati tomonidan rad etildi",
-    tasdiqlovchi: "Filial Mudiri"
-  },
-  {
-    id: 'tr-5',
-    num: 5,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Suhbatga qo'yilgan",
-    sana: "14.9.2026",
-    boshlanganSana: "13.09.2026, 16:45",
-    yakunlanganSana: "",
-    sababi: "Malaka oshirish va sinov suhbati tayinlangan",
-    tasdiqlovchi: "Kadrlar Bo'limi"
-  },
-  {
-    id: 'tr-6',
-    num: 6,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Yakunlangan",
-    sana: "14.9.2026",
-    boshlanganSana: "08.09.2026, 09:00",
-    yakunlanganSana: "14.09.2026, 18:00",
-    sababi: "Rejali o'tkazma muvaffaqiyatli yakunlandi",
-    tasdiqlovchi: "Zarifjon Zokirov"
-  },
-  {
-    id: 'tr-7',
-    num: 7,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Kutilmoqda",
-    sana: "14.9.2026",
-    boshlanganSana: "14.09.2026, 08:30",
-    yakunlanganSana: "",
-    sababi: "Yangi lavozim bo'yicha ko'rib chiqilmoqda",
-    tasdiqlovchi: "HR Menejer"
-  },
-  {
-    id: 'tr-8',
-    num: 8,
-    fio: "Zokirjon Sotvoldiyev Sadriddin O'g'li",
-    filial: "Uchko'prik",
-    viloyat: "Farg'ona",
-    kategoriya: "Omborxona",
-    qaysiLavozimdan: "Ombor sektori mutaxassisi",
-    qaysiLavozimga: "Tovar teruvchi",
-    status: "Hujjatlashtirish",
-    sana: "14.9.2026",
-    boshlanganSana: "12.09.2026, 15:10",
-    yakunlanganSana: "",
-    sababi: "Hujjatlar rasmiylashtirilmoqda",
-    tasdiqlovchi: "Yurist"
-  }
-];
+const INITIAL_TRANSFERS: TransferItem[] = [];
 
 const Toast = ({ message, type = 'success', onClose }: { message: string; type?: 'success' | 'warning'; onClose: () => void }) => {
   useEffect(() => {
@@ -331,17 +202,14 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         const fbTransfers = await getFirebaseTransfers();
         if (!active) return;
         
-        if (fbTransfers && fbTransfers.length > 0) {
+        if (fbTransfers && Array.isArray(fbTransfers) && fbTransfers.length > 0) {
           setTransfers(fbTransfers as TransferItem[]);
         } else {
-          // If Firestore is empty, seed it with INITIAL_TRANSFERS
-          setTransfers(INITIAL_TRANSFERS);
-          for (const tr of INITIAL_TRANSFERS) {
-            await saveFirebaseTransfer(tr);
-          }
+          setTransfers([]);
         }
       } catch (error) {
         console.error("Transfers sync error:", error);
+        if (active) setTransfers([]);
       } finally {
         if (active) setIsLoading(false);
       }
@@ -666,8 +534,17 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       return;
     }
     const removedItem = deletingTransfer;
-    setTransfers(prev => prev.filter(t => t.id !== deletingTransfer.id));
+    setTransfers(prev => {
+      const updated = prev.filter(t => t.id !== removedItem.id);
+      try {
+        localStorage.setItem('hrms_transfers_v3', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     deleteFirebaseTransfer(removedItem.id).catch(console.error);
+    try {
+      window.dispatchEvent(new Event('hrms_transfers_updated'));
+    } catch {}
     setToastMessage({ text: `O'tkazma ma'lumoti o'chirildi`, type: 'success' });
     recordSystemHistory({
       action: "Xodim o'tkazmasi o'chirildi",

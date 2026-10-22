@@ -1481,10 +1481,30 @@ export async function getFirebaseTransfers(forceRefresh: boolean = false): Promi
   return cachedFetch('transfers', async () => {
     try {
       const snap = await getDocs(collection(db, 'transfers'));
-      if (snap.empty) return [];
-      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+      if (snap.empty) {
+        try {
+          const saved = localStorage.getItem('hrms_transfers_v3');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch {}
+        return [];
+      }
+      const list = snap.docs.map(d => ({ ...d.data(), id: d.data().id || d.id, firestoreId: d.id }));
+      try {
+        localStorage.setItem('hrms_transfers_v3', JSON.stringify(list));
+      } catch {}
+      return list;
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'transfers');
+      try {
+        const saved = localStorage.getItem('hrms_transfers_v3');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
       return [];
     }
   }, 15 * 60 * 1000, forceRefresh);
@@ -1492,11 +1512,26 @@ export async function getFirebaseTransfers(forceRefresh: boolean = false): Promi
 
 export async function saveFirebaseTransfer(transfer: any): Promise<boolean> {
   try {
-    const docId = transfer.id || `tr-${Date.now()}`;
-    await setDoc(doc(db, 'transfers', docId), {
+    const docId = String(transfer.id || `tr-${Date.now()}`).trim();
+    const payload = {
       ...transfer,
+      id: docId,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    };
+    await setDoc(doc(db, 'transfers', docId), payload, { merge: true });
+    try {
+      const saved = localStorage.getItem('hrms_transfers_v3');
+      const list = saved ? JSON.parse(saved) : [];
+      if (Array.isArray(list)) {
+        const idx = list.findIndex((t: any) => t.id === docId || t.firestoreId === docId);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...payload };
+        } else {
+          list.unshift(payload);
+        }
+        localStorage.setItem('hrms_transfers_v3', JSON.stringify(list));
+      }
+    } catch {}
     invalidateCache('transfers');
     return true;
   } catch (error) {
@@ -1507,8 +1542,25 @@ export async function saveFirebaseTransfer(transfer: any): Promise<boolean> {
 
 export async function deleteFirebaseTransfer(transferId: string): Promise<boolean> {
   try {
-    const docId = transferId.startsWith('tr-') ? transferId : `tr-${transferId}`;
-    await deleteDoc(doc(db, 'transfers', docId));
+    const rawId = String(transferId || '').trim();
+    if (!rawId) return false;
+    await deleteDoc(doc(db, 'transfers', rawId)).catch(() => {});
+    if (rawId.startsWith('tr-')) {
+      const stripped = rawId.substring(3);
+      if (stripped) await deleteDoc(doc(db, 'transfers', stripped)).catch(() => {});
+    } else {
+      await deleteDoc(doc(db, 'transfers', `tr-${rawId}`)).catch(() => {});
+    }
+    try {
+      const saved = localStorage.getItem('hrms_transfers_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((t: any) => t.id !== rawId && t.firestoreId !== rawId && t.id !== `tr-${rawId}`);
+          localStorage.setItem('hrms_transfers_v3', JSON.stringify(filtered));
+        }
+      }
+    } catch {}
     invalidateCache('transfers');
     return true;
   } catch (error) {
