@@ -3,13 +3,48 @@ import "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 /**
- * Ma'lumotlarni Excel (XLSX) formatida yuklab olish
+ * Ma'lumotlarni Excel (XLSX) formatida to'g'ri va xatosiz yuklab olish
+ * (Browserda xitoycha belgilar yoki buzilgan fayl chiqishining oldi olingan)
  */
 export const exportToExcel = (data: any[], fileName: string) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    console.warn("Excelga eksport qilish uchun ma'lumotlar mavjud emas");
+    return;
+  }
+
   const worksheet = XLSX.utils.json_to_sheet(data);
+
+  // Ustun kengliklarini matnga qarab chiroyli va qulay qilish
+  const colWidths = Object.keys(data[0] || {}).map(key => {
+    const maxValLen = Math.max(
+      key.length,
+      ...data.map(row => String(row[key] ?? '').length)
+    );
+    return { wch: Math.min(Math.max(maxValLen + 3, 12), 40) };
+  });
+  worksheet['!cols'] = colWidths;
+
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Hisobot");
+
+  // Binary array orqali toza XLSX (OpenXML) yaratish (Bu Windows Excelda xitoycha chiqib qolishini butkul yo'qotadi)
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+
+  const cleanName = (fileName || 'Toyona_Savdo_Hisobot')
+    .replace(/[/\\?%*:|"<>]/g, '_')
+    .trim();
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `${cleanName}.xlsx`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
 /**
@@ -59,5 +94,10 @@ export const exportToPDF = (
       fillColor: [248, 250, 252]
     }
   });
-  doc.save(`${fileName}.pdf`);
+
+  const cleanName = (fileName || 'Toyona_Savdo_Hisobot')
+    .replace(/[/\\?%*:|"<>]/g, '_')
+    .trim();
+
+  doc.save(`${cleanName}.pdf`);
 };

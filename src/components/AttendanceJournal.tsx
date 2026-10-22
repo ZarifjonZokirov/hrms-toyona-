@@ -486,7 +486,7 @@ export default function AttendanceJournal({
         const recMap = new Map<string, DailyAttendance>();
         const baseRecords = (fbAttendance && fbAttendance.length > 0)
           ? (fbAttendance as DailyAttendance[])
-          : generateSeedAttendance(finalEmployees);
+          : [];
         baseRecords.forEach(r => recMap.set(r.id, r));
 
         if (Array.isArray(apiLogsRes) && apiLogsRes.length > 0) {

@@ -1,3 +1,4 @@
+import { exportToExcel } from '../lib/export';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   History, ArrowLeft, Search, Filter, Calendar, User, 
@@ -290,32 +291,24 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
     };
   }, [logs]);
 
-  // Export to CSV
+  // Export to Excel (XLSX)
   const handleExportCSV = () => {
-    const headers = ['ID', 'Vaqt', 'Amal', 'Modul', 'Turi', 'Bajardi', 'Roli', 'Batafsil', 'IP Manzil', 'Qurilma'];
-    const rows = filteredLogs.map(l => [
-      l.id,
-      `"${l.timestamp}"`,
-      `"${l.action}"`,
-      `"${l.module}"`,
-      `"${l.type}"`,
-      `"${l.performedBy}"`,
-      `"${l.role}"`,
-      `"${l.details.replace(/"/g, '""')}"`,
-      `"${l.ipAddress || '-'}"`,
-      `"${l.device || '-'}"`
-    ].join(','));
+    const excelData = filteredLogs.map((l, idx) => ({
+      '№': idx + 1,
+      'ID': l.id,
+      'Vaqt': l.timestamp,
+      'Amal': l.action,
+      'Modul': l.module,
+      'Turi': l.type,
+      'Bajardi': l.performedBy,
+      'Roli': l.role,
+      'Batafsil': l.details,
+      'IP Manzil': l.ipAddress || '-',
+      'Qurilma': l.device || '-'
+    }));
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Toyona_Savdo_Tizim_Tarixi_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Tizim tarixi eksport qilindi (${filteredLogs.length} ta yozuv)`);
+    exportToExcel(excelData, `Toyona_Savdo_Tizim_Tarixi_${new Date().toISOString().slice(0, 10)}`);
+    showToast(`Tizim tarixi Excel formatida muvaffaqiyatli yuklandi (${filteredLogs.length} ta yozuv)`);
   };
 
   // Clear history
@@ -423,7 +416,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>Eksport (CSV)</span>
+            <span>Eksport (Excel)</span>
           </button>
 
           <button
