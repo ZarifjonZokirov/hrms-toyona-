@@ -1155,6 +1155,17 @@ async function configureRoutes(appInstance = app) {
     }
     next();
   });
+  app.get("/api/client-info", (req, res) => {
+    const forwarded = req.headers["x-forwarded-for"];
+    let ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.socket.remoteAddress || req.ip || "127.0.0.1";
+    if (ip.startsWith("::ffff:")) ip = ip.substring(7);
+    if (ip === "::1") ip = "127.0.0.1";
+    res.json({
+      ip,
+      userAgent: req.headers["user-agent"] || "",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  });
   app.get("/api/candidates/health", async (req, res) => {
     try {
       const list = await getFirestoreCandidates();

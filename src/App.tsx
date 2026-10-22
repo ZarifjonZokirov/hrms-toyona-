@@ -566,7 +566,7 @@ export default function App() {
         type: 'login',
         performedBy: activeUser.name,
         role: activeUser.role,
-        details: `${activeUser.name} (${activeUser.role}) tizimga muvaffaqiyatli kirdi`
+        details: `${activeUser.name} (${activeUser.role}, Login: ${activeUser.username || loginUsername}) tizimga muvaffaqiyatli kirdi`
       });
     } catch (err) {
       console.error(err);
