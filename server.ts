@@ -1895,6 +1895,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
 
       const checkInLog = empLogs.find(l => l.action === 'keldim' || !l.action);
       const checkOutLog = empLogs.find(l => l.action === 'ketdim');
+      const dMin = checkInLog ? Number(checkInLog.delayMinutes) || 0 : 0;
+      const pAmount = checkInLog ? (checkInLog.penaltyAmount !== undefined ? Number(checkInLog.penaltyAmount) : calculatePenaltyAmount(dMin, penaltySettings)) : 0;
 
       res.json({
         success: true,
@@ -1908,6 +1910,18 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         checkInTime: checkInLog ? (checkInLog.timeFormatted || checkInLog.checkIn || checkInLog.time) : null,
         hasCheckedOut: !!checkOutLog,
         checkOutTime: checkOutLog ? (checkOutLog.timeFormatted || checkOutLog.checkOut || checkOutLog.time) : null,
+        delayMinutes: dMin,
+        delayFormatted: formatDelayText(dMin),
+        penaltyAmount: pAmount,
+        penaltyFormatted: pAmount > 0 ? `${pAmount.toLocaleString()} so'm` : "0 so'm",
+        penaltySettings: {
+          penaltyRate: penaltySettings.penaltyRate,
+          gracePeriodMinutes: penaltySettings.gracePeriodMinutes,
+          workStartTime: penaltySettings.workStartTime,
+          workEndTime: penaltySettings.workEndTime,
+          penaltyType: penaltySettings.penaltyType,
+          restDays: penaltySettings.restDays
+        },
         todayDate: todayStr,
         todayIso
       });
@@ -2051,7 +2065,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const allLogs = await getAllServerAttendanceLogs(emp.id);
       const empLogsToday = allLogs.filter(l => {
         const matchesEmp = l.employeeId === emp.id || 
-          (emp.username && l.username && l.username.toLowerCase() === emp.username.toLowerCase()) ||
+          (Boolean((emp as any).username) && l.username && l.username.toLowerCase() === String((emp as any).username).toLowerCase()) ||
           (l.employeeName && l.employeeName.toLowerCase() === emp.fullName.toLowerCase());
         const logIso = String(l.dateIso || l.date || l.timestamp || '').slice(0, 10);
         const matchesDate = logIso === dateIso || l.dateFormatted === dateFormatted || (l.date && l.date.includes(dateIso));
