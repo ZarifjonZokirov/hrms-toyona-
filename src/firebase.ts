@@ -229,9 +229,70 @@ export const CANONICAL_SUPER_ADMIN = {
  */
 export async function ensureCanonicalSuperAdminInFirebase(): Promise<void> {
   try {
-    await setDoc(doc(db, 'users', 'user-1'), CANONICAL_SUPER_ADMIN, { merge: true });
+    const userDocRef = doc(db, 'users', 'user-1');
+    const snap = await getDoc(userDocRef);
+    if (!snap.exists()) {
+      // Faqatgina hujjat Firestore'da mavjud bo'lmaganda birinchi marta yaratadi
+      await setDoc(userDocRef, CANONICAL_SUPER_ADMIN);
+    } else {
+      // Hujjat mavjud bo'lsa, foydalanuvchining o'zgartirgan joriy parolini ASLO BOSIB KETMAYDI!
+      const currentData = snap.data();
+      if (!currentData.role || !currentData.allowedModules) {
+        await updateDoc(userDocRef, {
+          role: 'Super Admin',
+          allowedModules: CANONICAL_SUPER_ADMIN.allowedModules
+        });
+      }
+    }
   } catch (error) {
     console.warn("Could not ensure super admin in Firestore:", error);
+  }
+}
+
+/**
+ * Foydalanuvchi yoki xodim parolini o'zgartirganida, ushbu o'zgarishni
+ * Firestore'dagi 'users' va 'employees' to'plamlariga bir vaqtda to'liq sinxron yozish.
+ * Bu orqali parol koddagi fayllarga bog'liq bo'lmaydi, balki to'g'ridan-to'g'ri
+ * Firebase va serverlar bo'ylab yangilanadi!
+ */
+export async function syncUserPasswordInBothCollections(username: string, newPassword: string): Promise<void> {
+  const cleanUsername = String(username || '').trim().toLowerCase();
+  const cleanPass = String(newPassword || '').trim();
+  if (!cleanUsername || !cleanPass) return;
+
+  try {
+    // 1. 'users' to'plamida yangilash
+    const qUsers = query(collection(db, 'users'), where('username', '==', cleanUsername));
+    const uSnap = await getDocs(qUsers);
+    for (const d of uSnap.docs) {
+      await updateDoc(doc(db, 'users', d.id), {
+        password: cleanPass,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    if (cleanUsername === '20090915') {
+      await setDoc(doc(db, 'users', 'user-1'), { password: cleanPass, updatedAt: new Date().toISOString() }, { merge: true });
+    }
+
+    // 2. 'employees' to'plamida ham yangilash (Face ID va Davomat uchun)
+    const qEmps = query(collection(db, 'employees'), where('username', '==', cleanUsername));
+    const eSnap = await getDocs(qEmps);
+    for (const d of eSnap.docs) {
+      await updateDoc(doc(db, 'employees', d.id), {
+        password: cleanPass,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    if (cleanUsername === '20090915') {
+      await setDoc(doc(db, 'employees', 'emp-101'), { password: cleanPass, updatedAt: new Date().toISOString() }, { merge: true });
+    }
+
+    invalidateCache('users');
+    invalidateCache('employees');
+  } catch (err) {
+    console.warn("syncUserPasswordInBothCollections ogohlantirish:", err);
   }
 }
 

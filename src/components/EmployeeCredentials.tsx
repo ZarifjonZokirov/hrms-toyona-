@@ -52,7 +52,8 @@ import {
   subscribeFirebaseEmployees,
   saveFirebaseUser,
   getFirebaseUsers,
-  getFirebaseGeozones
+  getFirebaseGeozones,
+  syncUserPasswordInBothCollections
 } from '../firebase';
 
 export interface EmployeeWithCredentials extends Employee {
@@ -264,8 +265,11 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
         accountCreatedAt: selectedEmployee.accountCreatedAt || new Date().toISOString().split('T')[0]
       };
 
-      // 1. Employee to'plamiga saqlash (Davomat hisobi faqat employees to'plamida bo'ladi, users ga aralashmaydi)
+      // 1. Employee to'plamiga saqlash
       await saveFirebaseEmployee(updatedEmp);
+
+      // 2. Firebase va serverlar bo'ylab 'users' va 'employees' to'plamlarida darhol sinxronlashtirish
+      syncUserPasswordInBothCollections(formUsername.trim(), formPassword.trim()).catch(() => {});
 
       // Mahalliy holatni yangilash
       setEmployees(prev => prev.map(e => e.id === updatedEmp.id ? updatedEmp : e));

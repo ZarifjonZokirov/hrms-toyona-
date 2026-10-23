@@ -1576,6 +1576,16 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         });
       }
 
+      // Agar xodim yoki super admin Firebase'da parolini yangilagan bo'lsa, uni to'g'ridan-to'g'ri Firebase hujjatidan yangilab olamiz:
+      if (usernameInput === '20090915' || matched.id === 'emp-101') {
+        try {
+          const userDoc = await readFirestoreDocViaPatch('users', 'user-1', true);
+          if (userDoc?.password?.stringValue) {
+            matched.password = userDoc.password.stringValue;
+          }
+        } catch (e) {}
+      }
+
       // Parol tekshiruvi: faqat xodimning Firebase'dagi haqiqiy joriy paroli
       const empPassword = (matched.password || '').trim();
       const passTrim = passwordInput.trim();

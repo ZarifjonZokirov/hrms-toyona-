@@ -8,7 +8,7 @@ import {
 import { ModuleHeaderLogo, ToyonaBrand, ToyonaSvg } from './Logo';
 import { exportToExcel, exportToPDF } from '../lib/export';
 import { ExportButtons } from './ExportButtons';
-import { saveFirebaseUser, deleteFirebaseUser } from '../firebase';
+import { saveFirebaseUser, deleteFirebaseUser, syncUserPasswordInBothCollections } from '../firebase';
 
 export interface UserItem {
   id: number;
@@ -239,6 +239,7 @@ export default function UsersManagement({
     };
     setUsers(users.map(u => u.id === selectedUserForCreds.id ? updatedUser : u));
     saveFirebaseUser(updatedUser).catch(() => {});
+    syncUserPasswordInBothCollections(editUsername, editPassword).catch(() => {});
     setSelectedUserForCreds(null);
     showToast(`"${selectedUserForCreds.name}" uchun Login va Parol yangilandi!`);
   };
