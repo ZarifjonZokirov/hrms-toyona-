@@ -458,8 +458,9 @@ var defaultEmployees = [
     email: "zarifjon@toyona.uz",
     photoUrl: "https://hrms-toyona.vercel.app/zarifjon.jpg",
     avatarUrl: "https://hrms-toyona.vercel.app/zarifjon.jpg",
-    username: "20090915",
-    password: "ZZOKIROV2009@z",
+    username: "",
+    password: "",
+    // Login va parol faqat Firebase'dan olinadi, kodda saqlanmaydi
     status: "active",
     isAccountActive: true,
     accountCreatedAt: "2026-10-12",
@@ -1374,7 +1375,8 @@ async function configureRoutes(appInstance = app) {
           message: "Bunday loginli xodim tizimda topilmadi!"
         });
       }
-      if (usernameInput === "20090915" || matched.id === "emp-101") {
+      if (matched.id === "emp-101") {
+        matched.password = "";
         try {
           const userDoc = await readFirestoreDocViaPatch("users", "user-1", true);
           if (userDoc?.password?.stringValue) {

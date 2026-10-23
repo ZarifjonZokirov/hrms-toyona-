@@ -198,21 +198,11 @@ Xodim mini appga kirganda bugun "Keldim" yoki "Ketdim" bosganmi-yo'qmi bilish uc
 
 ---
 
-## 5️⃣ Test Uchun Tayyor Xodimlar Login va Parollari
+## 5️⃣ Xodimlar Login va Parollari
 
-Boshqa AI bemalol test qilishi uchun serverda oldindan sozlangan namunaviy loginlar:
+Barcha login va parollar faqat Firebase Firestore ma'lumotlar bazasida saqlanadi va tekshiriladi.
 
-| Ism Familiya | Filial | Lavozim | Login | Parol |
-|---|---|---|---|---|
-| **Zarifjon Zokirov** | Bosh ofis | Bosh Direktor (CEO) | `zarif_admin` | `ZZOKIROV20009@z` |
-| **Alisher Qodirov** | Turkiston filiali | HR Menejer | `qodirov.alisher` | `Toyona#2026` |
-| **Dilnoza Karimova** | Bosh ofis | Bosh Hisobchi | `karimova.dilnoza` | `Toyona#2026` |
-| **Bobur Saidov** | Turkiston filiali | Filial Mudiri | `saidov.bobur` | `Toyona#2026` |
-| **Malika Umarova** | Navoiy filiali | Sifat Nazorati | `umarova.malika` | `Toyona#2026` |
-| **Jahongir Rahimov** | Bosh ofis | IT Administrator | `rahimov.jahongir` | `Toyona#2026` |
-| **Sevara Yusupova** | Istiqlol filiali | Kassa Nazoratchisi | `yusupova.sevara` | `Toyona#2026` |
-
-*Barcha xodimlar ro'yxatini to'liq olish uchun: `GET /api/attendance/employees`*
+*Barcha xodimlar ro'yxatini olish uchun: `GET /api/attendance/employees`*
 
 ---
 

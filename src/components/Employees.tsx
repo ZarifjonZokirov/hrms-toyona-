@@ -108,8 +108,8 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     address: 'Toshkent sh., Yunusobod t.',
     birthDate: '1990-05-12',
     gender: 'Erkak',
-    username: '20090915',
-    password: 'ZZOKIROV2009@z'
+    username: '',
+    password: ''
   }
 ];
 

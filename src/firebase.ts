@@ -179,11 +179,24 @@ export function subscribeFirebaseUsers(callback: (users: any[]) => void): Unsubs
 
 export async function saveFirebaseUser(user: any): Promise<boolean> {
   try {
-    const docId = user.id ? `user-${user.id}` : `user-${Date.now()}`;
-    await setDoc(doc(db, 'users', docId), {
+    const isSuper = user.role === 'Super Admin' || user.id === 1 || user.id === '1' || user.firestoreId === 'user-1';
+    const rawId = isSuper
+      ? 'user-1'
+      : (user.firestoreId && String(user.firestoreId).startsWith('user-'))
+        ? String(user.firestoreId)
+        : user.id
+          ? (String(user.id).startsWith('user-') ? String(user.id) : `user-${user.id}`)
+          : `user-${Date.now()}`;
+    const payload: Record<string, any> = {
       ...user,
+      id: isSuper ? 1 : (user.id || rawId),
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    };
+    delete payload.firestoreId;
+    if (!payload.username) delete payload.username;
+    if (!payload.password) delete payload.password;
+
+    await setDoc(doc(db, 'users', rawId), payload, { merge: true });
     invalidateCache('users');
     return true;
   } catch (error) {
@@ -207,8 +220,8 @@ export async function deleteFirebaseUser(userId: string | number): Promise<boole
 export const CANONICAL_SUPER_ADMIN = {
   id: 1,
   name: 'Zarifjon Zokirov',
-  username: '20090915',
-  password: 'ZZOKIROV2009@z',
+  username: '',
+  password: '',
   email: 'zarifjon@toyonasavdo.uz',
   role: 'Super Admin',
   branch: 'Bosh Idora',
@@ -224,20 +237,16 @@ export const CANONICAL_SUPER_ADMIN = {
 };
 
 /**
- * Ensure Super Admin (20090915) is always saved in Firebase Firestore,
- * without deleting or touching any other newly created users!
+ * Super Admin hujjati Firestore'da mavjud bo'lsa, faqat uning roli va
+ * modullar ruxsatini tekshiradi. Login va parol faqat Firebase'da saqlanadi.
  */
 export async function ensureCanonicalSuperAdminInFirebase(): Promise<void> {
   try {
     const userDocRef = doc(db, 'users', 'user-1');
     const snap = await getDoc(userDocRef);
-    if (!snap.exists()) {
-      // Faqatgina hujjat Firestore'da mavjud bo'lmaganda birinchi marta yaratadi
-      await setDoc(userDocRef, CANONICAL_SUPER_ADMIN);
-    } else {
-      // Hujjat mavjud bo'lsa, foydalanuvchining o'zgartirgan joriy parolini ASLO BOSIB KETMAYDI!
+    if (snap.exists()) {
       const currentData = snap.data();
-      if (!currentData.role || !currentData.allowedModules) {
+      if (currentData.role !== 'Super Admin' || !Array.isArray(currentData.allowedModules) || currentData.allowedModules.length < 5) {
         await updateDoc(userDocRef, {
           role: 'Super Admin',
           allowedModules: CANONICAL_SUPER_ADMIN.allowedModules
@@ -251,42 +260,59 @@ export async function ensureCanonicalSuperAdminInFirebase(): Promise<void> {
 
 /**
  * Foydalanuvchi yoki xodim parolini o'zgartirganida, ushbu o'zgarishni
- * Firestore'dagi 'users' va 'employees' to'plamlariga bir vaqtda to'liq sinxron yozish.
- * Bu orqali parol koddagi fayllarga bog'liq bo'lmaydi, balki to'g'ridan-to'g'ri
- * Firebase va serverlar bo'ylab yangilanadi!
+ * Firestore'dagi 'users' va 'employees' to'plamlariga bir vaqtda to'liq sinxron yozish
+ * hamda bir xil loginli dublikat hujjatlarni tozalash.
  */
-export async function syncUserPasswordInBothCollections(username: string, newPassword: string): Promise<void> {
+export async function syncUserPasswordInBothCollections(username: string, newPassword: string, userId?: string | number): Promise<void> {
   const cleanUsername = String(username || '').trim().toLowerCase();
   const cleanPass = String(newPassword || '').trim();
   if (!cleanUsername || !cleanPass) return;
 
+  const nowIso = new Date().toISOString();
+  const userVariations = Array.from(new Set([String(username || '').trim(), cleanUsername])).filter(Boolean);
+
   try {
-    // 1. 'users' to'plamida yangilash
-    const qUsers = query(collection(db, 'users'), where('username', '==', cleanUsername));
+    // 1. 'users' to'plamida yangilash va dublikatlarni o'chirish
+    const qUsers = query(collection(db, 'users'), where('username', 'in', userVariations));
     const uSnap = await getDocs(qUsers);
-    for (const d of uSnap.docs) {
-      await updateDoc(doc(db, 'users', d.id), {
-        password: cleanPass,
-        updatedAt: new Date().toISOString()
-      });
+    const matchingDocs = uSnap.docs;
+
+    const primaryDoc = matchingDocs.find(d => d.id === 'user-1') || matchingDocs[0];
+    for (const d of matchingDocs) {
+      if (primaryDoc && d.id !== primaryDoc.id) {
+        // Dublikat hujjatda eski parol qolib ketmasligi uchun uni o'chiramiz
+        await deleteDoc(doc(db, 'users', d.id));
+      } else {
+        await updateDoc(doc(db, 'users', d.id), {
+          username: String(username || '').trim(),
+          password: cleanPass,
+          updatedAt: nowIso
+        });
+      }
     }
 
-    if (cleanUsername === '20090915') {
-      await setDoc(doc(db, 'users', 'user-1'), { password: cleanPass, updatedAt: new Date().toISOString() }, { merge: true });
+    if (userId === 1 || userId === '1' || userId === 'user-1' || userId === 'emp-101') {
+      await setDoc(doc(db, 'users', 'user-1'), {
+        username: String(username || '').trim(),
+        password: cleanPass,
+        updatedAt: nowIso
+      }, { merge: true });
+      await setDoc(doc(db, 'employees', 'emp-101'), {
+        username: String(username || '').trim(),
+        password: cleanPass,
+        updatedAt: nowIso
+      }, { merge: true });
     }
 
     // 2. 'employees' to'plamida ham yangilash (Face ID va Davomat uchun)
-    const qEmps = query(collection(db, 'employees'), where('username', '==', cleanUsername));
+    const qEmps = query(collection(db, 'employees'), where('username', 'in', userVariations));
     const eSnap = await getDocs(qEmps);
     for (const d of eSnap.docs) {
       await updateDoc(doc(db, 'employees', d.id), {
+        username: String(username || '').trim(),
         password: cleanPass,
-        updatedAt: new Date().toISOString()
+        updatedAt: nowIso
       });
-    }
-
-    if (cleanUsername === '20090915') {
-      await setDoc(doc(db, 'employees', 'emp-101'), { password: cleanPass, updatedAt: new Date().toISOString() }, { merge: true });
     }
 
     invalidateCache('users');
@@ -298,92 +324,69 @@ export async function syncUserPasswordInBothCollections(username: string, newPas
 
 /**
  * Query Firestore to check credentials for a given username and password.
- * Checks both 'users' and 'employees' collections for instant cross-device authentication.
+ *
+ * QOIDA: Login va parol faqat Firebase Firestore'dan tekshiriladi.
+ * Kodda hech qanday login yoki parol saqlanmaydi.
  */
 export async function verifyUserCredentialsInFirebase(username: string, password: string): Promise<any | null> {
-  const cleanUsername = username.trim().toLowerCase();
+  const rawUsername = username.trim();
+  const cleanUsername = rawUsername.toLowerCase();
   const cleanPassword = password.trim();
+  if (!cleanUsername || !cleanPassword) return null;
 
-
+  const toTime = (v: any): number => {
+    if (!v) return 0;
+    if (typeof v === 'string') { const t = Date.parse(v); return isNaN(t) ? 0 : t; }
+    if (typeof v?.toMillis === 'function') return v.toMillis();
+    if (typeof v?.seconds === 'number') return v.seconds * 1000;
+    return 0;
+  };
 
   try {
-    const userVariations = Array.from(new Set([username.trim(), cleanUsername])).filter(Boolean);
+    const userVariations = Array.from(new Set([rawUsername, cleanUsername])).filter(Boolean);
 
-    // 2. Fast targeted query in 'users' collection (consumes only matching doc, saving quota)
-    try {
-      const qUsers = query(collection(db, 'users'), where('username', 'in', userVariations), limit(5));
-      const usersSnap = await getDocs(qUsers);
-      for (const docSnap of usersSnap.docs) {
-        const u = docSnap.data();
-        const uUser = (u.username || '').trim().toLowerCase();
-        const uPass = (u.password || '').trim();
-        if (uUser === cleanUsername && uPass === cleanPassword) {
-          return { ...u, firestoreId: docSnap.id };
-        }
-      }
-    } catch (e) {
-      // Query fallback handled below
+    // 1. 'users' to'plamidan qidirish
+    const usersSnap = await getDocs(query(collection(db, 'users'), where('username', 'in', userVariations)));
+    const userDocs = usersSnap.docs.filter(d => (d.data().username || '').trim().toLowerCase() === cleanUsername);
+
+    if (userDocs.length > 0) {
+      const latest = userDocs.reduce((best, cur) =>
+        toTime(cur.data().updatedAt) >= toTime(best.data().updatedAt) ? cur : best
+      );
+      const u = latest.data();
+      return (u.password || '').trim() === cleanPassword
+        ? { ...u, firestoreId: latest.id }
+        : null;
     }
 
-    // 3. Fast targeted query in 'employees' collection
-    try {
-      const qEmps = query(collection(db, 'employees'), where('username', 'in', userVariations), limit(5));
-      const employeesSnap = await getDocs(qEmps);
-      for (const docSnap of employeesSnap.docs) {
-        const emp = docSnap.data();
-        const empUser = (emp.username || '').trim().toLowerCase();
-        const empPass = (emp.password || '').trim();
-        if (empUser === cleanUsername && empPass === cleanPassword && emp.isAccountActive !== false) {
-          const generatedUser = {
-            id: emp.staffId ? parseInt(emp.staffId.replace(/\D/g, '')) || Date.now() : Date.now(),
-            name: emp.fullName || 'Xodim',
-            username: emp.username,
-            password: emp.password,
-            email: emp.email || `${emp.username}@toyonasavdo.uz`,
-            role: 'Xodim',
-            branch: emp.branch || 'Bosh Idora',
-            status: 'Faol',
-            isOnline: true,
-            lastActive: 'Hozir',
-            allowedModules: ['employee_portal'],
-            firestoreId: docSnap.id
-          };
-          // Also save to users collection for faster access next time
-          saveFirebaseUser(generatedUser).catch(() => {});
-          return generatedUser;
-        }
+    // 2. 'users'da topilmasa, 'employees' to'plami tekshiriladi
+    const empSnap = await getDocs(query(collection(db, 'employees'), where('username', 'in', userVariations)));
+    const empDocs = empSnap.docs.filter(d => (d.data().username || '').trim().toLowerCase() === cleanUsername);
+    if (empDocs.length > 0) {
+      const latestEmp = empDocs.reduce((best, cur) =>
+        toTime(cur.data().updatedAt) >= toTime(best.data().updatedAt) ? cur : best
+      );
+      const emp = latestEmp.data();
+      if ((emp.password || '').trim() === cleanPassword && emp.isAccountActive !== false) {
+        return {
+          id: 100000 + (emp.staffId ? parseInt(String(emp.staffId).replace(/\D/g, '')) || 0 : Date.now() % 100000),
+          name: emp.fullName || 'Xodim',
+          username: emp.username,
+          email: emp.email || `${emp.username}@toyonasavdo.uz`,
+          role: 'Xodim',
+          branch: emp.branch || 'Bosh Idora',
+          status: 'Faol',
+          isOnline: true,
+          lastActive: 'Hozir',
+          allowedModules: ['employee_portal'],
+          firestoreId: latestEmp.id
+        };
       }
-    } catch (e) {
-      // Query fallback handled below
-    }
-
-    // 4. Safe fallback for edge cases where username might have different casing or field names
-    const fallbackUsersSnap = await getDocs(query(collection(db, 'users'), limit(50)));
-    for (const docSnap of fallbackUsersSnap.docs) {
-      const u = docSnap.data();
-      const uUser = (u.username || '').trim().toLowerCase();
-      const uPass = (u.password || '').trim();
-      if (uUser === cleanUsername && uPass === cleanPassword) {
-        return { ...u, firestoreId: docSnap.id };
-      }
-    }
-
-    // Fallback if Firestore does not have user-1 document yet
-    if (
-      (cleanUsername === '20090915' || cleanUsername === 'zarif_admin') && 
-      cleanPassword === CANONICAL_SUPER_ADMIN.password
-    ) {
-      return CANONICAL_SUPER_ADMIN;
+      return null;
     }
 
     return null;
   } catch (error) {
-    if (
-      (cleanUsername === '20090915' || cleanUsername === 'zarif_admin') && 
-      cleanPassword === CANONICAL_SUPER_ADMIN.password
-    ) {
-      return CANONICAL_SUPER_ADMIN;
-    }
     console.error("Firestore credential verification error:", error);
     return null;
   }

@@ -487,8 +487,8 @@ const defaultEmployees: ServerEmployee[] = [
     email: 'zarifjon@toyona.uz',
     photoUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg',
     avatarUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg',
-    username: '20090915',
-    password: 'ZZOKIROV2009@z',
+    username: '',
+    password: '', // Login va parol faqat Firebase'dan olinadi, kodda saqlanmaydi
     status: 'active',
     isAccountActive: true,
     accountCreatedAt: '2026-10-12',
@@ -1577,7 +1577,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       }
 
       // Agar xodim yoki super admin Firebase'da parolini yangilagan bo'lsa, uni to'g'ridan-to'g'ri Firebase hujjatidan yangilab olamiz:
-      if (usernameInput === '20090915' || matched.id === 'emp-101') {
+      if (matched.id === 'emp-101') {
+        matched.password = '';
         try {
           const userDoc = await readFirestoreDocViaPatch('users', 'user-1', true);
           if (userDoc?.password?.stringValue) {

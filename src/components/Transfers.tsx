@@ -111,8 +111,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
   // Determine if current user is Super Admin
   const effectiveIsSuperAdmin = isSuperAdmin ?? (
     currentUser?.role === 'Super Admin' || 
-    currentUser?.id === 1 || 
-    currentUser?.username === '20090915'
+    currentUser?.id === 1 
   );
 
   const [transfers, setTransfers] = useState<TransferItem[]>([]);

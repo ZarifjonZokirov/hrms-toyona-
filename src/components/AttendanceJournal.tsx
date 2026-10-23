@@ -469,16 +469,16 @@ export default function AttendanceJournal({
             schedule: e.schedule || '09:00 - 18:00',
             phone: e.phone,
             dailyRate: e.dailyRate || 280000,
-            login: e.username || e.login || (e.id === 'emp-101' ? '20090915' : undefined),
-            password: e.password || e.parol || (e.id === 'emp-101' ? 'ZZOKIROV2009@z' : undefined)
+            login: e.username || e.login || undefined,
+            password: e.password || e.parol || undefined
           }));
         } else {
           finalEmployees = INITIAL_EMPLOYEES.map(e => ({
             ...e,
             schedule: '09:00 - 18:00',
             dailyRate: 280000,
-            login: e.username || (e.id === 'emp-101' ? '20090915' : undefined),
-            password: e.password || (e.id === 'emp-101' ? 'ZZOKIROV2009@z' : undefined)
+            login: e.username || undefined,
+            password: e.password || undefined
           })) as EmployeeData[];
         }
         setEmployees(finalEmployees);

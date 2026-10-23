@@ -158,9 +158,6 @@ export default function App() {
           const map = new Map<string, UserItem>();
           parsed.forEach((u: any) => {
             const idKey = String(u.id || u.firestoreId || u.username);
-            if ((u.username === '20090915' || u.id === 1) && u.password === 'ZZOKIROV20009@z') {
-              u.password = 'ZZOKIROV2009@z';
-            }
             map.set(idKey, u);
           });
           return Array.from(map.values());
@@ -515,18 +512,9 @@ export default function App() {
     }
 
     try {
-      // 1. Check directly against Firebase Firestore for instant cross-device authentication
-      let foundUser = await verifyUserCredentialsInFirebase(inputUser, inputPass);
-
-      // 2. If not found in direct Firestore check, fallback to loaded users state
-      if (!foundUser) {
-        const localMatch = users.find(u => 
-          (u.username || '').trim().toLowerCase() === inputUser && (u.password || '').trim() === inputPass
-        );
-        if (localMatch) {
-          foundUser = localMatch;
-        }
-      }
+      // Faqat Firebase Firestore'dagi joriy parol tekshiriladi.
+      // Brauzer xotirasidagi (localStorage) eski nusxalar bilan kirish mumkin emas.
+      const foundUser = await verifyUserCredentialsInFirebase(loginUsername, inputPass);
 
       if (!foundUser) {
         setLoginError("Noto'g'ri login yoki parol! Iltimos, tekshirib qaytadan kiriting.");
@@ -541,8 +529,10 @@ export default function App() {
         lastActive: 'Hozir'
       };
 
-      // Sync online state to Firebase Firestore
-      saveFirebaseUser(activeUser).catch(() => {});
+      // Sync online state to Firebase Firestore (faqat 'users' to'plamidagi hisoblar uchun)
+      if (!String((activeUser as any).firestoreId || '').startsWith('emp-')) {
+        saveFirebaseUser(activeUser).catch(() => {});
+      }
 
       // Update local state and storage
       setUsers(prevUsers => {

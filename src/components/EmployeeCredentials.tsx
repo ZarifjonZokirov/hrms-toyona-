@@ -118,8 +118,8 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
 
     const normalizeEmployeeList = (rawList: any[]): EmployeeWithCredentials[] => {
       return rawList.map(emp => {
-        const uname = emp.username || (emp as any).login || (emp.id === 'emp-101' ? '20090915' : '');
-        const upass = emp.password || (emp as any).parol || (emp.id === 'emp-101' ? 'ZZOKIROV2009@z' : '');
+        const uname = emp.username || (emp as any).login || '';
+        const upass = emp.password || (emp as any).parol || '';
         return {
           ...emp,
           id: emp.id || (emp as any).firestoreId || 'emp-101',
@@ -269,7 +269,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
       await saveFirebaseEmployee(updatedEmp);
 
       // 2. Firebase va serverlar bo'ylab 'users' va 'employees' to'plamlarida darhol sinxronlashtirish
-      syncUserPasswordInBothCollections(formUsername.trim(), formPassword.trim()).catch(() => {});
+      syncUserPasswordInBothCollections(formUsername.trim(), formPassword.trim(), updatedEmp.id).catch(() => {});
 
       // Mahalliy holatni yangilash
       setEmployees(prev => prev.map(e => e.id === updatedEmp.id ? updatedEmp : e));

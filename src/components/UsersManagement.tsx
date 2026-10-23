@@ -73,8 +73,8 @@ export const INITIAL_USERS_DATA: UserItem[] = [
   { 
     id: 1, 
     name: 'Zarifjon Zokirov', 
-    username: '20090915', 
-    password: 'ZZOKIROV2009@z', 
+    username: '', 
+    password: '', 
     email: 'zarifjon@toyonasavdo.uz', 
     role: 'Super Admin', 
     branch: 'Bosh Idora', 
@@ -234,12 +234,12 @@ export default function UsersManagement({
     if (!selectedUserForCreds) return;
     const updatedUser = {
       ...selectedUserForCreds,
-      username: editUsername,
-      password: editPassword
+      username: editUsername.trim(),
+      password: editPassword.trim()
     };
     setUsers(users.map(u => u.id === selectedUserForCreds.id ? updatedUser : u));
     saveFirebaseUser(updatedUser).catch(() => {});
-    syncUserPasswordInBothCollections(editUsername, editPassword).catch(() => {});
+    syncUserPasswordInBothCollections(editUsername.trim(), editPassword.trim(), selectedUserForCreds.id).catch(() => {});
     setSelectedUserForCreds(null);
     showToast(`"${selectedUserForCreds.name}" uchun Login va Parol yangilandi!`);
   };
