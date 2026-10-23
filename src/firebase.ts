@@ -208,7 +208,7 @@ export const CANONICAL_SUPER_ADMIN = {
   id: 1,
   name: 'Zarifjon Zokirov',
   username: '20090915',
-  password: 'ZZOKIROV20009@z',
+  password: 'ZZOKIROV2009@z',
   email: 'zarifjon@toyonasavdo.uz',
   role: 'Super Admin',
   branch: 'Bosh Idora',
@@ -243,13 +243,7 @@ export async function verifyUserCredentialsInFirebase(username: string, password
   const cleanUsername = username.trim().toLowerCase();
   const cleanPassword = password.trim();
 
-  // 1. Direct match with Canonical Super Admin
-  if (
-    (cleanUsername === '20090915' || cleanUsername === 'zarif_admin') && 
-    (cleanPassword === 'ZZOKIROV20009@z' || cleanPassword === 'ZZOKIROV2009@z' || cleanPassword === 'Toyona2026!Admin')
-  ) {
-    return CANONICAL_SUPER_ADMIN;
-  }
+
 
   try {
     const userVariations = Array.from(new Set([username.trim(), cleanUsername])).filter(Boolean);
@@ -313,8 +307,22 @@ export async function verifyUserCredentialsInFirebase(username: string, password
       }
     }
 
+    // Fallback if Firestore does not have user-1 document yet
+    if (
+      (cleanUsername === '20090915' || cleanUsername === 'zarif_admin') && 
+      cleanPassword === CANONICAL_SUPER_ADMIN.password
+    ) {
+      return CANONICAL_SUPER_ADMIN;
+    }
+
     return null;
   } catch (error) {
+    if (
+      (cleanUsername === '20090915' || cleanUsername === 'zarif_admin') && 
+      cleanPassword === CANONICAL_SUPER_ADMIN.password
+    ) {
+      return CANONICAL_SUPER_ADMIN;
+    }
     console.error("Firestore credential verification error:", error);
     return null;
   }

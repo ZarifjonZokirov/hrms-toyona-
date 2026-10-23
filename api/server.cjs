@@ -1376,9 +1376,7 @@ async function configureRoutes(appInstance = app) {
       }
       const empPassword = (matched.password || "").trim();
       const passTrim = passwordInput.trim();
-      const isPasswordValid = Boolean(
-        empPassword && passTrim === empPassword || matched.id === "emp-101" && (passTrim === "ZZOKIROV20009@z" || passTrim === "ZZOKIROV2009@z")
-      );
+      const isPasswordValid = Boolean(empPassword && passTrim === empPassword);
       if (!isPasswordValid) {
         return res.status(401).json({
           success: false,

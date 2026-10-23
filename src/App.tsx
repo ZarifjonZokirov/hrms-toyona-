@@ -158,6 +158,9 @@ export default function App() {
           const map = new Map<string, UserItem>();
           parsed.forEach((u: any) => {
             const idKey = String(u.id || u.firestoreId || u.username);
+            if ((u.username === '20090915' || u.id === 1) && u.password === 'ZZOKIROV20009@z') {
+              u.password = 'ZZOKIROV2009@z';
+            }
             map.set(idKey, u);
           });
           return Array.from(map.values());
