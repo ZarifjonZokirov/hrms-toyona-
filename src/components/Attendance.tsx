@@ -132,7 +132,7 @@ export default function Attendance({
       checkInTime: '09:05',
       status: 'late',
       delayMinutes: 35,
-      notes: 'Kechikish qayd etildi'
+      notes: 'Delay qayd etildi'
     },
     {
       id: 'att-4',
@@ -293,7 +293,7 @@ export default function Attendance({
                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                <span>Eksport</span>
+                <span>Export</span>
               </button>
             </div>
           </div>
@@ -312,7 +312,7 @@ export default function Attendance({
                 <span className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Total Employees</span>
                 <CalendarDays className="w-4 h-4 text-slate-400" />
               </div>
-              <div className="text-xl font-extrabold text-slate-800 mt-1">248 nafar</div>
+              <div className="text-xl font-extrabold text-slate-800 mt-1">248 staff</div>
             </div>
 
             <div 
@@ -324,10 +324,10 @@ export default function Attendance({
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-emerald-700 text-[11px] font-semibold uppercase tracking-wider">Vaqtida Kelganlar</span>
+                <span className="text-emerald-700 text-[11px] font-semibold uppercase tracking-wider">On Time</span>
                 <UserCheck className="w-4 h-4 text-[#00A651]" />
               </div>
-              <div className="text-xl font-extrabold text-emerald-800 mt-1">224 nafar</div>
+              <div className="text-xl font-extrabold text-emerald-800 mt-1">224 staff</div>
             </div>
 
             <div 
@@ -339,10 +339,10 @@ export default function Attendance({
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-amber-700 text-[11px] font-semibold uppercase tracking-wider">Kechikkanlar</span>
+                <span className="text-amber-700 text-[11px] font-semibold uppercase tracking-wider">Late Arrivals</span>
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="text-xl font-extrabold text-amber-800 mt-1">18 nafar</div>
+              <div className="text-xl font-extrabold text-amber-800 mt-1">18 staff</div>
             </div>
 
             <div 
@@ -354,10 +354,10 @@ export default function Attendance({
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-rose-700 text-[11px] font-semibold uppercase tracking-wider">Kelmaganlar</span>
+                <span className="text-rose-700 text-[11px] font-semibold uppercase tracking-wider">Absent</span>
                 <UserX className="w-4 h-4 text-rose-500" />
               </div>
-              <div className="text-xl font-extrabold text-rose-800 mt-1">6 nafar</div>
+              <div className="text-xl font-extrabold text-rose-800 mt-1">6 staff</div>
             </div>
           </div>
 
@@ -395,13 +395,13 @@ export default function Attendance({
                 <tr className="border-b border-slate-100 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <th className="py-3 px-4 w-12 text-center">#</th>
                   <th className="py-3 px-4">Employee Full Name</th>
-                  <th className="py-3 px-4">Lavozim & Bo'lim</th>
+                  <th className="py-3 px-4">Position & Department</th>
                   <th className="py-3 px-4">Branch</th>
-                  <th className="py-3 px-4 text-center">Ish Vaqti</th>
-                  <th className="py-3 px-4 text-center">Kelgan Vaqti</th>
-                  <th className="py-3 px-4 text-center">Kechikish</th>
-                  <th className="py-3 px-4 text-center">Holat</th>
-                  <th className="py-3 px-4">Izoh & GPS Manba</th>
+                  <th className="py-3 px-4 text-center">Shift Hours</th>
+                  <th className="py-3 px-4 text-center">Arrival Time</th>
+                  <th className="py-3 px-4 text-center">Delay</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4">Notes & GPS Source</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">

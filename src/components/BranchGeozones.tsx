@@ -420,7 +420,7 @@ export default function BranchGeozones() {
       leafletMapRef.current = map;
     } catch (err: any) {
       console.error("Leaflet init error:", err);
-      setMapError("Xaritani yuklashda xatolik yuz berdi");
+      setMapError("Failed to initialize map");
     }
 
     return () => {
@@ -825,7 +825,7 @@ export default function BranchGeozones() {
                 {isSavingGeozone ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saqlanmoqda...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>
@@ -1083,7 +1083,7 @@ export default function BranchGeozones() {
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold rounded-xl transition-all shadow-sm cursor-pointer"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  <span>Parameterslarni Tahrirlash</span>
+                  <span>Parameterslarni Edit</span>
                 </button>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
@@ -1104,7 +1104,7 @@ export default function BranchGeozones() {
                     {isSavingGeozone ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Saqlanmoqda...</span>
+                        <span>Saving...</span>
                       </>
                     ) : (
                       <>
@@ -1154,7 +1154,7 @@ export default function BranchGeozones() {
               <div className="absolute top-2.5 left-2.5 right-2.5 sm:right-36 bg-amber-500/95 backdrop-blur-xs text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md z-10 flex items-center gap-2 animate-fadeIn">
                 <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
                 <span className="truncate">
-                  ✏️ Tahrirlash: Dumaloq yoki qizil markerni suring, chetidan radiusni o'zgartiring!
+                  ✏️ Edit: Dumaloq yoki qizil markerni suring, chetidan radiusni o'zgartiring!
                 </span>
               </div>
             ) : (

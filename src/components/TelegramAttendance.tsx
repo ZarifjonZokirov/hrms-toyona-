@@ -237,7 +237,7 @@ export default function TelegramAttendance() {
           // Within branch area
           startCameraStep();
         } else {
-          setErrorMessage(`Siz filial hududidan tashqaridasiz! Branchgacha masofa: ${Math.round(dist)} metr. Ruxsat etilgan radius: ${allowedRadius} metr.`);
+          setErrorMessage(`You are outside permitted branch geofence radius! Branchgacha masofa: ${Math.round(dist)} metr. Ruxsat etilgan radius: ${allowedRadius} metr.`);
         }
       },
       (err) => {
@@ -424,7 +424,7 @@ export default function TelegramAttendance() {
               <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
                 <User className="w-8 h-8" />
               </div>
-              <h2 className="text-lg font-bold text-white">Xodimni tanlang</h2>
+              <h2 className="text-lg font-bold text-white">Select Employee Profile</h2>
               <p className="text-xs text-slate-400 max-w-xs mx-auto">
                 Davomatdan o'tish uchun o'z ism-familiyangizni tanlang
               </p>
@@ -475,7 +475,7 @@ export default function TelegramAttendance() {
               <MapPin className="w-8 h-8 animate-bounce" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Geolokatsiya tekshirilmoqda</h2>
+              <h2 className="text-lg font-bold text-white">Verifying GPS Location</h2>
               <p className="text-xs text-slate-400 mt-1">
                 {selectedEmp?.fullName} ({selectedEmp?.branch})
               </p>
@@ -484,7 +484,7 @@ export default function TelegramAttendance() {
             {isVerifyingGeo ? (
               <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-700 flex items-center justify-center gap-3 text-xs text-slate-300">
                 <RefreshCw className="w-4 h-4 text-emerald-400 animate-spin" />
-                <span>GPS koordinatalaringiz aniqlanmoqda...</span>
+                <span>Detecting your current GPS coordinates...</span>
               </div>
             ) : errorMessage ? (
               <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl text-left space-y-3">
@@ -497,13 +497,13 @@ export default function TelegramAttendance() {
                     onClick={() => selectedEmp && verifyLocation(selectedEmp, geozones)}
                     className="flex-1 py-2 text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
                   >
-                    Qayta tekshirish
+                    Retry Verification
                   </button>
                   <button
                     onClick={() => setStep('select')}
                     className="py-2 px-4 text-xs font-semibold text-slate-400 hover:text-white"
                   >
-                    Bekor qilish
+                    Cancel
                   </button>
                 </div>
               </div>
@@ -517,7 +517,7 @@ export default function TelegramAttendance() {
             <div className="text-center">
               <h2 className="text-base font-bold text-white flex items-center justify-center gap-2">
                 <Camera className="w-5 h-5 text-emerald-400" />
-                <span>Yuzingizni kameraga to'g'rilang</span>
+                <span>Align Face Inside Camera Frame</span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 {selectedEmp?.fullName} • {selectedEmp?.branch}
@@ -544,10 +544,10 @@ export default function TelegramAttendance() {
               <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-[11px] font-bold text-white">
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Skanerlanmoqda: {scanProgress}%
+                  Scanning: {scanProgress}%
                 </span>
                 {matchScore !== null && (
-                  <span>Moslik: {matchScore}%</span>
+                  <span>Match Confidence: {matchScore}%</span>
                 )}
               </div>
             </div>
@@ -593,7 +593,7 @@ export default function TelegramAttendance() {
 
             <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-700/60 text-left space-y-2.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-400">Xodim:</span>
+                <span className="text-slate-400">Employee:</span>
                 <span className="font-bold text-white">{selectedEmp?.fullName}</span>
               </div>
               <div className="flex justify-between">

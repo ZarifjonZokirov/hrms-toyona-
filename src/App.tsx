@@ -273,14 +273,8 @@ export default function App() {
     }
   });
 
-  // Authentication states
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('toyonasavdo_auth_v2') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Authentication states (Temporarily bypassed for direct access / demo preview)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
 
   const [currentUserId, setCurrentUserId] = useState<number>(() => {
     try {
@@ -304,7 +298,7 @@ export default function App() {
       const match = users.find(u => String(u.id) === String(savedId) || (u.username && u.username.toLowerCase() === savedId.toLowerCase()));
       if (match) return match;
     }
-    return users.find(u => u.id === currentUserId || String(u.id) === String(currentUserId)) || users[0];
+    return users.find(u => u.id === currentUserId || String(u.id) === String(currentUserId)) || users[0] || (CANONICAL_SUPER_ADMIN as UserItem);
   }, [users, currentUserId]);
 
   // Ref to track last loaded user state to prevent overwriting during user transition
@@ -807,7 +801,8 @@ export default function App() {
     );
   }
 
-  if (!isAuthenticated) {
+  // Login screen temporarily disabled for direct seamless access
+  if (false && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen w-full bg-slate-100 dark:bg-slate-950 font-sans p-4 relative transition-colors">
         {/* Quick Theme Switcher on Login Screen */}

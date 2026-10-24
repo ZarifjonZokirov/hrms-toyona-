@@ -150,7 +150,7 @@ export default function AttendanceSettings() {
 
       {isLoading ? (
         <div className="p-12 text-center text-xs font-bold text-slate-500">
-          Sozlamalar yuklanmoqda...
+          Loading attendance configuration...
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
@@ -160,11 +160,11 @@ export default function AttendanceSettings() {
               <div className="flex items-center gap-2">
                 <Sun className="w-4 h-4 text-amber-500" />
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
-                  1. Rasmiy Ish Vaqti (Grafik)
+                  1. Official Shift Hours & Work Schedule
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-slate-400">
-                Kechikish hisobi shu vaqtdan boshlanadi
+                Late arrival tracking calculates past this threshold
               </span>
             </div>
 
@@ -182,7 +182,7 @@ export default function AttendanceSettings() {
                     className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-black text-slate-800 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Standart vaqt: 09:00</p>
+                <p className="text-[11px] text-slate-400 mt-1">Default time: 09:00</p>
               </div>
 
               <div>
@@ -198,12 +198,12 @@ export default function AttendanceSettings() {
                     className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-black text-slate-800 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Standart vaqt: 18:00</p>
+                <p className="text-[11px] text-slate-400 mt-1">Default time: 18:00</p>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-                  Imtiyozli vaqt (Grace Period):
+                  Grace Period (Leniency Buffer):
                 </label>
                 <div className="relative">
                   <input 
@@ -221,7 +221,7 @@ export default function AttendanceSettings() {
                     minutes
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Shu vaqtgacha jarima qo'llanilmaydi</p>
+                <p className="text-[11px] text-slate-400 mt-1">Delays within this buffer incur no deduction</p>
               </div>
             </div>
           </div>
@@ -232,18 +232,18 @@ export default function AttendanceSettings() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-rose-600" />
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
-                  2. Kechikish Jarimasi Hisobi
+                  2. Late Arrival Penalty Calculation
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-rose-600">
-                Avtomatik kadrlar hisobiga yoziladi
+                Calculated automatically for payroll deduction
               </span>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 block">
-                  Jarima hisoblash birligi (Rejim):
+                  Penalty Calculation Mode:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
@@ -260,10 +260,10 @@ export default function AttendanceSettings() {
                       </div>
                       <div>
                         <div className="text-xs font-black text-slate-800 dark:text-slate-100">
-                          Har minutes uchun jarima (Daqiqasiga)
+                          Per-Minute Penalty Tier
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
-                          Kechikkan har bir minutesga aniq stavka qo'llaniladi
+                          Fixed deduction applied for every minute late
                         </div>
                       </div>
                     </div>
@@ -286,10 +286,10 @@ export default function AttendanceSettings() {
                       </div>
                       <div>
                         <div className="text-xs font-black text-slate-800 dark:text-slate-100">
-                          Har hours uchun jarima (Soatiga)
+                          Hourly Penalty Tier
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
-                          Kechikish har hoursga yaxlitlanib hisoblanadi
+                          Delays rounded to nearest full hour
                         </div>
                       </div>
                     </div>
@@ -311,7 +311,7 @@ export default function AttendanceSettings() {
                     type="number" 
                     min="0"
                     step="500"
-                    placeholder="Masalan: 1000"
+                    placeholder="e.g. 5"
                     value={penaltyRate} 
                     onChange={(e) => {
                       const val = e.target.value;
@@ -326,14 +326,14 @@ export default function AttendanceSettings() {
                     className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-black text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 font-mono pr-16"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    so'm
+                    USD
                   </span>
                 </div>
                 <div className="mt-2 p-3 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 shrink-0 text-amber-600" />
                   <span>
-                    Misol: Xodim <b>20 minutes</b> kechikib kelsa (15 minuteslik imtiyozdan keyin 5 min kechikish): 
-                    <b> 5 min &times; {(Number(penaltyRate) || 0).toLocaleString()} so'm = {(5 * (Number(penaltyRate) || 0)).toLocaleString()} so'm</b> jarima yoziladi.
+                    Example: If employee arrives 20 minutes late (5 min past 15 min grace period): 
+                    <b> 5 min &times; {(Number(penaltyRate) || 0).toLocaleString()} USD = {(5 * (Number(penaltyRate) || 0)).toLocaleString()} USD</b> penalty will be deducted.
                   </span>
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function AttendanceSettings() {
               <div className="flex items-center gap-2">
                 <Coffee className="w-4 h-4 text-emerald-600" />
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
-                  3. Haftaning Weekly Rest Days
+                  3. Weekly Scheduled Rest Days
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-emerald-600">
@@ -375,7 +375,7 @@ export default function AttendanceSettings() {
                     >
                       <span>{d.label}</span>
                       <span className="text-[10px] font-normal opacity-90">
-                        {isChecked ? 'Dam kuni ✓' : 'Ish kuni'}
+                        {isChecked ? 'Dam kuni ✓' : 'Work Day'}
                       </span>
                     </button>
                   );

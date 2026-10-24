@@ -121,7 +121,7 @@ export interface DailyAttendance {
   date: string; // YYYY-MM-DD
   checkIn: string; // '--:--' if absent
   checkOut: string; // '--:--' if absent
-  status: 'On Time' | 'Late' | 'Kelmagan' | 'Rest Day' | 'Ketdi' | 'Ta\'tilda' | 'Ish yuzasidan safarda';
+  status: 'On Time' | 'Late' | 'Absent' | 'Rest Day' | 'Clocked Out' | 'On Leave' | 'Business Trip';
   delayMinutes: number;
   delayReason?: string; // e.g., 'Transport tirbandligi', 'Shaxsiy sabab', 'Boshqa'
   workedTime: string;
@@ -162,7 +162,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           penalty: '-',
           bonus: '-',
           netPay: "0 so'm",
-          notes: 'Yakshanba dam olish kuni'
+          notes: 'Sunday scheduled rest day'
         };
       }
 
@@ -174,9 +174,9 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           date: dateStr,
           checkIn: '--:--',
           checkOut: '--:--',
-          status: 'Ta\'tilda' as const,
+          status: 'On Leave' as const,
           delayMinutes: 0,
-          workedTime: 'Ta\'tilda',
+          workedTime: 'On Leave',
           penalty: '-',
           bonus: '-',
           netPay: `${dailyBase.toLocaleString()} so'm`,
@@ -196,13 +196,13 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           date: dateStr,
           checkIn: '--:--',
           checkOut: '--:--',
-          status: 'Ish yuzasidan safarda' as const,
+          status: 'Business Trip' as const,
           delayMinutes: 0,
-          workedTime: 'Safarda',
+          workedTime: 'Business Trip',
           penalty: '-',
           bonus: '-',
           netPay: `${dailyBase.toLocaleString()} so'm`,
-          notes: '🍃 Ish yuzasidan xizmat safari (5 kun: 05.10.2026 - 09.10.2026) — Samarqand branch taftishi',
+          notes: '🍃 Business trip (5 days: 05.10.2026 - 09.10.2026) — Branch inspection and audit',
           durationDays: 5,
           leaveType: 'trip',
           startDate: '2026-10-05',
@@ -220,7 +220,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           date: dateStr,
           checkIn: '--:--',
           checkOut: '--:--',
-          status: 'Kelmagan' as const,
+          status: 'Absent' as const,
           delayMinutes: 0,
           workedTime: '-',
           penalty: '-',
@@ -274,7 +274,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           penalty: '-',
           bonus: `${bonusAmount.toLocaleString()} so'm`,
           netPay: `${net.toLocaleString()} so'm`,
-          notes: 'O\'z vaqtida kelib ish vaqtini to\'liq o\'tagan'
+          notes: 'Punctual arrival and full shift completed'
         };
       }
     };
@@ -549,7 +549,7 @@ export default function AttendanceJournal({
       status: record.status,
       delayMinutes: record.delayMinutes || 0,
       notes: record.notes || '',
-      success: record.status !== 'Kelmagan'
+      success: record.status !== 'Absent'
     });
   };
 
@@ -608,11 +608,11 @@ export default function AttendanceJournal({
       if (record) {
         if (record.status === 'On Time') onTimeCount++;
         else if (record.status === 'Late') lateCount++;
-        else if (record.status === 'Kelmagan') absentCount++;
-        else if (record.status === 'Ketdi') leftCount++;
+        else if (record.status === 'Absent') absentCount++;
+        else if (record.status === 'Clocked Out') leftCount++;
         else if (record.status === 'Rest Day') restCount++;
-        else if (record.status === 'Ta\'tilda') leaveCount++;
-        else if (record.status === 'Ish yuzasidan safarda') tripCount++;
+        else if (record.status === 'On Leave') leaveCount++;
+        else if (record.status === 'Business Trip') tripCount++;
       } else {
         if (isSunday) {
           restCount++;
@@ -668,12 +668,12 @@ export default function AttendanceJournal({
     if (stats.leftCount > 0) data.push({ name: 'Ishdan ketgan', value: stats.leftCount, fill: '#059669' });
     if (stats.lateCount > 0) data.push({ name: 'Late', value: stats.lateCount, fill: '#f59e0b' });
     if (stats.leaveCount > 0) data.push({ name: 'Ta\'tilda (Samolyot)', value: stats.leaveCount, fill: '#0284c7' });
-    if (stats.tripCount > 0) data.push({ name: 'Safarda (Barg)', value: stats.tripCount, fill: '#10b981' });
-    if (stats.restCount > 0) data.push({ name: 'Dam olish', value: stats.restCount, fill: '#3b82f6' });
-    if (stats.absentCount > 0) data.push({ name: 'Ishga kelmagan', value: stats.absentCount, fill: '#f43f5e' });
+    if (stats.tripCount > 0) data.push({ name: 'Business Trip', value: stats.tripCount, fill: '#10b981' });
+    if (stats.restCount > 0) data.push({ name: 'Rest Day', value: stats.restCount, fill: '#3b82f6' });
+    if (stats.absentCount > 0) data.push({ name: 'Absent', value: stats.absentCount, fill: '#f43f5e' });
 
     if (data.length === 0) {
-      data.push({ name: 'Kelmagan', value: stats.total, fill: '#f43f5e' });
+      data.push({ name: 'Absent', value: stats.total, fill: '#f43f5e' });
     }
 
     return data;
@@ -682,7 +682,7 @@ export default function AttendanceJournal({
   // Export report (Excel and PDF)
   const handleExportAttendance = (format: 'excel' | 'pdf') => {
     const fileName = `NovaHR_Attendance_${selectedDate}`;
-    const headers = ['№', 'F.I.Sh', 'Branch', 'Department', 'Designation', 'Keldi', 'Ketdi', 'Status', 'Jami ishlagan', 'Qo\'lga tegadi'];
+    const headers = ['№', 'F.I.Sh', 'Branch', 'Department', 'Designation', 'Keldi', 'Ketdi', 'Status', 'Total Worked', 'Qo\'lga tegadi'];
     const data = filteredEmployees.map((emp, idx) => {
       const record = dateAttendanceMap.get(emp.id);
       return [
@@ -708,17 +708,17 @@ export default function AttendanceJournal({
           'Branch': emp.branch,
           'Department': emp.department,
           'Designation': emp.position,
-          'Sana': selectedDate,
+          'Date': selectedDate,
           'Ish jadvali': emp.schedule,
           'Kelish vaqti': record?.checkIn || '--:--',
           'Ketish vaqti': record?.checkOut || '--:--',
           'Statusi': record?.status || 'Ishga kelmagan',
-          'Jami ishlagan': record?.workedTime || '-',
-          'Kechikish (min)': record?.delayMinutes || 0,
+          'Total Worked': record?.workedTime || '-',
+          'Delay Duration (min)': record?.delayMinutes || 0,
           'Jarima': record?.penalty || '-',
           'Bonus': record?.bonus || '-',
           'Qo\'lga tegadi': record?.netPay || '0 so\'m',
-          'Izoh': record?.notes || '-'
+          'Remarks': record?.notes || '-'
         };
       });
       exportToExcel(excelData, fileName);
@@ -732,7 +732,7 @@ export default function AttendanceJournal({
   const handleExportCSV = () => {
     const headers = [
       'T/r', 'Ism va familiya', 'Branch', 'Department', 'Designation', 
-      'Sana', 'Ish vaqti', 'Keldi', 'Ketdi', 'Status', 'Jami ishlagan', 'Jarimasi', 'Bonusi', 'Qo\'lga tegadi'
+      'Date', 'Ish vaqti', 'Keldi', 'Ketdi', 'Status', 'Total Worked', 'Jarimasi', 'Bonusi', 'Qo\'lga tegadi'
     ];
 
     const rows = filteredEmployees.map((emp, idx) => {
@@ -913,7 +913,7 @@ export default function AttendanceJournal({
               className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              <span>Branch Geozonalar</span>
+              <span>Branch Geozones</span>
             </button>
           )}
 
@@ -1195,7 +1195,7 @@ export default function AttendanceJournal({
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
-          <span>Kechikishlar (Latelar)</span>
+          <span>Delay Durationlar (Latelar)</span>
           <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'late' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>{stats.lateCount}</span>
         </button>
 
@@ -1223,7 +1223,7 @@ export default function AttendanceJournal({
           }`}
         >
           <Plane className="w-3.5 h-3.5" />
-          <span>Ta'tilda (Samolyot)</span>
+          <span>On Leave (Flight ✈️)</span>
           <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'leave' ? 'bg-white/20 text-white' : 'bg-sky-100 text-sky-800'}`}>{stats.leaveCount}</span>
         </button>
 
@@ -1237,7 +1237,7 @@ export default function AttendanceJournal({
           }`}
         >
           <Leaf className="w-3.5 h-3.5" />
-          <span>Safarda (Barg)</span>
+          <span>Business Trip (Field 🍃)</span>
           <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'trip' ? 'bg-white/20 text-white' : 'bg-teal-100 text-teal-800'}`}>{stats.tripCount}</span>
         </button>
       </div>
@@ -1248,7 +1248,7 @@ export default function AttendanceJournal({
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <b>Kechikishlar nazorati faol:</b> Today jami <b>{stats.lateCount} nafar</b> xodim kechikib kelgan. Xodim ustiga bosib batafsil sabab va jarimani ko'rishingiz mumkin.
+              <b>Delay Durationlar nazorati faol:</b> Today jami <b>{stats.lateCount} nafar</b> xodim kechikib kelgan. Xodim ustiga bosib batafsil sabab va jarimani ko'rishingiz mumkin.
             </span>
           </div>
           <button 
@@ -1256,7 +1256,7 @@ export default function AttendanceJournal({
             onClick={() => setStatusFilter('all')} 
             className="text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer shrink-0 ml-2"
           >
-            Filtrni tozalash
+            Clear Filter
           </button>
         </div>
       )}
@@ -1267,16 +1267,16 @@ export default function AttendanceJournal({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 w-14">T/r</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Ism va familiya</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 w-14">#</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Employee Name</th>
                 <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Branch</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Bo'lim</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Department</th>
                 <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Designation</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Ish vaqti</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Keldi</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Ketdi</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Attendance</th>
-                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Ta'til / Safar</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Shift Schedule</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Check-In</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500">Check-Out</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Status</th>
+                <th className="py-3.5 px-5 text-xs font-bold text-slate-500 text-center">Leave / Trip</th>
               </tr>
             </thead>
             <tbody>
@@ -1302,7 +1302,7 @@ export default function AttendanceJournal({
                             e.stopPropagation();
                             handleOpenFaceIdModal(emp, 'photos');
                           }}
-                          title="📸 Face ID etalon rasmini joylash / almashtirish"
+                          title="📸 Upload or change biometric Face ID reference photo"
                         >
                           {emp.avatarUrl ? (
                             <img src={emp.avatarUrl} alt={emp.fullName} className="w-full h-full object-cover" />
@@ -1321,14 +1321,14 @@ export default function AttendanceJournal({
                     <td className="py-3.5 px-5 text-sm text-slate-600 font-medium">{emp.branch}</td>
                     <td className="py-3.5 px-5 text-sm text-slate-600 font-medium">{emp.department}</td>
                     <td className="py-3.5 px-5 text-sm text-slate-600 font-medium">{emp.position}</td>
-                    <td className="py-3.5 px-5 text-sm text-slate-600 font-medium">{isRest ? 'Dam olish' : emp.schedule}</td>
+                    <td className="py-3.5 px-5 text-sm text-slate-600 font-medium">{isRest ? 'Rest Day' : emp.schedule}</td>
                     <td className="py-3.5 px-5 text-sm font-mono font-medium">
                       {record?.checkIn && record?.checkIn !== '--:--' ? (
                         status === 'Late' ? (
                           <div className="flex flex-col">
                             <span className="text-amber-700 font-bold font-mono">{record.checkIn}</span>
                             <span className="text-[10px] text-amber-600 font-black whitespace-nowrap">
-                              +{formatDelayShort(record.delayMinutes || 0)} kech qoldi
+                              +{formatDelayShort(record.delayMinutes || 0)} late
                             </span>
                           </div>
                         ) : (
@@ -1343,24 +1343,24 @@ export default function AttendanceJournal({
                     </td>
                     <td className="py-3.5 px-5 text-center">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                        status === 'On Time' || status === 'Ketdi' ? 'bg-emerald-100 text-emerald-700' :
+                        status === 'On Time' || status === 'Clocked Out' ? 'bg-emerald-100 text-emerald-700' :
                         status === 'Late' ? 'bg-amber-100 text-amber-700 border border-amber-300' :
                         status === 'Rest Day' ? 'bg-blue-100 text-blue-700' :
-                        status === 'Ta\'tilda' ? 'bg-sky-100 text-sky-800 border border-sky-300' :
-                        status === 'Ish yuzasidan safarda' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                        status === 'On Leave' ? 'bg-sky-100 text-sky-800 border border-sky-300' :
+                        status === 'Business Trip' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
                         'bg-rose-100 text-rose-700'
                       }`}>
-                        {status === 'Ta\'tilda' ? (
+                        {status === 'On Leave' ? (
                           <>
                             <Plane className="w-3.5 h-3.5 text-sky-600 shrink-0" />
                             <span>Ta'tilda {record?.durationDays ? `(${record.durationDays} kun)` : ''}</span>
                           </>
-                        ) : status === 'Ish yuzasidan safarda' ? (
+                        ) : status === 'Business Trip' ? (
                           <>
                             <Leaf className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                             <span>Safarda {record?.durationDays ? `(${record.durationDays} kun)` : ''}</span>
                           </>
-                        ) : status === 'Ketdi' ? (
+                        ) : status === 'Clocked Out' ? (
                           'Ishdan ketgan'
                         ) : (
                           status
@@ -1553,9 +1553,9 @@ function EmployeeDetailView({
   const metrics = useMemo(() => {
     const totalDays = records.length;
     const workDays = records.filter(r => r.status !== 'Rest Day').length;
-    const onTimeDays = records.filter(r => r.status === 'On Time' || r.status === 'Ketdi').length;
+    const onTimeDays = records.filter(r => r.status === 'On Time' || r.status === 'Clocked Out').length;
     const lateDays = records.filter(r => r.status === 'Late').length;
-    const absentDays = records.filter(r => r.status === 'Kelmagan').length;
+    const absentDays = records.filter(r => r.status === 'Absent').length;
     const restDays = records.filter(r => r.status === 'Rest Day').length;
 
     const onTimePct = workDays > 0 ? Math.round((onTimeDays / workDays) * 100) : 0;
@@ -1566,7 +1566,7 @@ function EmployeeDetailView({
     const delayHours = Math.floor(totalDelayMinutes / 60);
     const delayMins = totalDelayMinutes % 60;
 
-    // Kechikish sabablari
+    // Delay Duration sabablari
     const reasonCounts: Record<string, number> = {
       'Transport': 0,
       'Tirbandlik': 0,
@@ -1609,14 +1609,16 @@ function EmployeeDetailView({
 
   const getStatusStyle = (status: string) => {
     switch(status) {
+      case 'Clocked Out':
       case 'Ketdi':
       case 'On Time': return 'bg-emerald-100 text-emerald-700';
       case 'Late': return 'bg-amber-100 text-amber-700';
       case 'Kelmagan':
       case 'Absent': return 'bg-rose-100 text-rose-700';
-      case 'Rest Day':
-      case 'Dam olish': return 'bg-blue-100 text-blue-700';
+      case 'Rest Day': return 'bg-blue-100 text-blue-700';
+      case 'On Leave':
       case 'Ta\'tilda': return 'bg-sky-100 text-sky-800 border border-sky-200';
+      case 'Business Trip':
       case 'Ish yuzasidan safarda': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
       default: return 'bg-slate-100 text-slate-700';
     }
@@ -1624,14 +1626,16 @@ function EmployeeDetailView({
 
   const getRowBorder = (status: string) => {
     switch(status) {
+      case 'Clocked Out':
       case 'Ketdi':
       case 'On Time': return 'border-l-[4px] border-l-emerald-500';
       case 'Late': return 'border-l-[4px] border-l-amber-500';
       case 'Kelmagan':
       case 'Absent': return 'border-l-[4px] border-l-rose-500';
-      case 'Rest Day':
-      case 'Dam olish': return 'border-l-[4px] border-l-blue-500';
+      case 'Rest Day': return 'border-l-[4px] border-l-blue-500';
+      case 'On Leave':
       case 'Ta\'tilda': return 'border-l-[4px] border-l-sky-500';
+      case 'Business Trip':
       case 'Ish yuzasidan safarda': return 'border-l-[4px] border-l-emerald-600';
       default: return 'border-l-[4px] border-l-slate-200';
     }
@@ -1690,7 +1694,7 @@ function EmployeeDetailView({
           <button 
             onClick={onBack} 
             className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors cursor-pointer text-slate-600"
-            title="Ortga qaytish"
+            title="Back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -1792,7 +1796,7 @@ function EmployeeDetailView({
             className="flex items-center gap-2 px-3.5 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 cursor-pointer transition-colors shadow-sm"
           >
             <Edit className="w-4 h-4" />
-            Tahrirlash
+            Edit
           </button>
         </div>
       </div>
@@ -1851,21 +1855,21 @@ function EmployeeDetailView({
           <table className="w-full text-left border-collapse bg-white">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500">
-                <th className="py-3 px-6">Sana</th>
+                <th className="py-3 px-6">Date</th>
                 <th className="py-3 px-6">Ish vaqti</th>
-                <th className="py-3 px-6">Kirish</th>
-                <th className="py-3 px-6">Chiqish</th>
+                <th className="py-3 px-6">Check-in</th>
+                <th className="py-3 px-6">Check-out</th>
                 <th className="py-3 px-6 text-center">Status</th>
-                <th className="py-3 px-6 text-center">Jami ishlagan</th>
-                <th className="py-3 px-6 text-center">Kunlik jarimasi</th>
-                <th className="py-3 px-6 text-center">Kunlik bonusi</th>
-                <th className="py-3 px-6 text-right">Qo'lga tegadi</th>
+                <th className="py-3 px-6 text-center">Total Worked</th>
+                <th className="py-3 px-6 text-center">Daily Penalty</th>
+                <th className="py-3 px-6 text-center">Daily Bonus</th>
+                <th className="py-3 px-6 text-right">Net Payout</th>
                 <th className="py-3 px-6 text-center">Amallar</th>
               </tr>
             </thead>
             <tbody>
               {records.map((att, attIdx) => {
-                const statusDisplay = att.status === 'Kelmagan' ? 'Absent' : att.status === 'Rest Day' ? 'Dam olish' : att.status;
+                const statusDisplay = att.status === 'Absent' ? 'Absent' : att.status === 'Rest Day' ? 'Rest Day' : att.status;
                 const isRest = att.status === 'Rest Day';
                 
                 return (
@@ -1874,7 +1878,7 @@ function EmployeeDetailView({
                       {att.date.split('-').reverse().join('.').substring(0, 5)}
                     </td>
                     <td className="py-3.5 px-6 text-sm text-slate-600 font-medium">
-                      {isRest ? 'Dam olish' : employee.schedule}
+                      {isRest ? 'Rest Day' : employee.schedule}
                     </td>
                     <td className="py-3.5 px-6 text-sm text-slate-700 font-mono font-medium">{att.checkIn}</td>
                     <td className="py-3.5 px-6 text-sm text-slate-700 font-mono font-medium">{att.checkOut}</td>
@@ -1967,7 +1971,7 @@ function EmployeeDetailView({
                         data={[
                           { name: 'Vaqtida', value: metrics.onTimePct, fill: '#10b981' },
                           { name: 'Late', value: metrics.latePct, fill: '#f59e0b' },
-                          { name: 'Kelmagan', value: metrics.absentPct, fill: '#f43f5e' },
+                          { name: 'Absent', value: metrics.absentPct, fill: '#f43f5e' },
                         ]}
                         cx="50%" cy="50%" innerRadius={60} outerRadius={80} startAngle={90} endAngle={-270} dataKey="value" stroke="none"
                       >
@@ -1990,9 +1994,9 @@ function EmployeeDetailView({
                 </div>
               </div>
               
-              {/* Doughnut 2: Kechikish sabablari */}
+              {/* Doughnut 2: Delay Duration sabablari */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
-                <h4 className="font-bold text-slate-700 mb-2 text-sm">Kechikish sabablari</h4>
+                <h4 className="font-bold text-slate-700 mb-2 text-sm">Delay Duration sabablari</h4>
                 <div className="w-[180px] h-[180px] relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -2028,13 +2032,13 @@ function EmployeeDetailView({
                   <h4 className="font-bold text-slate-700 mb-3 text-sm">Moliyaviy intizom</h4>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                      <span className="text-xs font-semibold text-emerald-800">Rag'batlantirish (Bonus):</span>
+                      <span className="text-xs font-semibold text-emerald-800">Performance Incentive (Bonus):</span>
                       <span className="text-sm font-black text-emerald-700">
                         {records.filter(r => r.bonus && r.bonus !== '-').length * 15000} so'm
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-rose-50/60 rounded-xl border border-rose-100">
-                      <span className="text-xs font-semibold text-rose-800">Kechikish jarimalari:</span>
+                      <span className="text-xs font-semibold text-rose-800">Delay Duration jarimalari:</span>
                       <span className="text-sm font-black text-rose-700">
                         {metrics.lateDays * 15000} so'm
                       </span>
@@ -2068,11 +2072,11 @@ function EmployeeDetailView({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/30 border-b border-slate-200 text-xs font-bold text-slate-500">
-                      <th className="py-3 px-6">Sana</th>
+                      <th className="py-3 px-6">Date</th>
                       <th className="py-3 px-6">Rejadagi vaqt</th>
                       <th className="py-3 px-6">Haqiqiy kelgan vaqti</th>
-                      <th className="py-3 px-6">Kechikish miqdori</th>
-                      <th className="py-3 px-6">Kechikish sababi</th>
+                      <th className="py-3 px-6">Delay Duration miqdori</th>
+                      <th className="py-3 px-6">Delay Duration sababi</th>
                       <th className="py-3 px-6 text-right">Ushlab qolingan jarima</th>
                     </tr>
                   </thead>
@@ -2086,7 +2090,7 @@ function EmployeeDetailView({
                         <td className="py-3 px-6 text-sm text-amber-700 font-mono font-bold">{lateRecord.checkIn}</td>
                         <td className="py-3 px-6">
                           <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-bold">
-                            +{formatDelayText(lateRecord.delayMinutes)} kech qoldi
+                            +{formatDelayText(lateRecord.delayMinutes)} late
                           </span>
                         </td>
                         <td className="py-3 px-6 text-sm text-slate-700 font-medium">{lateRecord.delayReason || 'Transport tirbandligi'}</td>
@@ -2201,13 +2205,13 @@ function EmployeeDetailView({
                 onClick={() => setShowConfigModal(false)}
                 className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50"
               >
-                Bekor qilish
+                Cancel
               </button>
               <button 
                 onClick={() => setShowConfigModal(false)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow"
               >
-                Saqlash
+                Save
               </button>
             </div>
           </div>
@@ -2288,7 +2292,7 @@ function LeaveTripModal({
     "Yillik mehnat ta'tili",
     "Ish haqi saqlanmaydigan ta'til",
     "O'quv ta'tili (Sessiya)",
-    "Sog'liqni tiklash / Sanatoriy",
+    "Sog'liqni tiklash / Datetoriy",
     "Oilaviy sharoit tufayli"
   ];
 
@@ -2362,7 +2366,7 @@ function LeaveTripModal({
             }`}
           >
             <Plane className="w-4 h-4 text-sky-600" />
-            <span>Ta'tilda (Samolyot)</span>
+            <span>On Leave (Flight ✈️)</span>
           </button>
 
           <button
@@ -2378,7 +2382,7 @@ function LeaveTripModal({
             }`}
           >
             <Leaf className="w-4 h-4 text-emerald-600" />
-            <span>Safarda (Barg)</span>
+            <span>Business Trip (Field 🍃)</span>
           </button>
         </div>
 
@@ -2498,7 +2502,7 @@ function LeaveTripModal({
           }`}>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 shrink-0 text-slate-500" />
-              <span>Sanalar oralig'i:</span>
+              <span>Datelar oralig'i:</span>
             </div>
             <span className="font-mono text-xs font-extrabold">
               {startDate.split('-').reverse().join('.')} &rarr; {endDate.split('-').reverse().join('.')} ({durationDays} kun)
@@ -2556,7 +2560,7 @@ function LeaveTripModal({
               onClick={onClose}
               className="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors"
             >
-              Bekor qilish
+              Cancel
             </button>
             <button
               type="submit"
@@ -2700,13 +2704,13 @@ function AddEmployeeModal({
               onClick={onClose}
               className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
             >
-              Bekor qilish
+              Cancel
             </button>
             <button 
               type="submit"
               className="px-5 py-2 bg-[#00A651] hover:bg-[#009247] text-white rounded-lg text-xs font-bold shadow cursor-pointer transition-colors"
             >
-              Saqlash va qo'shish
+              Save va qo'shish
             </button>
           </div>
         </form>
@@ -2727,7 +2731,7 @@ function EditRecordModal({
   const [checkIn, setCheckIn] = useState(record.checkIn);
   const [checkOut, setCheckOut] = useState(record.checkOut);
   const [status, setStatus] = useState<DailyAttendance['status']>(record.status);
-  const [durationDays, setDurationDays] = useState<number>(record.durationDays || (record.status === 'Ish yuzasidan safarda' ? 3 : 7));
+  const [durationDays, setDurationDays] = useState<number>(record.durationDays || (record.status === 'Business Trip' ? 3 : 7));
   const [delayReason, setDelayReason] = useState(record.delayReason || '');
   const [penalty, setPenalty] = useState(record.penalty);
   const [bonus, setBonus] = useState(record.bonus);
@@ -2737,14 +2741,14 @@ function EditRecordModal({
     e.preventDefault();
     onSave({
       ...record,
-      checkIn: (status === 'Ta\'tilda' || status === 'Ish yuzasidan safarda') ? '--:--' : checkIn,
-      checkOut: (status === 'Ta\'tilda' || status === 'Ish yuzasidan safarda') ? '--:--' : checkOut,
+      checkIn: (status === 'On Leave' || status === 'Business Trip') ? '--:--' : checkIn,
+      checkOut: (status === 'On Leave' || status === 'Business Trip') ? '--:--' : checkOut,
       status,
       delayReason,
       penalty,
       bonus,
       notes,
-      durationDays: (status === 'Ta\'tilda' || status === 'Ish yuzasidan safarda') ? durationDays : record.durationDays
+      durationDays: (status === 'On Leave' || status === 'Business Trip') ? durationDays : record.durationDays
     });
   };
 
@@ -2764,7 +2768,7 @@ function EditRecordModal({
         <form onSubmit={handleSave} className="space-y-3.5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Kirish vaqti</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Check-in vaqti</label>
               <input 
                 type="text" 
                 value={checkIn} 
@@ -2773,7 +2777,7 @@ function EditRecordModal({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Chiqish vaqti</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Check-out vaqti</label>
               <input 
                 type="text" 
                 value={checkOut} 
@@ -2800,7 +2804,7 @@ function EditRecordModal({
             </select>
           </div>
 
-          {(status === 'Ta\'tilda' || status === 'Ish yuzasidan safarda') && (
+          {(status === 'On Leave' || status === 'Business Trip') && (
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
               <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                 Davomiyligi (Necha kun?):
@@ -2815,7 +2819,7 @@ function EditRecordModal({
                   className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-black text-center bg-white"
                 />
                 <span className="text-xs font-bold text-slate-600">
-                  kun ({status === 'Ta\'tilda' ? 'Samolyot ✈️' : 'Barg 🍃'})
+                  kun ({status === 'On Leave' ? 'Samolyot ✈️' : 'Barg 🍃'})
                 </span>
               </div>
             </div>
@@ -2823,7 +2827,7 @@ function EditRecordModal({
 
           {status === 'Late' && (
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Kechikish sababi</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Delay Duration sababi</label>
               <input 
                 type="text" 
                 value={delayReason} 
@@ -2856,7 +2860,7 @@ function EditRecordModal({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 mb-1 block">Izoh</label>
+            <label className="text-xs font-bold text-slate-700 mb-1 block">Remarks</label>
             <input 
               type="text" 
               value={notes} 
@@ -2871,13 +2875,13 @@ function EditRecordModal({
               onClick={onClose}
               className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600"
             >
-              Bekor qilish
+              Cancel
             </button>
             <button 
               type="submit"
               className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow"
             >
-              Saqlash
+              Save
             </button>
           </div>
         </form>
@@ -3000,7 +3004,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
                 Jarima va Dam Olish Kunlari Sozlamalari
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Kechikishlar uchun jarima turi, stavkasi va dam olish kunlarini boshqarish
+                Delay Durationlar uchun jarima turi, stavkasi va dam olish kunlarini boshqarish
               </p>
             </div>
           </div>
@@ -3113,7 +3117,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
               </div>
             </div>
 
-            {/* Dam olish kunlari (Hafta kunlari) */}
+            {/* Rest Day kunlari (Hafta kunlari) */}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <label className="text-xs font-black text-slate-800 block">
                 Haftaning dam olish kunlari:
@@ -3191,7 +3195,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
                 onClick={onClose}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
-                Bekor qilish
+                Cancel
               </button>
               <button 
                 type="submit"
@@ -3343,7 +3347,7 @@ function GpsCheckInModal({
       penalty: delayCalculation.penaltyStr,
       bonus: delayCalculation.bonusStr,
       netPay: delayCalculation.netPayStr,
-      notes: `GPS orqali tasdiqlandi (${branchZone.name}, ${distanceMeters}m masofadan). ${delayCalculation.isLate ? `${formatDelayText(delayCalculation.delayMinutes)} kech qoldi` : "O'z vaqtida keldi"}`
+      notes: `GPS orqali tasdiqlandi (${branchZone.name}, ${distanceMeters}m masofadan). ${delayCalculation.isLate ? `${formatDelayText(delayCalculation.delayMinutes)} late` : "O'z vaqtida keldi"}`
     };
 
     onRecord(newRec);
@@ -3367,7 +3371,7 @@ function GpsCheckInModal({
       date: dateStr,
       checkIn: '08:52',
       checkOut: checkInTime,
-      status: 'Ketdi',
+      status: 'Clocked Out',
       delayMinutes: 0,
       workedTime: '8 h 35 min',
       penalty: '-',
@@ -3377,7 +3381,7 @@ function GpsCheckInModal({
     };
 
     onRecord(newRec);
-    showToast(`${selectedEmp.fullName} uchun 'Ketdim' (Chiqish vaqti: ${checkInTime}) muvaffaqiyatli saqlandi!`);
+    showToast(`${selectedEmp.fullName} uchun 'Ketdim' (Check-out vaqti: ${checkInTime}) muvaffaqiyatli saqlandi!`);
     onClose();
   };
 
@@ -3445,12 +3449,12 @@ function GpsCheckInModal({
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-600">
-              <span>Branch radiusi:</span>
+              <span>Branch radius:</span>
               <span className="font-bold text-emerald-700">{branchZone.radius} metr</span>
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-600">
-              <span>Branch koordinatalari:</span>
+              <span>Branch GPS coordinates:</span>
               <span className="font-mono text-[11px] font-semibold text-slate-700">
                 Lat: {branchZone.lat.toFixed(4)}, Lon: {branchZone.lon.toFixed(4)}
               </span>
@@ -3568,10 +3572,10 @@ function GpsCheckInModal({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-amber-600" />
-                    Kechikish holati:
+                    Delay Duration holati:
                   </span>
                   <span className="text-xs font-black px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-mono">
-                    +{formatDelayText(delayCalculation.delayMinutes)} kech qoldi
+                    +{formatDelayText(delayCalculation.delayMinutes)} late
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-amber-800">
@@ -3579,7 +3583,7 @@ function GpsCheckInModal({
                   <span className="font-bold text-rose-600">{delayCalculation.penaltyStr}</span>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-amber-900 block mb-1">Kechikish sababi:</label>
+                  <label className="text-[11px] font-bold text-amber-900 block mb-1">Delay Duration sababi:</label>
                   <input 
                     type="text"
                     value={delayReason}
@@ -3595,7 +3599,7 @@ function GpsCheckInModal({
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   O'z vaqtida kelgan (On Time (No Delay))
                 </span>
-                <span className="font-bold text-emerald-700">+15,000 so'm bonus</span>
+                <span className="font-bold text-emerald-700">+$15 Performance Bonus</span>
               </div>
             )}
           </div>
@@ -3608,7 +3612,7 @@ function GpsCheckInModal({
             onClick={onClose}
             className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer transition-all"
           >
-            Bekor qilish
+            Cancel
           </button>
 
           <button
@@ -3784,7 +3788,7 @@ function FaceIdIntegrationModal({
         await fetchPhotoRequests();
       }
     } catch (err) {
-      showToast("O'chirishda xatolik");
+      showToast("Deleteda xatolik");
     }
   };
 
@@ -3865,7 +3869,7 @@ function FaceIdIntegrationModal({
       const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
       setPhotoPreview(dataUrl);
       stopCamera();
-      showToast("📸 Fotosurat suratga olindi! Quyidagi 'Saqlash' tugmasini bosing.");
+      showToast("📸 Fotosurat suratga olindi! Quyidagi 'Save' tugmasini bosing.");
     }
   };
 
@@ -3877,7 +3881,7 @@ function FaceIdIntegrationModal({
         const result = reader.result as string;
         setPhotoPreview(result);
         stopCamera();
-        showToast("📁 Fayldan rasm yuklandi! Quyidagi 'Saqlash' tugmasini bosing.");
+        showToast("📁 Fayldan rasm yuklandi! Quyidagi 'Save' tugmasini bosing.");
       };
       reader.readAsDataURL(file);
     }
@@ -3888,7 +3892,7 @@ function FaceIdIntegrationModal({
     setPhotoPreview(urlInput.trim());
     setUrlInput('');
     stopCamera();
-    showToast("🌐 Rasm havolasi kiritildi! 'Saqlash' tugmasini bosing.");
+    showToast("🌐 Rasm havolasi kiritildi! 'Save' tugmasini bosing.");
   };
 
   const handleSavePhotoToEmployee = async (targetEmp: EmployeeData) => {
@@ -4018,7 +4022,7 @@ function FaceIdIntegrationModal({
       penalty: scanResult.isLate ? `- ${delayAmount.toLocaleString()} so'm` : '-',
       bonus: !scanResult.isLate && scanResult.action === 'check_in' ? "15,000 so'm" : '-',
       netPay: scanResult.isLate ? `${(dailyBase - delayAmount).toLocaleString()} so'm` : `${(dailyBase + 15000).toLocaleString()} so'm`,
-      notes: `Face ID & AI terminali orqali tasdiqlandi (Moslik: 98.8%, ${selectedEmp.branch}). ${scanResult.isLate ? `${formatDelayText(scanResult.delayMinutes)} kech qoldi` : "O'z vaqtida kelgan"}`
+      notes: `Face ID & AI terminali orqali tasdiqlandi (Moslik: 98.8%, ${selectedEmp.branch}). ${scanResult.isLate ? `${formatDelayText(scanResult.delayMinutes)} late` : "O'z vaqtida kelgan"}`
     };
 
     onRecord(newRec);
@@ -4386,7 +4390,7 @@ function FaceIdIntegrationModal({
 
                               <div className="mt-3 text-white">
                                 <span className="text-xs font-bold block">
-                                  {photoPreview ? "Yangi olingan surat tayyor! Quyidagi 'Saqlash' tugmasini bosing" : "Joriy Face ID etalon surati"}
+                                  {photoPreview ? "Yangi olingan surat tayyor! Quyidagi 'Save' tugmasini bosing" : "Joriy Face ID etalon surati"}
                                 </span>
                                 <span className="text-[11px] text-slate-400">
                                   Narigi AI "Keldim" bosilganda yuzni tekshirish uchun ushbu rasmni yuklaydi
@@ -4461,7 +4465,7 @@ function FaceIdIntegrationModal({
                               {isSavingPhoto
                                 ? "Saqlanmoqda..."
                                 : photoPreview
-                                ? `💾 Ushbu Etalon Rasmni Saqlash (${currentPhotoEmp.fullName})`
+                                ? `💾 Ushbu Etalon Rasmni Save (${currentPhotoEmp.fullName})`
                                 : "Suratni saqlash uchun yuqoridagi 1 yoki 2-usul bilan rasm tanlang"}
                             </span>
                           </button>
@@ -4686,7 +4690,7 @@ function FaceIdIntegrationModal({
                         }`}
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>"Keldim" (Kirish)</span>
+                        <span>"Keldim" (Check-in)</span>
                       </button>
 
                       <button
@@ -4699,7 +4703,7 @@ function FaceIdIntegrationModal({
                         }`}
                       >
                         <Clock className="w-3.5 h-3.5" />
-                        <span>"Ketdim" (Chiqish)</span>
+                        <span>"Ketdim" (Check-out)</span>
                       </button>
                     </div>
                   </div>
@@ -4708,7 +4712,7 @@ function FaceIdIntegrationModal({
                 {/* Selected Employee Credential Card & Geozone Verification */}
                 <div className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-600">Kirish hisobi:</span>
+                    <span className="font-bold text-slate-600">Check-in hisobi:</span>
                     <span className="px-2 py-0.5 rounded bg-slate-100 font-mono font-bold text-slate-800">
                       {getEmployeeCredentials(selectedEmp).login}
                     </span>
@@ -4807,7 +4811,7 @@ function FaceIdIntegrationModal({
                   </div>
 
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="text-xs font-bold text-slate-700">Branch & Manzil:</span>
+                    <span className="text-xs font-bold text-slate-700">Branch & Location:</span>
                     <span className="text-xs font-bold text-emerald-700">{selectedEmp?.branch} (Radius ichida ✅)</span>
                   </div>
 
@@ -4819,14 +4823,14 @@ function FaceIdIntegrationModal({
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">Davomat va Kechikish holati:</span>
+                    <span className="text-xs font-bold text-slate-700">Davomat va Delay Duration holati:</span>
                     <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${
                       scanResult.isLate 
                         ? 'bg-amber-100 text-amber-800 border border-amber-300' 
                         : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                     }`}>
                       {scanResult.isLate 
-                        ? `Late (+${formatDelayShort(scanResult.delayMinutes)} kech qoldi)` 
+                        ? `Late (+${formatDelayShort(scanResult.delayMinutes)} late)` 
                         : (scanResult.action === 'check_out' ? "Ishdan ketdi ✅" : "O'z vaqtida kelgan ✅")}
                     </span>
                   </div>
@@ -5009,7 +5013,7 @@ function FaceIdIntegrationModal({
                               type="button"
                               onClick={() => handleDeleteRequest(req.id)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                              title="Tarixdan o'chirish"
+                              title="Audit Historydan o'chirish"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -5104,7 +5108,7 @@ function FaceIdIntegrationModal({
                                     }}
                                     className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
                                   >
-                                    Bekor qilish
+                                    Cancel
                                   </button>
                                   <button
                                     type="button"
