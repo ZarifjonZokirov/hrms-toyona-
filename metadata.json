@@ -1,0 +1,8 @@
+{
+  "name": "To'yona savdo",
+  "description": "To'yona savdo HRMS boshqaruv tizimi va nomzodlar anketalari monitoringi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

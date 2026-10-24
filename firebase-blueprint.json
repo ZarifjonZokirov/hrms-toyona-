@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user account with role, branch, and authentication credentials",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "Unique numeric or string ID" },
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name" },
+        "username": { "type": "string", "description": "Login username" },
+        "password": { "type": "string", "description": "Password or hash" },
+        "email": { "type": "string", "description": "Email address" },
+        "role": { "type": "string", "enum": ["Super Admin", "HR Menejer", "Filial Mudiri", "Xodim", "admin", "hr", "manager", "employee"], "description": "User access role" },
+        "branch": { "type": "string", "description": "Assigned branch name" },
+        "department": { "type": "string", "description": "Assigned department" },
+        "employeeId": { "type": "string", "description": "Associated employee record ID" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "avatarUrl": { "type": "string", "description": "Profile picture URL or base64" },
+        "status": { "type": "string", "enum": ["Faol", "Nofaol", "Muzlatilgan"], "description": "Account status" },
+        "isOnline": { "type": "boolean", "description": "Online indicator" },
+        "lastActive": { "type": "string", "description": "Last active timestamp or label" },
+        "allowedModules": { "type": "array", "description": "List of accessible module IDs" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "Last update ISO string" }
+      },
+      "required": ["username", "role", "status"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Company employee master record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Document ID or employee code" },
+        "employeeId": { "type": "string", "description": "Unique HR badge or employee code (e.g. EMP-1001)" },
+        "fullName": { "type": "string", "description": "Full name" },
+        "phone": { "type": "string", "description": "Primary phone" },
+        "email": { "type": "string", "description": "Corporate or personal email" },
+        "gender": { "type": "string", "enum": ["Erkak", "Ayol"], "description": "Gender" },
+        "birthDate": { "type": "string", "description": "Birth date YYYY-MM-DD" },
+        "hireDate": { "type": "string", "description": "Hire date YYYY-MM-DD" },
+        "position": { "type": "string", "description": "Job title / position" },
+        "department": { "type": "string", "description": "Department name" },
+        "branch": { "type": "string", "description": "Branch name" },
+        "manager": { "type": "string", "description": "Direct supervisor name" },
+        "scheduleId": { "type": "string", "description": "Work schedule ID" },
+        "schedule": { "type": "string", "description": "Schedule summary like 09:00 - 18:00" },
+        "salary": { "type": "number", "description": "Monthly base salary in UZS" },
+        "dailyRate": { "type": "number", "description": "Daily calculated rate in UZS" },
+        "avatarUrl": { "type": "string", "description": "Photo URL" },
+        "status": { "type": "string", "enum": ["Faol", "Bo'shagan", "Ta'tilda"], "description": "Employment status" },
+        "leaveBalance": { "type": "number", "description": "Remaining annual leave days" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["fullName", "position", "branch", "status"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily employee attendance and checkout logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "checkIn": { "type": "string", "description": "HH:MM" },
+        "checkOut": { "type": "string", "description": "HH:MM" },
+        "checkInTimestamp": { "type": "string", "description": "Server ISO timestamp" },
+        "checkOutTimestamp": { "type": "string", "description": "Server ISO timestamp" },
+        "status": { "type": "string", "enum": ["Vaqtida kelgan", "Kech qolgan", "Kelmagan", "Ketdi", "Dam olish kuni", "Bayram kuni", "Ta'tilda"] },
+        "delayMinutes": { "type": "number" },
+        "delayReason": { "type": "string" },
+        "workedMinutes": { "type": "number" },
+        "workedTime": { "type": "string" },
+        "isEarlyLeave": { "type": "boolean" },
+        "penalty": { "type": "string" },
+        "bonus": { "type": "string" },
+        "netPay": { "type": "string" },
+        "notes": { "type": "string" },
+        "branch": { "type": "string" },
+        "department": { "type": "string" },
+        "editedBy": { "type": "string" },
+        "editedAt": { "type": "string" },
+        "editReason": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["employeeId", "date", "status"]
+    },
+    "LeaveRequest": {
+      "title": "LeaveRequest",
+      "description": "Employee vacation, sick leave, or personal time-off requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "department": { "type": "string" },
+        "branch": { "type": "string" },
+        "type": { "type": "string", "enum": ["Yillik ta'til", "Kasallik ta'tili", "Oilaviy sabab", "Boshqa ruxsat"] },
+        "startDate": { "type": "string", "description": "YYYY-MM-DD" },
+        "endDate": { "type": "string", "description": "YYYY-MM-DD" },
+        "daysCount": { "type": "number" },
+        "reason": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["Kutilmoqda", "Tasdiqlangan", "Rad etilgan"] },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string" },
+        "reviewComment": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["employeeId", "type", "startDate", "endDate", "status"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Company organizational departments",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "manager": { "type": "string" },
+        "employeesCount": { "type": "number" },
+        "color": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Branch": {
+      "title": "Branch",
+      "description": "Physical stores and offices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "region": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "manager": { "type": "string" },
+        "category": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "radiusMeters": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "region"]
+    },
+    "WorkSchedule": {
+      "title": "WorkSchedule",
+      "description": "Shift and work hours rules",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "startTime": { "type": "string", "description": "e.g. 09:00" },
+        "endTime": { "type": "string", "description": "e.g. 18:00" },
+        "gracePeriodMinutes": { "type": "number", "description": "e.g. 15 minutes tolerance" },
+        "workDays": { "type": "array", "description": "Array of day numbers 1..6" },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "startTime", "endTime"]
+    },
+    "Holiday": {
+      "title": "Holiday",
+      "description": "Official company and public holidays",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "type": { "type": "string", "enum": ["Davlat bayrami", "Kompaniya dam olish kuni"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "date"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Real-time alerts for employees and HR",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "targetRole": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["attendance", "leave", "announcement", "system"] },
+        "read": { "type": "boolean" },
+        "relatedId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "message", "type", "read"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Security and compliance trail for changes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "action": { "type": "string" },
+        "module": { "type": "string" },
+        "performedBy": { "type": "string" },
+        "performedById": { "type": "string" },
+        "role": { "type": "string" },
+        "targetId": { "type": "string" },
+        "details": { "type": "string" },
+        "reason": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["action", "performedBy", "timestamp"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Global HRMS configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "companyName": { "type": "string" },
+        "defaultGraceMinutes": { "type": "number" },
+        "dailyLatePenaltyRate": { "type": "number" },
+        "defaultAnnualLeaveDays": { "type": "number" },
+        "timeZone": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["companyName"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User accounts with roles, credentials and module permissions"
+    },
+    "/employees/{employeeId}": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "Company employees with branch and department assignments"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/Attendance" },
+      "description": "Attendance and delay logs"
+    },
+    "/leaveRequests/{leaveRequestId}": {
+      "schema": { "$ref": "#/entities/LeaveRequest" },
+      "description": "Employee leave requests and approvals"
+    },
+    "/departments/{departmentId}": {
+      "schema": { "$ref": "#/entities/Department" },
+      "description": "Organizational departments"
+    },
+    "/branches/{branchId}": {
+      "schema": { "$ref": "#/entities/Branch" },
+      "description": "Branches list and metadata"
+    },
+    "/workSchedules/{scheduleId}": {
+      "schema": { "$ref": "#/entities/WorkSchedule" },
+      "description": "Work shifts, working hours, and grace limits"
+    },
+    "/holidays/{holidayId}": {
+      "schema": { "$ref": "#/entities/Holiday" },
+      "description": "National and internal holidays"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "In-app notifications and alerts"
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "HR audit records"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Setting" },
+      "description": "Global HRMS system settings"
+    }
+  }
+}
