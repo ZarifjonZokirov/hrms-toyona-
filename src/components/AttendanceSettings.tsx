@@ -100,7 +100,7 @@ export default function AttendanceSettings() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast('✅ Jarima, ish vaqti va dam kunlari muvaffaqiyatli saqlandi!');
+        showToast('✅ Work shifts, penalties, and rest days saved successfully!');
       } else {
         showToast(data.message || 'Error yuz berdi');
       }
@@ -128,11 +128,11 @@ export default function AttendanceSettings() {
               <Clock className="w-5 h-5" />
             </span>
             <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              Ish Vaqti, Jarimalar & Weekly Rest Days
+              Work Hours, Penalty Rates & Rest Days
             </h1>
           </div>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            Latelar uchun har bir minutes yoki hourslik jarima miqdori, rasmiy ish hourslari va dam kunlarini belgilash
+            Configure official shift hours, late penalty rates per minute/hour, and weekly rest days
           </p>
         </div>
 
@@ -154,7 +154,7 @@ export default function AttendanceSettings() {
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
-          {/* 1-BLOK: ISH VAQTI VA GRAFIK */}
+          {/* 1-BLOCK: WORK SHIFTS & SCHEDULE */}
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
@@ -226,7 +226,7 @@ export default function AttendanceSettings() {
             </div>
           </div>
 
-          {/* 2-BLOK: HAR BIR DAQIQA VA SOAT UCHUN JARIMA */}
+          {/* 2-BLOCK: LATE ARRIVAL PENALTIES */}
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
@@ -303,8 +303,8 @@ export default function AttendanceSettings() {
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
                   {penaltyType === 'minute' 
-                    ? '1 minutes kechikish uchun jarima stavkasi (so\'mda):' 
-                    : '1 hours kechikish uchun jarima stavkasi (so\'mda):'}
+                    ? 'Penalty rate per minute of delay ($):' 
+                    : 'Penalty rate per hour of delay ($):'}
                 </label>
                 <div className="relative max-w-sm">
                   <input 
@@ -340,7 +340,7 @@ export default function AttendanceSettings() {
             </div>
           </div>
 
-          {/* 3-BLOK: HAFTALIK DAM OLISH KUNLARI */}
+          {/* 3-BLOCK: WEEKLY REST DAYS */}
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
@@ -350,13 +350,13 @@ export default function AttendanceSettings() {
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-emerald-600">
-                Dam kunlarida kelganda jarima olinmaydi
+                No penalties applied on designated rest days
               </span>
             </div>
 
             <div>
               <p className="text-xs text-slate-500 mb-3">
-                Employees dam oladigan kunlarni belgilang (Bir yoki bir nechta kunni tanlash mumkin):
+                Select employee rest days (multiple days can be selected):
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
@@ -375,7 +375,7 @@ export default function AttendanceSettings() {
                     >
                       <span>{d.label}</span>
                       <span className="text-[10px] font-normal opacity-90">
-                        {isChecked ? 'Dam kuni ✓' : 'Work Day'}
+                        {isChecked ? 'Rest Day ✓' : 'Work Day'}
                       </span>
                     </button>
                   );
@@ -390,17 +390,17 @@ export default function AttendanceSettings() {
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
-                  4. Rasmiy Bayram va Maxsus Dam Olish Sanalari
+                  4. Public Holidays & Company Non-Working Days
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-slate-400">
-                Yil davomidagi alohida dam sanalari
+                Designated non-working dates throughout the calendar year
               </span>
             </div>
 
             <div>
               <p className="text-xs text-slate-500 mb-3">
-                Yangi yil, Navro'z, Hayit yoki boshqa rasmiy bayram kunlarini qo'shing:
+                Add official federal, national, or corporate holidays:
               </p>
 
               <div className="flex gap-2 max-w-md mb-3">
@@ -440,12 +440,12 @@ export default function AttendanceSettings() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">Hali maxsus bayram sanalari qo'shilmagan.</p>
+                <p className="text-xs text-slate-400 italic">No special holiday dates added yet.</p>
               )}
             </div>
           </div>
 
-          {/* SAQLASH TUGMASI */}
+          {/* SAVE SETTINGS BUTTON */}
           <div className="pt-2 flex items-center justify-end gap-3">
             <button
               type="submit"
@@ -453,7 +453,7 @@ export default function AttendanceSettings() {
               className="px-6 py-3 bg-[#00A651] hover:bg-[#008f45] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all flex items-center gap-2 active:scale-98"
             >
               <Save className="w-4 h-4" />
-              <span>{isSaving ? "Saving..." : "Barcha Settingsni Save Policy Changes"}</span>
+              <span>{isSaving ? "Saving..." : "Save All Policy Changes"}</span>
             </button>
           </div>
         </form>

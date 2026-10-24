@@ -56,24 +56,24 @@ async function getFirestoreCandidates(): Promise<any[]> {
         const docId = item.document.name.split('/').pop() || '';
         return {
           id: docId,
-          fullName: f.fullName?.stringValue || f.fio?.stringValue || 'Noma\'lum',
+          fullName: f.fullName?.stringValue || f.fio?.stringValue || 'Not Specified',
           fatherName: f.fatherName?.stringValue || f.middleName?.stringValue || f.otasiningIsmi?.stringValue || '',
-          jobPosition: f.jobPosition?.stringValue || f.position?.stringValue || f.lavozim?.stringValue || 'Noma\'lum',
-          position: f.jobPosition?.stringValue || f.position?.stringValue || f.lavozim?.stringValue || 'Noma\'lum',
+          jobPosition: f.jobPosition?.stringValue || f.position?.stringValue || f.lavozim?.stringValue || 'Not Specified',
+          position: f.jobPosition?.stringValue || f.position?.stringValue || f.lavozim?.stringValue || 'Not Specified',
           targetBranch: f.targetBranch?.stringValue || f.branch?.stringValue || f.filial?.stringValue || '',
-          region: f.region?.stringValue || f.viloyat?.stringValue || 'Noma\'lum',
+          region: f.region?.stringValue || f.viloyat?.stringValue || 'Not Specified',
           address: f.exactAddress?.stringValue || f.address?.stringValue || f.manzil?.stringValue || '',
           exactAddress: f.exactAddress?.stringValue || f.address?.stringValue || f.manzil?.stringValue || '',
           phone1: f.phone1?.stringValue || f.phone?.stringValue || f.telefon1?.stringValue || '',
           phone2: f.phone2?.stringValue || f.telefon2?.stringValue || '',
-          gender: f.gender?.stringValue || f.jinsi?.stringValue || 'Erkak',
+          gender: f.gender?.stringValue || f.jinsi?.stringValue || 'Male',
           dob: f.dob?.stringValue || f.birthYear?.stringValue || f.tugilganYili?.stringValue || '',
           maritalStatus: f.maritalStatus?.stringValue || f.oilaviyHolati?.stringValue || f.turmushHolati?.stringValue || '',
           educationLevel: f.educationLevel?.stringValue || f.degree?.stringValue || f.education?.stringValue || f.malumoti?.stringValue || '',
           graduationYear: f.graduationYear?.stringValue || f.gradYear?.stringValue || f.tugatganYili?.stringValue || '',
           pastExperience: f.pastExperience?.stringValue || f.candidateMessage?.stringValue || f.tajriba?.stringValue || '',
           candidateMessage: f.pastExperience?.stringValue || f.candidateMessage?.stringValue || f.tajriba?.stringValue || '',
-          status: f.status?.stringValue || 'Yangi nomzod',
+          status: f.status?.stringValue || 'New Applicant',
           submittedAt: f.submittedAt?.stringValue || f.date?.stringValue || new Date().toISOString(),
           date: f.date?.stringValue || new Date().toLocaleDateString('uz-UZ'),
           photoUrl: f.photoUrl?.stringValue || '',
@@ -98,24 +98,24 @@ async function saveFirestoreCandidate(candidate: any): Promise<boolean> {
 
   const fields: Record<string, any> = {
     id: { stringValue: String(docId) },
-    fullName: { stringValue: String(candidate.fullName || candidate.fio || 'Noma\'lum') },
+    fullName: { stringValue: String(candidate.fullName || candidate.fio || 'Not Specified') },
     fatherName: { stringValue: String(candidate.fatherName || candidate.middleName || '') },
-    jobPosition: { stringValue: String(candidate.jobPosition || candidate.position || 'Noma\'lum') },
-    position: { stringValue: String(candidate.jobPosition || candidate.position || 'Noma\'lum') },
+    jobPosition: { stringValue: String(candidate.jobPosition || candidate.position || 'Not Specified') },
+    position: { stringValue: String(candidate.jobPosition || candidate.position || 'Not Specified') },
     targetBranch: { stringValue: String(candidate.targetBranch || candidate.branch || candidate.filial || '') },
-    region: { stringValue: String(candidate.region || candidate.viloyat || 'Noma\'lum') },
+    region: { stringValue: String(candidate.region || candidate.viloyat || 'Not Specified') },
     address: { stringValue: String(candidate.address || candidate.exactAddress || '') },
     exactAddress: { stringValue: String(candidate.exactAddress || candidate.address || '') },
     phone1: { stringValue: String(candidate.phone1 || candidate.phone || '') },
     phone2: { stringValue: String(candidate.phone2 || '') },
-    gender: { stringValue: String(candidate.gender || 'Erkak') },
+    gender: { stringValue: String(candidate.gender || 'Male') },
     dob: { stringValue: String(candidate.dob || candidate.birthYear || '') },
     maritalStatus: { stringValue: String(candidate.maritalStatus || '') },
     educationLevel: { stringValue: String(candidate.educationLevel || candidate.education || '') },
     graduationYear: { stringValue: String(candidate.graduationYear || '') },
     pastExperience: { stringValue: String(candidate.pastExperience || candidate.candidateMessage || candidate.tajriba || '') },
     candidateMessage: { stringValue: String(candidate.pastExperience || candidate.candidateMessage || candidate.tajriba || '') },
-    status: { stringValue: String(candidate.status || 'Yangi nomzod') },
+    status: { stringValue: String(candidate.status || 'New Applicant') },
     submittedAt: { stringValue: String(candidate.submittedAt || new Date().toISOString()) },
     date: { stringValue: String(candidate.date || new Date().toLocaleDateString('uz-UZ')) }
   };
@@ -228,11 +228,11 @@ let branchGeozones: BranchGeozone[] = [
   },
   {
     id: 'branch-6',
-    name: 'Bosh ofis',
+    name: 'Headquarters',
     lat: 40.55441164458834,
     lon: 71.10088818840296,
     radius: 500,
-    address: 'Qo\'qon shahar, Markaziy bino, Bosh ofis',
+    address: 'Qo\'qon shahar, Markaziy bino, Headquarters',
     updatedAt: new Date().toISOString()
   },
   {
@@ -241,7 +241,7 @@ let branchGeozones: BranchGeozone[] = [
     lat: 40.8750,
     lon: 71.1070,
     radius: 120,
-    address: 'Pop shahar, Markaziy ko\'cha, 18-uy',
+    address: 'Midtown Campus, Markaziy ko\'cha, 18-uy',
     updatedAt: new Date().toISOString()
   },
   {
@@ -277,13 +277,13 @@ let branchGeozones: BranchGeozone[] = [
     lat: 40.3700,
     lon: 70.8150,
     radius: 120,
-    address: 'O\'zbekiston tumani, Yaypan shahar, Mustaqillik shoh ko\'chasi',
+    address: 'O\'zbekiston tumani, West Coast Hub, Mustaqillik shoh ko\'chasi',
     updatedAt: new Date().toISOString()
   }
 ];
 
 const LOCAL_GEOZONES_FILE = path.join(process.cwd(), 'branch_geozones.json');
-const TMP_GEOZONES_FILE = path.join(os.tmpdir(), 'toyonasavdo_geozones.json');
+const TMP_GEOZONES_FILE = path.join(os.tmpdir(), 'novahr_geozones.json');
 
 function saveLocalGeozones(zones: BranchGeozone[]) {
   const data = JSON.stringify(zones);
@@ -359,7 +359,7 @@ async function readFirestoreDocViaPatch(collectionName: string, docId: string, f
 
 // Persistent attendance check-in logs (disk + memory + Firestore sync)
 const LOCAL_LOGS_FILE = path.join(process.cwd(), 'attendance_logs.json');
-const TMP_LOGS_FILE = path.join(os.tmpdir(), 'toyonasavdo_attendance_logs.json');
+const TMP_LOGS_FILE = path.join(os.tmpdir(), 'novahr_attendance_logs.json');
 
 function saveLocalAttendance(logs: any[]) {
   const data = JSON.stringify(logs.slice(0, 1000));
@@ -420,12 +420,12 @@ function calculatePenaltyAmount(delayMinutes: number, settings: PenaltySettings 
 
 export function formatDelayText(delayMinutes: number): string {
   const d = Math.max(0, Number(delayMinutes) || 0);
-  if (d <= 0) return "Kechikish yo'q";
-  if (d < 60) return `${d} daqiqa`;
+  if (d <= 0) return "No delay";
+  if (d < 60) return `${d} min`;
   const hours = Math.floor(d / 60);
   const remainingMins = d % 60;
-  if (remainingMins === 0) return `${hours} soat`;
-  return `${hours} soat ${remainingMins} daqiqa`;
+  if (remainingMins === 0) return `${hours} hr`;
+  return `${hours} hr ${remainingMins} min`;
 }
 
 // Default Employees with credentials for instant offline & high-speed access
@@ -454,7 +454,7 @@ interface ServerEmployee {
 }
 
 const LOCAL_EMPLOYEES_FILE = path.join(process.cwd(), 'employees_cache.json');
-const TMP_EMPLOYEES_FILE = path.join(os.tmpdir(), 'toyonasavdo_employees_cache.json');
+const TMP_EMPLOYEES_FILE = path.join(os.tmpdir(), 'novahr_employees_cache.json');
 
 function saveLocalEmployees(list: ServerEmployee[]) {
   const data = JSON.stringify(list);
@@ -479,12 +479,12 @@ const defaultEmployees: ServerEmployee[] = [
   {
     id: 'emp-101',
     staffId: 'TS-0001',
-    fullName: 'Zarifjon Zokirov',
-    position: 'Bosh Direktor (CEO)',
+    fullName: 'Alexander Mitchell',
+    position: 'Chief Executive Officer (CEO)',
     department: 'Ijroiya Boshqaruvi',
-    branch: 'Bosh ofis',
+    branch: 'Headquarters',
     phone: '+998 90 123 45 67',
-    email: 'zarifjon@toyona.uz',
+    email: 'admin@novahr.com',
     photoUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg',
     avatarUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg',
     username: '',
@@ -495,7 +495,7 @@ const defaultEmployees: ServerEmployee[] = [
     salary: '25,000,000 UZS',
     hireDate: '2020-03-15',
     birthDate: '1990-05-12',
-    gender: 'Erkak',
+    gender: 'Male',
     address: 'Toshkent sh., Yunusobod t.'
   }
 ];
@@ -603,7 +603,7 @@ async function getFirestorePhotoRequests(): Promise<PhotoUpdateRequest[]> {
       const req: PhotoUpdateRequest = {
         id: docId,
         employeeId: f.employeeId?.stringValue || '',
-        employeeName: f.employeeName?.stringValue || 'Noma\'lum',
+        employeeName: f.employeeName?.stringValue || 'Not Specified',
         branch: f.branch?.stringValue || '',
         position: f.position?.stringValue || '',
         currentPhotoUrl: f.currentPhotoUrl?.stringValue || '',
@@ -660,7 +660,7 @@ async function saveFirestorePhotoRequest(req: PhotoUpdateRequest): Promise<boole
 function applyFirestoreEmployeeFieldsToMap(map: Map<string, ServerEmployee>, docId: string, f: any) {
   if (!f || deletedEmployeeIds.has(docId)) return;
   const existing = map.get(docId) || {} as Partial<ServerEmployee>;
-  const empName = f.fullName?.stringValue || existing.fullName || 'Xodim';
+  const empName = f.fullName?.stringValue || existing.fullName || 'Employee';
   const defaultUser = empName.toLowerCase().replace(/['`ʻ’\s]/g, '.');
   const preferredDataPhoto =
     (f.photoUrl?.stringValue?.startsWith('data:image/') ? f.photoUrl.stringValue : '') ||
@@ -679,23 +679,23 @@ function applyFirestoreEmployeeFieldsToMap(map: Map<string, ServerEmployee>, doc
     id: docId,
     staffId: f.staffId?.stringValue || existing.staffId || 'TS-0001',
     fullName: empName,
-    position: f.position?.stringValue || existing.position || 'Mutaxassis',
+    position: f.position?.stringValue || existing.position || 'Specialist',
     department: f.department?.stringValue || existing.department || 'Savdo',
-    branch: f.branch?.stringValue || existing.branch || 'Bosh ofis',
+    branch: f.branch?.stringValue || existing.branch || 'Headquarters',
     phone: f.phone?.stringValue || existing.phone || '',
     email: f.email?.stringValue || existing.email || '',
     photoUrl: resolvedPhoto,
     avatarUrl: resolvedPhoto,
     rasmUrl: resolvedPhoto,
     username: f.username?.stringValue || existing.username || defaultUser,
-    password: f.password?.stringValue || existing.password || 'Toyona#2026',
+    password: f.password?.stringValue || existing.password || 'NovaHR#2026',
     status: f.status?.stringValue || existing.status || 'active',
     isAccountActive: f.isAccountActive?.booleanValue !== undefined ? f.isAccountActive.booleanValue : (existing.isAccountActive ?? true),
     accountCreatedAt: f.accountCreatedAt?.stringValue || existing.accountCreatedAt || '2026-10-12',
     salary: f.salary?.stringValue || existing.salary || '4,000,000 UZS',
     hireDate: f.hireDate?.stringValue || existing.hireDate || '2026-01-01',
     birthDate: f.birthDate?.stringValue || existing.birthDate || '',
-    gender: f.gender?.stringValue || existing.gender || 'Erkak',
+    gender: f.gender?.stringValue || existing.gender || 'Male',
     address: f.address?.stringValue || existing.address || ''
   });
 }
@@ -802,11 +802,11 @@ function findMatchingGeozone(
   if (!allBranches.length) {
     return {
       id: 'branch-6',
-      name: 'Bosh ofis',
+      name: 'Headquarters',
       lat: 40.55441164458834,
       lon: 71.10088818840296,
       radius: 500,
-      address: "Qo'qon shahar, Markaziy bino, Bosh ofis",
+      address: "One World Trade Center, Floor 65, New York, NY",
       updatedAt: new Date().toISOString()
     };
   }
@@ -826,18 +826,18 @@ function findMatchingGeozone(
   const exact = allBranches.find(b => normalizeBranchName(b.name) === normInput);
   if (exact) return exact;
 
-  // 3. Head office synonyms ("bosh ofis", "bosh idora", "bosh bino", "markaziy ofis")
+  // 3. Head office synonyms ("headquarters", "headquarters", "bosh bino", "markaziy ofis")
   const isHeadOffice =
-    normInput.includes('bosh ofis') ||
-    normInput.includes('bosh idora') ||
+    normInput.includes('headquarters') ||
+    normInput.includes('headquarters') ||
     normInput.includes('bosh bino') ||
     normInput.includes('markaziy ofis');
   if (isHeadOffice) {
     const headMatch = allBranches.find(
       b =>
         b.id === 'branch-6' ||
-        normalizeBranchName(b.name).includes('bosh ofis') ||
-        normalizeBranchName(b.name).includes('bosh idora')
+        normalizeBranchName(b.name).includes('headquarters') ||
+        normalizeBranchName(b.name).includes('headquarters')
     );
     if (headMatch) return headMatch;
   }
@@ -861,7 +861,7 @@ let lastGeozonesFirestoreSync = 0;
 
 function applyFirestoreGeozoneFieldsToMap(map: Map<string, BranchGeozone>, docId: string, f: any) {
   if (!f) return;
-  const name = f.name?.stringValue || 'Filial';
+  const name = f.name?.stringValue || 'Branch';
   const description = f.description?.stringValue || '';
   const rawLat = f.lat?.doubleValue ?? f.lat?.integerValue ?? f.lat?.stringValue;
   const rawLon = f.lon?.doubleValue ?? f.lon?.integerValue ?? f.lon?.stringValue;
@@ -1051,13 +1051,13 @@ function getLocalDateFormatted(d: Date = new Date()): string {
 function applyFirestoreAttendanceDocToMap(map: Map<string, any>, docId: string, f: any) {
   if (!f) return;
   const empId = f.employeeId?.stringValue || '';
-  const empName = f.employeeName?.stringValue || 'Xodim';
+  const empName = f.employeeName?.stringValue || 'Employee';
   const dateStr = f.date?.stringValue || getLocalIsoDate();
   const checkIn = f.checkIn?.stringValue || '--:--';
   const checkOut = f.checkOut?.stringValue || '--:--';
-  const status = f.status?.stringValue || 'Vaqtida kelgan';
+  const status = f.status?.stringValue || 'On Time';
   const delayMinutes = f.delayMinutes?.integerValue ? Number(f.delayMinutes.integerValue) : 0;
-  const branchName = f.branch?.stringValue || 'Bosh ofis';
+  const branchName = f.branch?.stringValue || 'Headquarters';
 
   if (checkIn && checkIn !== '--:--') {
     map.set(`${docId}_in`, {
@@ -1090,7 +1090,7 @@ function applyFirestoreAttendanceDocToMap(map: Map<string, any>, docId: string, 
       employeeId: empId,
       employeeName: empName,
       branchName: branchName,
-      status: 'Ketdi (Ish yakunlandi)',
+      status: 'Shift Completed',
       success: true,
       delayMinutes: 0,
       faceVerified: f.faceVerified?.booleanValue !== false
@@ -1221,11 +1221,11 @@ async function saveFirestoreAttendance(record: any): Promise<boolean> {
   const fields: Record<string, any> = {
     id: { stringValue: String(docId) },
     employeeId: { stringValue: String(record.employeeId || 'EMP') },
-    employeeName: { stringValue: String(record.employeeName || 'Xodim') },
+    employeeName: { stringValue: String(record.employeeName || 'Employee') },
     date: { stringValue: String(dateIso) },
-    status: { stringValue: String(record.status || 'Vaqtida kelgan') },
+    status: { stringValue: String(record.status || 'On Time') },
     delayMinutes: { integerValue: String(record.delayMinutes || 0) },
-    branch: { stringValue: String(record.branch || record.branchName || 'Bosh ofis') },
+    branch: { stringValue: String(record.branch || record.branchName || 'Headquarters') },
     department: { stringValue: String(record.department || 'Savdo') },
     notes: { stringValue: String(record.notes || '') },
     updatedAt: { stringValue: new Date().toISOString() }
@@ -1370,12 +1370,12 @@ export async function configureRoutes(appInstance: express.Express = app) {
         id: body.id || `cand_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         date: body.date || new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.'),
         submittedAt: body.submittedAt || new Date().toISOString(),
-        status: body.status || 'Yangi nomzod',
-        fullName: body.fullName || body.fio || (body.lastName ? `${body.lastName} ${body.firstName || ''} ${body.middleName || ''}`.trim() : 'Noma\'lum'),
+        status: body.status || 'New Applicant',
+        fullName: body.fullName || body.fio || (body.lastName ? `${body.lastName} ${body.firstName || ''} ${body.middleName || ''}`.trim() : 'Not Specified'),
         fatherName: body.fatherName || body.middleName || '',
-        position: body.jobPosition || body.position || body.lavozim || 'Noma\'lum',
-        jobPosition: body.jobPosition || body.position || body.lavozim || 'Noma\'lum',
-        region: body.region || body.viloyat || 'Noma\'lum',
+        position: body.jobPosition || body.position || body.lavozim || 'Not Specified',
+        jobPosition: body.jobPosition || body.position || body.lavozim || 'Not Specified',
+        region: body.region || body.viloyat || 'Not Specified',
         address: body.exactAddress || body.address || body.manzil || '',
         exactAddress: body.exactAddress || body.address || body.manzil || '',
         targetBranch: body.targetBranch || body.branch || body.filial || '',
@@ -1384,7 +1384,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
         graduationYear: body.graduationYear || body.gradYear || '',
         phone1: body.phone1 || body.phone || body.telefon1 || '',
         phone2: body.phone2 || body.telefon2 || '',
-        gender: body.gender || body.jinsi || 'Erkak',
+        gender: body.gender || body.jinsi || 'Male',
         dob: body.dob || body.birthYear || body.tugilganYili || '',
         pastExperience: body.pastExperience || body.candidateMessage || body.tajriba || '',
         candidateMessage: body.pastExperience || body.candidateMessage || body.tajriba || '',
@@ -1412,7 +1412,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
       });
     } catch (err: any) {
       console.error("Candidate creation error:", err);
-      res.status(500).json({ success: false, error: err?.message || "Server xatosi" });
+      res.status(500).json({ success: false, error: err?.message || "Internal server error" });
     }
   };
 
@@ -1450,7 +1450,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
   const handleSaveGeozone = async (req: any, res: any) => {
     const { id, name, description, lat, lon, radius, address } = req.body;
     if (!name) {
-      return res.status(400).json({ error: "Filial nomi kiritilmadi" });
+      return res.status(400).json({ error: "Branch name is required" });
     }
 
     const existingIndex = branchGeozones.findIndex(
@@ -1501,12 +1501,12 @@ export async function configureRoutes(appInstance: express.Express = app) {
     res.status(405).json({
       success: false,
       code: "METHOD_NOT_ALLOWED",
-      message: "Login uchun POST so'rovi yuborilishi kerak. Content-Type: application/json bo'lishi shart.",
+      message: "POST request required with Content-Type: application/json.",
       method: "POST",
       endpoints: ["/api/attendance/login", "/api/qatnashish/kirish", "/api/davomat/login"],
       example: {
         username: "qodirov.alisher",
-        password: "Toyona#2026"
+        password: "NovaHR#2026"
       }
     });
   };
@@ -1644,7 +1644,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       });
     } catch (err: any) {
       console.error("Attendance login error:", err);
-      res.status(500).json({ success: false, message: "Serverda xatolik yuz berdi" });
+      res.status(500).json({ success: false, message: "Internal server error occurred" });
     }
   };
 
@@ -1682,7 +1682,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         message: "Xodimning tizimda saqlangan rasmi muvaffaqiyatli yuborildi. Mini app kodi uni jonli kameradagi yuz bilan solishtirishi mumkin."
       });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: "Rasm yuklashda xatolik" });
+      res.status(500).json({ success: false, message: "Error retrieving reference photo" });
     }
   };
 
@@ -1768,7 +1768,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       list.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
       res.json({ success: true, requests: list });
     } catch (e: any) {
-      res.status(500).json({ success: false, message: e.message || "So'rovlarni olishda xatolik" });
+      res.status(500).json({ success: false, message: e.message || "Error fetching photo verification requests" });
     }
   });
 
@@ -1805,11 +1805,11 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       await saveFirestorePhotoRequest(newReq);
       res.json({
         success: true,
-        message: "Rasm HR tasdig'iga muvaffaqiyatli yuborildi. Kutilmoqda.",
+        message: "Photo submitted for HR review. Status: Pending.",
         request: newReq
       });
     } catch (e: any) {
-      res.status(500).json({ success: false, message: e.message || "Rasm so'rovini yuborishda xatolik" });
+      res.status(500).json({ success: false, message: e.message || "Error submitting photo verification request" });
     }
   });
 
@@ -1840,7 +1840,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
 
         return res.json({
           success: true,
-          message: "Xodim rasmi muvaffaqiyatli tasdiqlandi va Face ID uchun yangilandi!",
+          message: "Photo approved and updated for biometric Face ID authentication!",
           request: targetReq
         });
       } else if (action === 'reject') {
@@ -1859,7 +1859,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         return res.status(400).json({ success: false, message: "Noto'g'ri amal (action: approve yoki reject)." });
       }
     } catch (e: any) {
-      res.status(500).json({ success: false, message: e.message || "So'rovni ko'rib chiqishda xatolik" });
+      res.status(500).json({ success: false, message: e.message || "Error reviewing request" });
     }
   });
 
@@ -1873,7 +1873,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       }
       res.json({ success: true, message: "So'rov o'chirildi." });
     } catch (e: any) {
-      res.status(500).json({ success: false, message: e.message || "O'chirishda xatolik" });
+      res.status(500).json({ success: false, message: e.message || "Error deleting request" });
     }
   });
 
@@ -1934,7 +1934,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         todayIso
       });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: "Bugungi statusni olishda xatolik" });
+      res.status(500).json({ success: false, message: "Error fetching today attendance status" });
     }
   };
 
@@ -1977,7 +1977,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         branchName, 
         userLat, 
         userLon,
-        action = 'keldim', // 'keldim' yoki 'ketdim'
+        action = 'check_in',
         capturedPhoto, // jonli kameradan tushirilgan rasm (base64 yoki URL)
         faceVerified,  // yuz tanish kodi tasdiqladimi (true/false)
         faceConfidence, // yuz o'xshashlik foizi (masalan, 0.94)
@@ -2014,8 +2014,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const emp = (lookupQuery ? findServerEmployee(allEmployees, lookupQuery) : null) || {
         id: employeeId || 'EMP-UNKNOWN',
         fullName: employeeName || 'Noma\'lum Xodim',
-        branch: branchName || 'Bosh ofis',
-        position: 'Xodim',
+        branch: branchName || 'Headquarters',
+        position: 'Employee',
         department: 'Savdo',
         photoUrl: 'https://hrms-toyona.vercel.app/zarifjon.jpg'
       };
@@ -2063,8 +2063,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const statusText = isRestDay
         ? (action === 'keldim' ? 'Dam olish kunida kelgan' : 'Dam olish kunida ketdi')
         : (action === 'ketdim' 
-            ? 'Ketdi (Ish yakunlandi)' 
-            : (delayMinutes > 0 ? `Kech qolgan (${delayMinutes} daqiqa)` : 'Vaqtida kelgan'));
+            ? 'Shift Completed' 
+            : (delayMinutes > 0 ? `Kech qolgan (${delayMinutes} daqiqa)` : 'On Time'));
 
       const timeFormatted = getLocalTimeString(now);
       const dateFormatted = getLocalDateFormatted(now);
@@ -2089,7 +2089,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         return res.status(400).json({
           success: false,
           code: "ALREADY_CHECKED_IN",
-          message: `Siz bugun allaqachon "Keldim" deb qayd etilgansiz${prevTime ? ` (soat ${prevTime} da)` : ''}! Takroriy kelish qabul qilinmaydi.`
+          message: `You have already checked in today${prevTime ? ` (soat ${prevTime} da)` : ''}! Takroriy kelish qabul qilinmaydi.`
         });
       }
 
@@ -2098,7 +2098,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         return res.status(400).json({
           success: false,
           code: "NOT_CHECKED_IN_YET",
-          message: `Avval "Keldim" tugmasi orqali ishga kelganingizni tasdiqlashingiz kerak!`
+          message: `You must check in first before checking out!`
         });
       }
 
@@ -2108,7 +2108,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         return res.status(400).json({
           success: false,
           code: "ALREADY_CHECKED_OUT",
-          message: `Siz bugun allaqachon "Ketdim" deb qayd etilgansiz${prevTime ? ` (soat ${prevTime} da)` : ''}! Takroriy ketish qabul qilinmaydi.`
+          message: `You have already checked out today${prevTime ? ` (soat ${prevTime} da)` : ''}! Takroriy ketish qabul qilinmaydi.`
         });
       }
 
@@ -2251,14 +2251,14 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           rasmUrl: e.rasmUrl || e.photoUrl,
           username: e.username,
           login: e.username,
-          password: e.password || 'Toyona#2026',
-          parol: e.password || 'Toyona#2026',
+          password: e.password || 'NovaHR#2026',
+          parol: e.password || 'NovaHR#2026',
           isAccountActive: e.isAccountActive !== false,
           accountCreatedAt: e.accountCreatedAt || '2026-10-12',
           salary: e.salary || '4,000,000 UZS',
           hireDate: e.hireDate || '2026-01-01',
           birthDate: e.birthDate || '',
-          gender: e.gender || 'Erkak',
+          gender: e.gender || 'Male',
           address: e.address || '',
           status: e.status,
           isVacationActive: leave.isVacation,
@@ -2287,10 +2287,10 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       const merged: ServerEmployee = {
         id,
         staffId: emp.staffId || existing.staffId || 'TS-0001',
-        fullName: emp.fullName || existing.fullName || 'Xodim',
-        position: emp.position || existing.position || 'Mutaxassis',
+        fullName: emp.fullName || existing.fullName || 'Employee',
+        position: emp.position || existing.position || 'Specialist',
         department: emp.department || existing.department || 'Savdo',
-        branch: emp.branch || existing.branch || 'Bosh ofis',
+        branch: emp.branch || existing.branch || 'Headquarters',
         phone: emp.phone ?? existing.phone ?? '',
         email: emp.email ?? existing.email ?? '',
         photoUrl: photo,
@@ -2304,7 +2304,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
         salary: emp.salary || existing.salary || '4,000,000 UZS',
         hireDate: emp.hireDate || existing.hireDate || new Date().toISOString().split('T')[0],
         birthDate: emp.birthDate || existing.birthDate || '',
-        gender: emp.gender || existing.gender || 'Erkak',
+        gender: emp.gender || existing.gender || 'Male',
         address: emp.address || existing.address || ''
       };
 
@@ -2388,7 +2388,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
     const host = req.get('host') || 'ais-pre-bk2ecsa4uidxq66izqrrgk-913174961397.asia-east1.run.app';
     const baseUrl = `${req.protocol}://${host}`;
     res.json({
-      title: "Toyona HRMS - Davomat, Face ID va Geolokatsiya Integratsiya Shartnomasi (Xat & Protokol)",
+      title: "NovaHR - Attendance, Biometrics and Geofencing API Contract (Xat & Protokol)",
       version: "2.1.0",
       baseUrl,
       overview: "Ushbu API Toyona HRMS asosiy tizimi bilan tashqi Face ID va 'Keldim/Ketdim' davomat mini app kodi o'rtasida to'liq sinxronizatsiyani ta'minlaydi.",
@@ -2406,7 +2406,7 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           description: "Xodim login va paroli bilan kirishi. Faqat shu xodimning ism-familiyasi, filiali, lavozimi, login-paroli, saqlangan etalon rasmi va filial geozonasi (lat, lon, radius) qaytadi.",
           requestBody: {
             username: "qodirov.alisher (yoki login)",
-            password: "Toyona#2026 (yoki parol)"
+            password: "NovaHR#2026 (yoki parol)"
           },
           responseExample: {
             success: true,
@@ -2608,11 +2608,11 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
 
       res.json({
         success: true,
-        message: "Jarima va dam olish kunlari sozlamalari muvaffaqiyatli yangilandi!",
+        message: "Attendance policies and rest days updated successfully!",
         settings: penaltySettings
       });
     } catch (e: any) {
-      res.status(500).json({ success: false, message: e?.message || "Sozlamalarni saqlashda xatolik" });
+      res.status(500).json({ success: false, message: e?.message || "Error saving policy settings" });
     }
   });
 

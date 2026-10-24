@@ -507,7 +507,7 @@ export default function App() {
 
     try {
       // Faqat Firebase Firestore'dagi joriy parol tekshiriladi.
-      // Brauzer xotirasidagi (localStorage) eski nusxalar bilan kirish mumkin emas.
+      // Stale local cached authentication tokens disabled in production demo.
       const foundUser = await verifyUserCredentialsInFirebase(loginUsername, inputPass);
 
       if (!foundUser) {
@@ -787,14 +787,14 @@ export default function App() {
             </div>
           </div>
           <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-2">
-            TOYONA SAVDO HRMS
+            NOVA HRMS ENTERPRISE
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
             Updating data, please wait...
           </p>
           <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Firebase Cloud Baza bilan sinxronizatsiya</span>
+            <span>Synchronizing with Cloud Database</span>
           </div>
         </div>
       </div>
@@ -1080,7 +1080,7 @@ export default function App() {
                   {navItems.find(item => item.id === activeItem)?.label || 'Modul'}
                 </h1>
                 <span className="text-[10px] font-black bg-[#00A651] text-white px-1.5 py-0.5 rounded tracking-wider uppercase">
-                  TOYONA SAVDO
+                  NOVA HRMS
                 </span>
               </div>
             </div>
@@ -1093,14 +1093,14 @@ export default function App() {
                 setIsRefreshingCache(true);
                 invalidateCache();
                 setVisitedTabs(new Set([normalizedActiveTab]));
-                setToastMessage("Kesh tozalandi. Sahifa yangilanmoqda...");
+                setToastMessage("Cache refreshed. Reloading data...");
                 setTimeout(() => setIsRefreshingCache(false), 800);
               }}
-              title="Keshni yangilash va serverdan yangi ma'lumotlarni olish"
+              title="Refresh cache and fetch latest updates"
               className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isRefreshingCache ? 'animate-spin' : ''}`} />
-              <span className="hidden md:inline">Keshni yangilash</span>
+              <span className="hidden md:inline">Refresh Cache</span>
             </button>
 
             {/* GLOBAL DARK MODE TOGGLE */}
@@ -1109,7 +1109,7 @@ export default function App() {
             {/* FIREBASE SYNC STATUS BADGE */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold rounded-xl shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Firebase Ulangan</span>
+              <span>Cloud Database Connected</span>
             </div>
 
             {/* USER ROLE STATUS BADGE */}
@@ -1137,16 +1137,16 @@ export default function App() {
                 <div className="w-16 h-16 bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center">
                   <Lock className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Ushbu Modulni Ko'rish Huquqi Yo'q</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Access Denied: Restricted Module</h3>
                 <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md leading-relaxed">
-                  Hurmatli <b>{currentUser.name}</b> ({currentUser.role}), ushbu bo'limni ko'rish sizning vakolat doirangizga kiritilmagan.
-                  Modul ruxsatini Super Admin orqali olishingiz mumkin.
+                  Dear <b>{currentUser.name}</b> ({currentUser.role}), you do not have permission to view this module.
+                  Please contact the Super Administrator to request access.
                 </p>
                 <button
                   onClick={() => setCurrentUserId(1)} // Switch back to Super Admin
                   className="px-4 py-2 bg-[#00A651] text-white text-xs font-bold rounded-xl shadow-md hover:bg-[#008d44] transition-all cursor-pointer"
                 >
-                  Super Admin Rejimiga O'tish
+                  Switch to Super Admin Mode
                 </button>
               </div>
             ) : (

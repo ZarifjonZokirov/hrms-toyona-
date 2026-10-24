@@ -19,7 +19,7 @@ export interface Vacancy {
   headcount: number;      // Number of open quotas (e.g. 2)
   salaryRange: string;    // Salary (e.g. "4,000,000 - 6,000,000 USD")
   requirements: string;   // Requirements / descriptions
-  status: 'Open' | 'Active' | 'Muzlatilgan' | 'To\'ldirilgan';
+  status: 'Open' | 'Active' | 'On Hold' | 'To\'ldirilgan';
   createdAt: string;
 }
 
@@ -29,10 +29,10 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-1',
     title: 'Senior Sales Representative',
     branch: 'Headquarters',
-    department: 'Savdo bo\'limi',
+    department: 'Sales & Retail',
     headcount: 3,
     salaryRange: '4,000,000 - 6,000,000 USD',
-    requirements: 'Chakana savdo tajribasi, xaridorlarga xushmuomala xizmat ko\'rsatish',
+    requirements: 'Retail customer service experience and client communication skills',
     status: 'Active',
     createdAt: '01.09.2026'
   },
@@ -40,10 +40,10 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-2',
     title: 'Lead Sales Consultant',
     branch: 'Headquarters',
-    department: 'Savdo bo\'limi',
+    department: 'Sales & Retail',
     headcount: 1,
     salaryRange: '5,500,000 - 7,500,000 USD',
-    requirements: 'Savdo zali boshqaruvi, tovarlar aylanmasi va inventarizatsiya',
+    requirements: 'Showroom supervision, inventory management and store operations',
     status: 'Open',
     createdAt: '02.09.2026'
   },
@@ -62,10 +62,10 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-4',
     title: 'Contracts & Compliance Lead',
     branch: 'Headquarters',
-    department: 'Shartnomalar bo\'limi',
+    department: 'Contracts & Legal',
     headcount: 1,
     salaryRange: '7,000,000 - 10,000,000 USD',
-    requirements: 'Huquqiy hujjatlar, muddatli to\'lov shartnomalari tahlili',
+    requirements: 'Legal documentation review and installment contract analysis',
     status: 'Active',
     createdAt: '04.09.2026'
   },
@@ -73,7 +73,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-5',
     title: 'Contracts Operations Specialist',
     branch: 'Westside Operations Hub',
-    department: 'Shartnomalar bo\'limi',
+    department: 'Contracts & Legal',
     headcount: 2,
     salaryRange: '4,500,000 - 6,500,000 USD',
     requirements: 'Manage CRM contracts and customer billing workflows',
@@ -84,10 +84,10 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-6',
     title: 'Store Operations Manager',
     branch: 'Brooklyn Logistics Center',
-    department: 'Savdo bo\'limi',
+    department: 'Sales & Retail',
     headcount: 1,
     salaryRange: '8,000,000 - 12,000,000 USD',
-    requirements: 'Branch savdo rejasini bajarish, sotuvchilar jamoasini boshqarish',
+    requirements: 'Branch sales target achievement and team leadership experience',
     status: 'Active',
     createdAt: '05.09.2026'
   },
@@ -98,7 +98,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     department: 'Mijozlar bilan ishlash bo\'limi',
     headcount: 2,
     salaryRange: '4,000,000 - 5,500,000 USD',
-    requirements: 'Mijozlar bilan telefon orqali muloqot, CRM tizimida arizalar bilan ishlash',
+    requirements: 'Inbound customer support, ticketing workflows, and SLA management',
     status: 'Open',
     createdAt: '06.09.2026'
   },
@@ -106,10 +106,10 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-8',
     title: 'Logistics & Warehouse Manager',
     branch: 'Headquarters',
-    department: 'Omborxona va Logistika bo\'limi',
+    department: 'Warehouse & Logistics',
     headcount: 1,
     salaryRange: '7,000,000 - 9,500,000 USD',
-    requirements: '1C Ombor tizimi, tovarlar qabul qilish va kirim-chiqim nazorati',
+    requirements: 'Warehouse inventory control, ERP logging, and freight receiving',
     status: 'Active',
     createdAt: '07.09.2026'
   },
@@ -117,7 +117,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     id: 'vac-9',
     title: 'Inventory & Stock Specialist',
     branch: 'Queens Distribution Terminal',
-    department: 'Omborxona va Logistika bo\'limi',
+    department: 'Warehouse & Logistics',
     headcount: 2,
     salaryRange: '4,000,000 - 5,500,000 USD',
     requirements: 'Yuklarni saralash, yorliqlash va inventarizatsiyada ishtirok etish',
@@ -164,7 +164,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     department: 'Logistika va Transport bo\'limi',
     headcount: 2,
     salaryRange: '4,500,000 - 6,000,000 USD',
-    requirements: 'B va C toifali haydovchilik guvohnomasi, 3+ yil haydash tajribasi',
+    requirements: 'Valid commercial driver license and 3+ years courier experience',
     status: 'Active',
     createdAt: '09.09.2026'
   },
@@ -175,7 +175,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     department: 'Logistika va Yetkazib berish bo\'limi',
     headcount: 3,
     salaryRange: '4,000,000 - 6,500,000 USD',
-    requirements: 'Mijozlarga buyurtmalarni o\'z vaqtida yetkazish, shahar ko\'chalarini yaxshi bilish',
+    requirements: 'Timely delivery of customer orders and strong metropolitan area navigation skills',
     status: 'Open',
     createdAt: '10.09.2026'
   },
@@ -197,7 +197,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     department: 'Marketing va Reklama bo\'limi',
     headcount: 1,
     salaryRange: '8,000,000 - 12,000,000 USD',
-    requirements: 'Chakana savdo marketing strategiyasi, aksiyalar va mijozlar oqimi tahlili',
+    requirements: 'Retail marketing campaigns, promotional planning and traffic analytics',
     status: 'Active',
     createdAt: '11.09.2026'
   },
@@ -252,18 +252,18 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     department: 'Marketing va Kontent bo\'limi',
     headcount: 1,
     salaryRange: '5,000,000 - 7,000,000 USD',
-    requirements: 'Savdo matnlari, banner shiorlari va reklama ssenariylari yaratish',
+    requirements: 'Copywriting, promotional banners, and social advertising content',
     status: 'Active',
     createdAt: '13.09.2026'
   }
 ];
 
 export const DEPARTMENTS_LIST = [
-  'Barcha bo\'limlar',
-  'Savdo bo\'limi',
+  'All Departments',
+  'Sales & Retail',
   'Kassalar va Moliya bo\'limi',
-  'Shartnomalar bo\'limi',
-  'Omborxona va Logistika bo\'limi',
+  'Contracts & Legal',
+  'Warehouse & Logistics',
   'Oshxona va Xo\'jalik bo\'limi',
   'Logistika va Transport bo\'limi',
   'Logistika va Yetkazib berish bo\'limi',
@@ -308,7 +308,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
   const [formData, setFormData] = useState({
     title: POSITIONS_LIST[0] || '',
     branch: BRANCHES_LIST[0] || '',
-    department: 'Savdo bo\'limi',
+    department: 'Sales & Retail',
     headcount: 1,
     salaryRange: '4,000,000 - 6,000,000 USD',
     requirements: '',
@@ -367,13 +367,13 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
           submittedAt: d.submittedAt || d.date || new Date().toISOString(),
           phone1: d.phone1 || d.phone || '',
           phone2: d.phone2 || '',
-          targetBranch: d.targetBranch || d.branch || d.filial || '',
+          targetBranch: d.targetBranch || d.branch || '',
           fatherName: d.fatherName || '',
           exactAddress: d.exactAddress || d.address || '',
           maritalStatus: d.maritalStatus || '',
           educationLevel: d.educationLevel || '',
           graduationYear: d.graduationYear || '',
-          gender: d.gender || 'Erkak',
+          gender: d.gender || 'Any',
           dob: d.dob || '',
           candidateMessage: d.candidateMessage || d.pastExperience || '',
           pastExperience: d.pastExperience || d.candidateMessage || '',
@@ -448,7 +448,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
       department: formData.department,
       headcount: Number(formData.headcount) || 1,
       salaryRange: formData.salaryRange.trim() || "Kelishilgan",
-      requirements: formData.requirements.trim() || "Talablar suhbat jarayonida tushuntiriladi",
+      requirements: formData.requirements.trim() || "Requirements will be detailed during the interview",
       status: formData.status,
       createdAt: new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.')
     };
@@ -462,7 +462,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
     setFormData({
       title: POSITIONS_LIST[0] || '',
       branch: BRANCHES_LIST[0] || '',
-      department: 'Savdo bo\'limi',
+      department: 'Sales & Retail',
       headcount: 1,
       salaryRange: '4,000,000 - 6,000,000 USD',
       requirements: '',
@@ -519,13 +519,13 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
           'Salary Range': v.salaryRange,
           'Status': v.status,
           'Total Applicants': candCount,
-          'Talablar': v.requirements || '-',
+          'Requirements': v.requirements || '-',
           'Yaratilgan sana': v.createdAt
         };
       });
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Job Openings & Vacancies");
+      exportToPDF(headers, data, fileName, "NovaHR - Job Openings & Vacancies");
     }
   };
 
@@ -584,7 +584,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
       {/* COMPACT INTERACTIVE STATUS FILTER PILLS (HR talabiga binoan ixcham status filtri) */}
       <div className="bg-slate-50/80 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 my-3 flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mr-1">Holat:</span>
+          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mr-1">Status:</span>
           
           <button
             type="button"
@@ -624,14 +624,14 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
 
           <button
             type="button"
-            onClick={() => { setSelectedStatus('Muzlatilgan'); setOnlyWithCandidates(false); }}
+            onClick={() => { setSelectedStatus('On Hold'); setOnlyWithCandidates(false); }}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedStatus === 'Muzlatilgan'
+              selectedStatus === 'On Hold'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
-            Muzlatilgan ({vacancies.filter(v => v.status === 'Muzlatilgan').length})
+            On Hold ({vacancies.filter(v => v.status === 'On Hold').length})
           </button>
 
           <button
@@ -699,7 +699,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
             className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-[#00A651] cursor-pointer"
           >
             <option value="all">All Departments</option>
-            {DEPARTMENTS_LIST.filter(d => d !== 'Barcha bo\'limlar').map(dept => (
+            {DEPARTMENTS_LIST.filter(d => d !== 'All Departments').map(dept => (
               <option key={dept} value={dept}>{dept}</option>
             ))}
           </select>
@@ -735,7 +735,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
               <th className="py-3 px-4 text-center">Headcount Quota</th>
               <th className="py-3 px-4">Salary</th>
               <th className="py-3 px-4 text-center">Applicants</th>
-              <th className="py-3 px-4 text-center">Holat</th>
+              <th className="py-3 px-4 text-center">Status</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -831,7 +831,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
                         >
                           <span className="w-2 h-2 rounded-full bg-[#00A651] animate-pulse"></span>
-                          <span>{matched.length}  candidates kelgan</span>
+                          <span>{matched.length}  candidates applied</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[11px] font-medium">
@@ -845,7 +845,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                         vacancy.status === 'Active' || vacancy.status === 'Open'
                           ? 'bg-[#00A651]/10 text-[#00A651] border border-[#00A651]/20'
-                          : vacancy.status === 'Muzlatilgan'
+                          : vacancy.status === 'On Hold'
                           ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}>
@@ -859,7 +859,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                         <button
                           type="button"
                           onClick={() => setSelectedVacancyForCandidates(vacancy)}
-                          title="Ushbu ishga kelgan nomzodlarni ko'rish"
+                          title="View applicants for this opening"
                           className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#00A651] hover:bg-[#00A651]/10 rounded-lg transition-colors cursor-pointer"
                         >
                           <Eye className="w-4 h-4" />
@@ -947,10 +947,10 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                           <UserX className="w-7 h-7" />
                         </div>
                         <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
-                          Ushbu filialdagi "{selectedVacancyForCandidates.title}" has no candidates yet
+                          "{selectedVacancyForCandidates.title}" at this location has received no applications yet
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                          Currently, <b className="text-slate-700 dark:text-slate-300">{selectedVacancyForCandidates.branch}</b> branchga ushbu lavozim bo'yicha ariza tushmagan. Candidates anketani to'ldirishi bilan bu yerda bir zumda ko'rinadi.
+                          Currently, no candidates have applied for this role at <b className="text-slate-700 dark:text-slate-300">{selectedVacancyForCandidates.branch}</b>. As new applicants submit their profiles, they will automatically appear here.
                         </p>
                         <div className="pt-2 flex items-center gap-2">
                           <a
@@ -1094,12 +1094,12 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                   <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedCandidateDetail.region} {selectedCandidateDetail.address ? `(${selectedCandidateDetail.address})` : ''}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 dark:text-slate-500">Jinsi / Tug'ilgan yili:</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedCandidateDetail.gender || 'Erkak'} {selectedCandidateDetail.dob ? `• ${selectedCandidateDetail.dob}` : ''}</span>
+                  <span className="text-slate-400 dark:text-slate-500">Gender / Date of Birth:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedCandidateDetail.gender || 'Not specified'} {selectedCandidateDetail.dob ? `• ${selectedCandidateDetail.dob}` : ''}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 dark:text-slate-500">Ma'lumoti:</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedCandidateDetail.educationLevel || "O'rta"}</span>
+                  <span className="text-slate-400 dark:text-slate-500">Education:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedCandidateDetail.educationLevel || "Associate Degree"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400 dark:text-slate-500">Status:</span>
@@ -1107,7 +1107,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                 </div>
                 {selectedCandidateDetail.pastExperience && (
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <span className="text-slate-400 dark:text-slate-500 block mb-1 font-semibold">Ish tajribasi / Xabar:</span>
+                    <span className="text-slate-400 dark:text-slate-500 block mb-1 font-semibold">Experience / Candidate Cover Note:</span>
                     <p className="text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
                       {selectedCandidateDetail.pastExperience}
                     </p>
@@ -1206,7 +1206,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                       className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-[#00A651] cursor-pointer"
                     >
-                      {DEPARTMENTS_LIST.filter(d => d !== 'Barcha bo\'limlar').map(d => (
+                      {DEPARTMENTS_LIST.filter(d => d !== 'All Departments').map(d => (
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
@@ -1246,7 +1246,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                   {/* 6. Status */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Holati
+                      Posting Status
                     </label>
                     <select
                       value={formData.status}
@@ -1255,7 +1255,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                     >
                       <option value="Active">Active</option>
                       <option value="Open">Open</option>
-                      <option value="Muzlatilgan">Muzlatilgan</option>
+                      <option value="On Hold">On Hold</option>
                       <option value="Filled">Filled</option>
                     </select>
                   </div>
@@ -1264,13 +1264,13 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                 {/* 7. Requirements */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Talablar va Qisqacha Tavsif
+                    Key Requirements & Job Description
                   </label>
                   <textarea
                     rows={2}
                     value={formData.requirements}
                     onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                    placeholder="Masalan: Tajriba, kompyuter savodxonligi, xushmuomalalik..."
+                    placeholder="e.g. 2+ years relevant experience, CRM software, leadership skills..."
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-[#00A651] resize-none"
                   />
                 </div>

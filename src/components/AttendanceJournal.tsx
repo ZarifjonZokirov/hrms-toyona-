@@ -111,7 +111,7 @@ export function getEmployeeCredentials(emp: EmployeeData) {
     .replace(/\.+/g, '.');
   const login = emp.login || cleanName || `user.${emp.id}`;
   const numId = (emp.id || '1').replace(/\D/g, '') || '1';
-  const password = emp.password || `Toyona${numId}*2026`;
+  const password = emp.password || `NovaHR${numId}*2026`;
   return { login, password };
 }
 
@@ -123,7 +123,7 @@ export interface DailyAttendance {
   checkOut: string; // '--:--' if absent
   status: 'On Time' | 'Late' | 'Absent' | 'Rest Day' | 'Clocked Out' | 'On Leave' | 'Business Trip';
   delayMinutes: number;
-  delayReason?: string; // e.g., 'Transport tirbandligi', 'Shaxsiy sabab', 'Boshqa'
+  delayReason?: string; // e.g., 'Transit Delays', 'Personal Matters', 'Other'
   workedTime: string;
   penalty: string;
   bonus: string;
@@ -180,7 +180,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           penalty: '-',
           bonus: '-',
           netPay: `${dailyBase.toLocaleString()} $`,
-          notes: '✈️ Yillik mehnat ta\'tili (14 days: 01.10.2026 - 14.10.2026)',
+          notes: '✈️ Annual Paid Leave (14 days: 01.10.2026 - 14.10.2026)',
           durationDays: 14,
           leaveType: 'vacation',
           startDate: '2026-10-01',
@@ -226,7 +226,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           penalty: '-',
           bonus: '-',
           netPay: "0 $",
-          notes: 'Sababsiz kelmadi'
+          notes: 'Unexcused absence'
         };
       } else if (patternMod === 4 || patternMod === 7) {
         // Late (Late)
@@ -235,7 +235,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
         const inMinStr = lateMin < 10 ? `0${lateMin}` : `${lateMin}`;
         const penaltyAmount = lateMin * 1000;
         const net = dailyBase - penaltyAmount;
-        const reasons = ['Transport tirbandligi', 'Shaxsiy sabab', 'Ob-havo / Transport kechikishi'];
+        const reasons = ['Transit Delays', 'Personal Matters', 'Inclement Weather'];
         const chosenReason = reasons[(day + empIdx) % reasons.length];
 
         return {
@@ -251,7 +251,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           penalty: `- ${penaltyAmount.toLocaleString()} $`,
           bonus: '-',
           netPay: `${net.toLocaleString()} $`,
-          notes: `${chosenReason} tufayli ${formatDelayText(lateMin)} kechikkan`
+          notes: `Arrived ${formatDelayText(lateMin)} late due to ${chosenReason}`
         };
       } else {
         // On time (On Time)
@@ -414,7 +414,7 @@ export default function AttendanceJournal({
         penalty: '-',
         bonus: '-',
         netPay: config.isPaid ? `${(emp.dailyRate || 280000).toLocaleString()} $` : "0 $",
-        notes: `${isLeave ? "✈️ Ta'tilda" : "🍃 Ish yuzasidan safarda"} (${config.durationDays} kun: ${config.startDate} - ${config.endDate}) — ${config.reason}`,
+        notes: `${isLeave ? "✈️ Annual Leave" : "🍃 Business Trip"} (${config.durationDays} days: ${config.startDate} - ${config.endDate}) — ${config.reason}`,
         durationDays: config.durationDays,
         leaveType: config.type,
         startDate: config.startDate,
@@ -434,7 +434,7 @@ export default function AttendanceJournal({
     }
 
     setShowLeaveTripModal(false);
-    showToast(`${emp.fullName} uchun ${config.durationDays} kunlik ${isLeave ? "Annual Leave (Flight ✈️)" : "Business Trip (Field 🍃)"} muvaffaqiyatli saqlandi!`);
+    showToast(`${emp.fullName} ${isLeave ? "Annual Leave (Flight ✈️)" : "Business Trip (Field 🍃)"} for ${config.durationDays} days scheduled successfully!`);
   };
 
   // Sync with Firebase & Backend API on mount
@@ -463,8 +463,8 @@ export default function AttendanceJournal({
             id: e.id || e.firestoreId,
             fullName: e.fullName || 'Noma\'lum',
             branch: e.branch || 'Headquarters',
-            department: e.department || 'Boshqaruv',
-            position: e.position || 'Mutaxassis',
+            department: e.department || 'Executive Board',
+            position: e.position || 'Specialist',
             avatarUrl: e.avatarUrl || e.photoUrl || e.rasmUrl,
             schedule: e.schedule || '09:00 - 18:00',
             phone: e.phone,
@@ -709,9 +709,9 @@ export default function AttendanceJournal({
           'Department': emp.department,
           'Designation': emp.position,
           'Date': selectedDate,
-          'Ish jadvali': emp.schedule,
-          'Kelish vaqti': record?.checkIn || '--:--',
-          'Ketish vaqti': record?.checkOut || '--:--',
+          'Work Schedule': emp.schedule,
+          'Check-In Time': record?.checkIn || '--:--',
+          'Check-Out Time': record?.checkOut || '--:--',
           'Status': record?.status || 'Absent',
           'Total Worked': record?.workedTime || '-',
           'Delay Duration (min)': record?.delayMinutes || 0,
@@ -723,9 +723,9 @@ export default function AttendanceJournal({
       });
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, `Toyona Savdo - Attendance Journal (${selectedDate})`, 'landscape');
+      exportToPDF(headers, data, fileName, `NovaHR - Attendance Journal (${selectedDate})`, 'landscape');
     }
-    showToast(`Report exported successfully! (${filteredEmployees.length} xodim)`);
+    showToast(`Report exported successfully! (${filteredEmployees.length} employees)`);
   };
 
   // Export report to CSV
@@ -764,7 +764,7 @@ export default function AttendanceJournal({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast(`Report exported successfully! (${filteredEmployees.length} xodim)`);
+    showToast(`Report exported successfully! (${filteredEmployees.length} employees)`);
   };
 
   // Add a new employee
@@ -926,7 +926,7 @@ export default function AttendanceJournal({
               }
             }}
             className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Late Penalty miqdori, min/h hisobi va dam olish kunlarini sozlash"
+            title="Configure late penalties, shift calculation, and weekly rest days"
           >
             <Clock className="w-3.5 h-3.5 text-rose-600" />
             <span>Jarima & Dam Kunlari</span>
@@ -970,7 +970,7 @@ export default function AttendanceJournal({
               <p className="font-extrabold text-sm text-purple-950 flex items-center gap-2">
                 <span>Yangi Face ID surat so'rovlari keldi!</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
-                  {pendingPhotoRequestsCount} ta kutilmoqda
+                  {pendingPhotoRequestsCount} pending
                 </span>
               </p>
               <p className="text-slate-600 font-medium mt-0.5">
@@ -989,7 +989,7 @@ export default function AttendanceJournal({
             }}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
-            <span>Ko'rib chiqish & Confirm</span>
+            <span>Review & Confirm</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -1248,7 +1248,7 @@ export default function AttendanceJournal({
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <b>Delay Durationlar nazorati faol:</b> Today jami <b>{stats.lateCount} nafar</b> xodim kechikib kelgan. Employee ustiga bosib batafsil sabab va jarimani ko'rishingiz mumkin.
+              <b>Punctuality Monitoring Active:</b> Today jami <b>{stats.lateCount} nafar</b> xodim kechikib kelgan. Employee ustiga bosib batafsil sabab va jarimani ko'rishingiz mumkin.
             </span>
           </div>
           <button 
@@ -1742,7 +1742,7 @@ function EmployeeDetailView({
                 type="button"
                 onClick={() => onOpenLeaveModal(employee, 'leave')}
                 className="flex items-center gap-1.5 px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                title="Samolyot: Ta'tilda (Necha kunligini sozlash)"
+                title="Annual Leave (Configure Duration)"
               >
                 <Plane className="w-4 h-4 text-sky-600" />
                 <span>Ta'tilda</span>
@@ -1752,7 +1752,7 @@ function EmployeeDetailView({
                 type="button"
                 onClick={() => onOpenLeaveModal(employee, 'trip')}
                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                title="Barg: Ish yuzasidan safarda (Necha kunligini sozlash)"
+                title="Business Travel (Configure Duration)"
               >
                 <Leaf className="w-4 h-4 text-emerald-600" />
                 <span>Safarda</span>
@@ -1829,8 +1829,8 @@ function EmployeeDetailView({
       <div className="px-6 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-50/70 border-b border-slate-200">
         <h3 className="font-bold text-slate-800 text-sm">Kunlik tafsilot jurnali</h3>
         <div className="flex flex-wrap items-center gap-5">
-          <LegendItem color="bg-emerald-500" label="On Time yoki erta kelgan" />
-          <LegendItem color="bg-amber-500" label="Kech kelgan / erta ketgan" />
+          <LegendItem color="bg-emerald-500" label="Punctual or Early Arrival" />
+          <LegendItem color="bg-amber-500" label="Late Arrival or Early Departure" />
           <LegendItem color="bg-rose-500" label="Absent" />
           <LegendItem color="bg-blue-500" label="Rest Day" />
         </div>
@@ -1915,7 +1915,7 @@ function EmployeeDetailView({
                               type="button"
                               onClick={() => onOpenLeaveModal(employee, 'leave')}
                               className="p-1 hover:text-sky-600 hover:bg-sky-50 rounded transition-colors cursor-pointer text-slate-400"
-                              title="Samolyot: Ta'tilda (Necha kunligini sozlash)"
+                              title="Annual Leave (Configure Duration)"
                             >
                               <Plane className="w-3.5 h-3.5 text-sky-600" />
                             </button>
@@ -1923,7 +1923,7 @@ function EmployeeDetailView({
                               type="button"
                               onClick={() => onOpenLeaveModal(employee, 'trip')}
                               className="p-1 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer text-slate-400"
-                              title="Barg: Ish yuzasidan safarda (Necha kunligini sozlash)"
+                              title="Business Travel (Configure Duration)"
                             >
                               <Leaf className="w-3.5 h-3.5 text-emerald-600" />
                             </button>
@@ -1947,10 +1947,10 @@ function EmployeeDetailView({
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-black text-slate-800 text-lg">
-                Joriy oy statistikasi va kechikishlar tahlili
+                Monthly Attendance & Punctuality Analytics
               </h3>
               <span className="text-xs font-semibold px-3 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
-                Jami ish kunlari: {metrics.workDays} kun
+                Total Work Days: {metrics.workDays} days
               </span>
             </div>
 
@@ -2009,7 +2009,7 @@ function EmployeeDetailView({
                     <span className="text-xs font-black text-slate-800">
                       {metrics.delayHours > 0 ? `${metrics.delayHours} h ` : ''}{metrics.delayMins} m
                     </span>
-                    <span className="text-slate-400 text-[10px] font-semibold">Jami kechikish</span>
+                    <span className="text-slate-400 text-[10px] font-semibold">Total Delay</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-4 text-[11px] font-semibold text-slate-600 w-full">
@@ -2038,7 +2038,7 @@ function EmployeeDetailView({
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                      <span className="text-xs font-semibold text-slate-600">O'rtacha kechikish:</span>
+                      <span className="text-xs font-semibold text-slate-600">Average Delay:</span>
                       <span className="text-sm font-bold text-slate-800">
                         {metrics.lateDays > 0 ? `${formatDelayShort(Math.round(metrics.totalDelayMinutes / metrics.lateDays))}/kun` : "0 m/kun"}
                       </span>
@@ -2055,11 +2055,11 @@ function EmployeeDetailView({
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-slate-800 text-sm">Kechikilgan kunlar ro'yxati (Batafsil)</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">Employee aynan qaysi kunlari kech qolgan, necha min va qanday sabab bilan</p>
+                  <h4 className="font-bold text-slate-800 text-sm">Late Attendance Records (Detailed)</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Log of specific late arrival dates, duration, and stated delay reasons</p>
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg">
-                  {metrics.lateDays} ta kechikish holati
+                  {metrics.lateDays} delay incidents
                 </span>
               </div>
               <div className="overflow-x-auto">
@@ -2067,11 +2067,11 @@ function EmployeeDetailView({
                   <thead>
                     <tr className="bg-slate-50/30 border-b border-slate-200 text-xs font-bold text-slate-500">
                       <th className="py-3 px-6">Date</th>
-                      <th className="py-3 px-6">Rejadagi vaqt</th>
-                      <th className="py-3 px-6">Haqiqiy kelgan vaqti</th>
-                      <th className="py-3 px-6">Delay Duration miqdori</th>
-                      <th className="py-3 px-6">Delay Duration sababi</th>
-                      <th className="py-3 px-6 text-right">Ushlab qolingan jarima</th>
+                      <th className="py-3 px-6">Scheduled Shift Time</th>
+                      <th className="py-3 px-6">Actual Arrival Time</th>
+                      <th className="py-3 px-6">Delay Duration</th>
+                      <th className="py-3 px-6">Reason for Delay</th>
+                      <th className="py-3 px-6 text-right">Assessed Penalty</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2087,7 +2087,7 @@ function EmployeeDetailView({
                             +{formatDelayText(lateRecord.delayMinutes)} late
                           </span>
                         </td>
-                        <td className="py-3 px-6 text-sm text-slate-700 font-medium">{lateRecord.delayReason || 'Transport tirbandligi'}</td>
+                        <td className="py-3 px-6 text-sm text-slate-700 font-medium">{lateRecord.delayReason || 'Transit Delay'}</td>
                         <td className="py-3 px-6 text-right text-sm font-bold text-rose-600">{lateRecord.penalty}</td>
                       </tr>
                     ))}
@@ -2119,19 +2119,19 @@ function EmployeeDetailView({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-xs font-semibold text-slate-500">Jami hisoblangan kunlar</span>
-                  <p className="text-2xl font-black text-slate-800 mt-1">{metrics.totalDays} kun</p>
+                  <span className="text-xs font-semibold text-slate-500">Total Accounted Days</span>
+                  <p className="text-2xl font-black text-slate-800 mt-1">{metrics.totalDays} days</p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-xs font-semibold text-slate-500">Ishga qatnashgan kunlar</span>
-                  <p className="text-2xl font-black text-emerald-600 mt-1">{metrics.onTimeDays + metrics.lateDays} kun</p>
+                  <span className="text-xs font-semibold text-slate-500">Days Worked</span>
+                  <p className="text-2xl font-black text-emerald-600 mt-1">{metrics.onTimeDays + metrics.lateDays} days</p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-xs font-semibold text-slate-500">O'rtacha kunlik stavka</span>
+                  <span className="text-xs font-semibold text-slate-500">Daily Pay Rate</span>
                   <p className="text-xl font-bold text-slate-800 mt-1">{(employee.dailyRate || 280000).toLocaleString()} $</p>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                  <span className="text-xs font-semibold text-emerald-700">Sof hisoblangan oylik</span>
+                  <span className="text-xs font-semibold text-emerald-700">Calculated Net Salary</span>
                   <p className="text-xl font-black text-emerald-700 mt-1">
                     {((metrics.onTimeDays + metrics.lateDays) * (employee.dailyRate || 280000)).toLocaleString()} $
                   </p>
@@ -2141,7 +2141,7 @@ function EmployeeDetailView({
           </div>
         ) : (
           <div className="p-12 text-center text-slate-400 font-medium">
-            Ushbu bo'lim faol xizmatda
+            Active operational module
           </div>
         )}
       </div>
@@ -2186,7 +2186,7 @@ function EmployeeDetailView({
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1 block">Ruxsat etilgan kechikish (min)</label>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">Grace Period Allowed (min)</label>
                 <input 
                   type="number" 
                   defaultValue={10} 
@@ -2284,7 +2284,7 @@ function LeaveTripModal({
 
   const leaveReasons = [
     "Yillik mehnat ta'tili",
-    "Ish haqi saqlanmaydigan ta'til",
+    "Unpaid Leave of Absence",
     "O'quv ta'tili (Sessiya)",
     "Sog'liqni tiklash / Datetoriy",
     "Oilaviy sharoit tufayli"
@@ -2295,8 +2295,8 @@ function LeaveTripModal({
     "Westside Branch bilan muzokaralar",
     "Mijozlar bilan biznes uchrashuv",
     "Malaka oshirish seminari",
-    "Hududiy savdo nazorati va monitoring",
-    "Texnik jihozlarni sozlash safari"
+    "Regional market oversight & client monitoring",
+    "Technical equipment calibration trip"
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -2329,7 +2329,7 @@ function LeaveTripModal({
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-800 tracking-tight">
-                {isLeave ? "Ta'tilni sozlash (Samolyot ✈️)" : "Xizmat safarini sozlash (Barg 🍃)"}
+                {isLeave ? "Configure Leave of Absence" : "Configure Business Travel"}
               </h3>
               <p className="text-xs font-semibold text-slate-500">
                 {isLeave ? "Schedule Annual Leave for Employee" : "Schedule Business Trip Duration"}
@@ -2422,7 +2422,7 @@ function LeaveTripModal({
           {/* Date & Duration Controls */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Boshlanish sanasi</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Start Date</label>
               <input 
                 type="date"
                 value={startDate}
@@ -2506,13 +2506,13 @@ function LeaveTripModal({
           {/* Reason / Notes */}
           <div>
             <label className="text-xs font-bold text-slate-700 mb-1 block">
-              {isLeave ? "Ta'til sababi yoki turi" : "Xizmat safari maqsadi"}
+              {isLeave ? "Leave Reason / Category" : "Business Travel Purpose"}
             </label>
             <input 
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Sabab yoki maqsadni kiriting..."
+              placeholder="Enter reason or assignment details..."
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-blue-500"
             />
             {/* Reason Suggestion Chips */}
@@ -2533,8 +2533,8 @@ function LeaveTripModal({
           {/* Payment option */}
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
             <div>
-              <div className="text-xs font-bold text-slate-800">Ish haqi saqlanishi</div>
-              <div className="text-[11px] text-slate-500">Ta'til/safar davrida kunlik maosh hisoblanadimi?</div>
+              <div className="text-xs font-bold text-slate-800">Paid Leave Policy</div>
+              <div className="text-[11px] text-slate-500">Is daily salary compensated during this period?</div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input 
@@ -2565,7 +2565,7 @@ function LeaveTripModal({
               }`}
             >
               {isLeave ? <Plane className="w-4 h-4" /> : <Leaf className="w-4 h-4" />}
-              <span>{durationDays} kunlik {isLeave ? "ta'tilni" : "safarni"} saqlash</span>
+              <span>Save {durationDays}-day {isLeave ? "leave" : "travel"} record</span>
             </button>
           </div>
 
@@ -2604,8 +2604,8 @@ function AddEmployeeModal({
       <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
         <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
           <div>
-            <h3 className="text-lg font-black text-slate-800">Yangi xodim qo'shish</h3>
-            <p className="text-xs text-slate-500">Tizimga va davomat jurnaliga yangi xodimni kiritish</p>
+            <h3 className="text-lg font-black text-slate-800">Add New Employee</h3>
+            <p className="text-xs text-slate-500">Enroll a new employee into the system and attendance roster</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
             <X className="w-5 h-5" />
@@ -2971,7 +2971,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
       });
       const data = await res.json();
       if (data.success) {
-        showToast('✅ Jarima va dam olish kunlari sozlamalari muvaffaqiyatli saqlandi!');
+        showToast('✅ Late penalty rates and rest days saved successfully!');
         if (onSettingsSaved) onSettingsSaved();
         onClose();
       } else {
@@ -2995,10 +2995,10 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
             </span>
             <div>
               <h3 className="text-base font-black text-slate-800">
-                Jarima va Dam Olish Kunlari Settingsi
+                Late Penalties & Rest Days Policy
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Delay Durationlar uchun jarima turi, stavkasi va dam olish kunlarini boshqarish
+                Configure penalty calculation rates and weekly non-working days
               </p>
             </div>
           </div>
@@ -3029,7 +3029,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
 
               <div>
                 <label className="text-xs font-bold text-slate-700 mb-1 block">
-                  Ruxsat etilgan kechikish (min):
+                  Grace Period Allowed (min):
                 </label>
                 <input 
                   type="number" 
@@ -3114,7 +3114,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
             {/* Rest Day kunlari (Hafta kunlari) */}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <label className="text-xs font-black text-slate-800 block">
-                Haftaning dam olish kunlari:
+                Weekly non-working rest days:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {daysOfWeek.map(d => {
@@ -3143,7 +3143,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
             {/* Maxsus sana / Bayram kunlari */}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <label className="text-xs font-black text-slate-800 block">
-                Maxsus bayram yoki rasmiy dam olish sanalari (YYYY-MM-DD):
+                Official holidays or designated corporate non-working dates (YYYY-MM-DD):
               </label>
               <div className="flex gap-2">
                 <input 
@@ -3393,7 +3393,7 @@ function GpsCheckInModal({
                 GPS Branch Georadiusi va Davomat
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Employee biriktirilgan filial radiusi ichida bo'lsa "Kelgan" deb tasdiqlash
+                Verify check-in when employee is within authorized branch radius
               </p>
             </div>
           </div>
@@ -3411,7 +3411,7 @@ function GpsCheckInModal({
           {/* Employee Selector */}
           <div>
             <label className="text-xs font-bold text-slate-700 mb-1.5 block">
-              Davomat qilinayotgan xodim:
+              Employee logging attendance:
             </label>
             <select
               value={selectedEmpId}
@@ -3591,7 +3591,7 @@ function GpsCheckInModal({
               <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-800 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  O'z vaqtida kelgan (On Time (No Delay))
+                  Punctual Check-In (On Time)
                 </span>
                 <span className="font-bold text-emerald-700">+$15 Performance Bonus</span>
               </div>
@@ -3633,7 +3633,7 @@ function GpsCheckInModal({
             }`}
           >
             <Check className="w-4 h-4" />
-            <span>✅ "Check-inm" deb tasdiqlash</span>
+            <span>✅ Confirm Check-In</span>
           </button>
         </div>
       </div>
@@ -4027,7 +4027,7 @@ function FaceIdIntegrationModal({
   // Generate complete JSON sync packet for external AI
   const externalAiPayload = useMemo(() => {
     return {
-      appName: "Toyona HR & Davomat",
+      appName: "NovaHR Attendance Suite",
       timestamp: new Date().toISOString(),
       employees: employees.map(emp => {
         const creds = getEmployeeCredentials(emp);
@@ -4072,7 +4072,7 @@ function FaceIdIntegrationModal({
                 </span>
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Employeesning yuz fotosuratini yuklash, jonli kameradan rasmga olish va Narigi AI ga uzatish
+                Upload employee portrait photo, capture via live camera and synchronize with AI recognition terminals
               </p>
             </div>
           </div>
@@ -4100,7 +4100,7 @@ function FaceIdIntegrationModal({
             }`}
           >
             <Camera className="w-3.5 h-3.5 text-purple-600" />
-            <span>📸 Face ID Rasm Joylash Joyi</span>
+            <span>📸 Face ID Reference Photo Hub</span>
           </button>
 
           <button
@@ -4142,7 +4142,7 @@ function FaceIdIntegrationModal({
             }`}
           >
             <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>⏳ Employees Rasm So'rovlari</span>
+            <span>⏳ Employee Photo Verification Requests</span>
             {pendingRequestsCount > 0 && (
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
                 {pendingRequestsCount}
@@ -4161,7 +4161,7 @@ function FaceIdIntegrationModal({
                 <Camera className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-purple-950 leading-relaxed">
                   <p className="font-bold mb-1 flex items-center gap-1.5 text-sm text-purple-900">
-                    <span>Employeesning Face ID Etalon Rasmini Joylash Joyi</span>
+                    <span>Employee Face ID Reference Photo Hub</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-200 text-purple-800">
                       POST /api/attendance/employee-photo
                     </span>
@@ -4180,7 +4180,7 @@ function FaceIdIntegrationModal({
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Employee ismi, lavozimi, login bo'yicha qidirish..."
+                      placeholder="Search by employee name, role, username..."
                       value={photoSearch}
                       onChange={(e) => setPhotoSearch(e.target.value)}
                       className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-purple-500 font-medium"
@@ -4200,7 +4200,7 @@ function FaceIdIntegrationModal({
                 </div>
 
                 <div className="text-[11px] font-bold text-slate-500">
-                  {filteredPhotoEmployees.length} nafar xodim topildi
+                  {filteredPhotoEmployees.length} employees found
                 </div>
               </div>
 
@@ -4215,7 +4215,7 @@ function FaceIdIntegrationModal({
                     {/* Left: Employee Selection List */}
                     <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1 border border-slate-200 rounded-2xl p-2 bg-slate-50/50">
                       <div className="text-[11px] font-bold text-slate-500 px-2 py-1 flex items-center justify-between">
-                        <span>XODIMNI TANLANG</span>
+                        <span>SELECT EMPLOYEE</span>
                         <span>{filteredPhotoEmployees.length} ta</span>
                       </div>
 
@@ -4277,7 +4277,7 @@ function FaceIdIntegrationModal({
 
                       {filteredPhotoEmployees.length === 0 && (
                         <div className="py-8 text-center text-xs text-slate-400 font-semibold">
-                          Employee topilmadi
+                          No employees found
                         </div>
                       )}
                     </div>
@@ -4307,7 +4307,7 @@ function FaceIdIntegrationModal({
                               onClick={() => handleTestApi(currentPhotoEmp)}
                               disabled={isTestingApi}
                               className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border border-slate-200"
-                              title="GET /api/attendance/employee-photo orqali Narigi AI nima olishini sinash"
+                              title="Test what AI Terminal receives via GET /api/attendance/employee-photo"
                             >
                               <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
                               <span>{isTestingApi ? "Tekshirilmoqda..." : "Narigi AI API Tekshiruvi"}</span>
@@ -4333,7 +4333,7 @@ function FaceIdIntegrationModal({
                                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                                   <div className="w-44 h-56 rounded-[50%] border-2 border-dashed border-purple-400/80 animate-pulse flex flex-col items-center justify-between p-3">
                                     <span className="text-[10px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full">
-                                      Yuzni shu yerga joylang
+                                      Center face within frame
                                     </span>
                                     <div className="w-full h-0.5 bg-purple-400 shadow-[0_0_8px_#c084fc] animate-bounce" />
                                     <span className="text-[9px] text-purple-200">
@@ -4471,7 +4471,7 @@ function FaceIdIntegrationModal({
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-emerald-400 flex items-center gap-1.5">
                                 <CheckCircle2 className="w-4 h-4" />
-                                Narigi AI oladigan API natijasi (GET /api/attendance/employee-photo):
+                                AI Terminal Endpoint Output Preview (GET /api/attendance/employee-photo):
                               </span>
                               <button
                                 type="button"
@@ -4502,7 +4502,7 @@ function FaceIdIntegrationModal({
                 <Sparkles className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-indigo-950 leading-relaxed">
                   <p className="font-bold mb-1">
-                    Narigi AI ga xodimlarning hisob ma'lumotlari uzatiladi:
+                    Employee access credentials synced with external AI terminals:
                   </p>
                   <p className="text-indigo-800">
                     Siz davomat uchun narigi AI ga xodimning <b>loginini</b>, <b>parolini</b>, <b>branchni</b> va <b>lavozimini</b> yuborasiz. 
@@ -4514,17 +4514,17 @@ function FaceIdIntegrationModal({
               {/* Sync Actions Bar */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="text-xs text-slate-500 font-semibold">
-                  Jami <b>{employees.length} nafar</b> xodim hisobi mavjud
+                  Total <b>{employees.length}</b> employee credentials active
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => handleCopy(JSON.stringify(externalAiPayload, null, 2), "All Employees JSON paketi")}
+                    onClick={() => handleCopy(JSON.stringify(externalAiPayload, null, 2), "All Employees JSON Payload")}
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    <span>{copiedText === "All Employees JSON paketi" ? "Nusxalandi! ✅" : "AI ga JSON nusxalash"}</span>
+                    <span>{copiedText === "All Employees JSON Payload" ? "Copied! ✅" : "Copy JSON to Clipboard"}</span>
                   </button>
                 </div>
               </div>
@@ -4654,7 +4654,7 @@ function FaceIdIntegrationModal({
               <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-1 block">Employeeni tanlang:</label>
+                    <label className="text-xs font-bold text-slate-700 mb-1 block">Select Employee:</label>
                     <select
                       value={selectedEmpId}
                       onChange={(e) => {
@@ -4751,13 +4751,13 @@ function FaceIdIntegrationModal({
                         Kameradan rasm olindi va narigi AI ga yuborildi...
                       </span>
                       <p className="text-[11px] text-slate-400 font-mono">
-                        POST /api/face-id/verify-photo: "Men o'sha xodimning rasmini yuboraman, sen skaner qilasan"
+                        POST /api/face-id/verify-photo: Real-time biometric face verification handshake
                       </p>
                     </div>
                   ) : scanResult ? (
                     <span className="text-emerald-400 flex items-center gap-1.5 justify-center">
                       <CheckCircle2 className="w-4 h-4" />
-                      Narigi AI javob qaytardi: Employee yuzi 98.8% aniqlikda tasdiqlandi!
+                      AI Terminal Verified: Employee face recognized with 98.8% confidence!
                     </span>
                   ) : (
                     <div className="space-y-1">
@@ -4800,7 +4800,7 @@ function FaceIdIntegrationModal({
               {scanResult && (
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 animate-in fade-in">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="text-xs font-bold text-slate-700">Narigi AI qaytargan xodim:</span>
+                    <span className="text-xs font-bold text-slate-700">AI Terminal Identified Employee:</span>
                     <span className="text-xs font-black text-slate-800">{selectedEmp?.fullName} (ID: {selectedEmp?.id})</span>
                   </div>
 
@@ -4817,7 +4817,7 @@ function FaceIdIntegrationModal({
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">Davomat va Delay Duration holati:</span>
+                    <span className="text-xs font-bold text-slate-700">Attendance & Punctuality Status:</span>
                     <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${
                       scanResult.isLate 
                         ? 'bg-amber-100 text-amber-800 border border-amber-300' 
@@ -4825,7 +4825,7 @@ function FaceIdIntegrationModal({
                     }`}>
                       {scanResult.isLate 
                         ? `Late (+${formatDelayShort(scanResult.delayMinutes)} late)` 
-                        : (scanResult.action === 'check_out' ? "Ishdan ketdi ✅" : "O'z vaqtida kelgan ✅")}
+                        : (scanResult.action === 'check_out' ? "Checked Out ✅" : "Punctual Check-In ✅")}
                     </span>
                   </div>
 
@@ -4843,7 +4843,7 @@ function FaceIdIntegrationModal({
               )}
             </div>
           ) : activeTab === 'requests' ? (
-            /* TAB 3: XODIMLAR RASM SO'ROVLARI (HR TASDIG'I) */
+            /* TAB 3: EMPLOYEE PHOTO VERIFICATION REQUESTS (HR APPROVAL) */
             <div className="space-y-4">
               {/* Banner */}
               <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-purple-50 border border-emerald-200 rounded-2xl flex items-start justify-between gap-3">
@@ -4853,7 +4853,7 @@ function FaceIdIntegrationModal({
                   </span>
                   <div className="text-xs text-slate-800 leading-relaxed">
                     <p className="font-bold text-sm text-emerald-950 mb-0.5 flex items-center gap-2">
-                      <span>Employees Yuborgan Yangi Face ID Surat So'rovlari</span>
+                      <span>New Face ID Photo Requests Submitted by Employees</span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-200 text-emerald-900">
                         HR Confirm Markazi
                       </span>
@@ -4883,10 +4883,10 @@ function FaceIdIntegrationModal({
                       ? photoRequests.length 
                       : photoRequests.filter(r => r.status === st).length;
                     const labels: Record<string, string> = {
-                      pending: '⏳ Kutilmoqda',
+                      pending: '⏳ Pending',
                       all: 'All',
-                      approved: '✓ Tasdiqlangan',
-                      rejected: '✕ Rad etilgan'
+                      approved: '✓ Approved',
+                      rejected: '✕ Rejected'
                     };
                     return (
                       <button
@@ -4913,7 +4913,7 @@ function FaceIdIntegrationModal({
                 </div>
 
                 <div className="text-xs text-slate-500 font-bold">
-                  Total duration: {filteredPhotoRequests.length} ta so'rov
+                  Total: {filteredPhotoRequests.length} requests
                 </div>
               </div>
 
@@ -4921,16 +4921,16 @@ function FaceIdIntegrationModal({
               {isLoadingRequests && photoRequests.length === 0 ? (
                 <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 font-medium">
                   <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
-                  So'rovlar yuklanmoqda...
+                  Loading verification requests...
                 </div>
               ) : filteredPhotoRequests.length === 0 ? (
                 <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 space-y-2">
                   <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-xl">
                     📸
                   </div>
-                  <h4 className="text-sm font-bold text-slate-700">Hozircha so'rovlar mavjud emas</h4>
+                  <h4 className="text-sm font-bold text-slate-700">No Photo Verification Requests Pending</h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Employees o'z profilidan yangi surat yuklaganida so'rovlar shu yerda paydo bo'ladi.
+                    When employees upload a new photo from their portal, verification requests appear here.
                   </p>
                 </div>
               ) : (
@@ -5007,7 +5007,7 @@ function FaceIdIntegrationModal({
                               type="button"
                               onClick={() => handleDeleteRequest(req.id)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                              title="Audit Historydan o'chirish"
+                              title="Remove from audit history"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -5019,22 +5019,22 @@ function FaceIdIntegrationModal({
                           {/* Old / Current */}
                           <div className="flex flex-col items-center gap-1.5">
                             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-                              Joriy etalon rasm
+                              Current Profile Reference
                             </span>
                             <div className="w-24 h-28 rounded-xl overflow-hidden bg-white border border-slate-200 shadow-2xs relative">
                               {req.currentPhotoUrl ? (
                                 <img
                                   src={req.currentPhotoUrl}
-                                  alt="Joriy rasm"
+                                  alt="Current photo"
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">
-                                  Rasm yo'q
+                                  No Photo
                                 </div>
                               )}
                             </div>
-                            <span className="text-[10px] text-slate-400 font-medium">Amaldagi</span>
+                            <span className="text-[10px] text-slate-400 font-medium">Current</span>
                           </div>
 
                           {/* Arrow */}
@@ -5045,24 +5045,24 @@ function FaceIdIntegrationModal({
                           {/* New Request */}
                           <div className="flex flex-col items-center gap-1.5">
                             <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wide flex items-center gap-1">
-                              <span>Yangi yuborilgan rasm</span>
+                              <span>Submitted New Photo</span>
                               <Sparkles className="w-3 h-3 text-purple-600" />
                             </span>
                             <div className="w-24 h-28 rounded-xl overflow-hidden bg-white border-2 border-purple-500 shadow-md ring-4 ring-purple-100 relative">
                               <img
                                 src={req.newPhotoUrl}
-                                alt="Yangi rasm"
+                                alt="Submitted photo"
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <span className="text-[10px] text-purple-700 font-bold">Kutilayotgan yangi</span>
+                            <span className="text-[10px] text-purple-700 font-bold">Pending Review</span>
                           </div>
                         </div>
 
                         {/* Status details or review notes */}
                         {isApproved && (
                           <div className="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 flex items-center justify-between">
-                            <span>✓ Ushbu rasm <strong>Face ID etalon bazasiga biriktirildi</strong>. Employee endi shu rasm orqali taniydi.</span>
+                            <span>✓ This photo has been <strong>approved and bound to the Face ID reference database</strong>.</span>
                             {req.reviewedBy && (
                               <span className="text-[11px] text-emerald-700 font-bold">
                                 {req.reviewedBy} ({req.reviewedAt ? new Date(req.reviewedAt).toLocaleDateString('uz-UZ') : ''})
@@ -5073,8 +5073,8 @@ function FaceIdIntegrationModal({
 
                         {isRejected && (
                           <div className="text-xs text-rose-800 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-                            <span className="font-bold">Rad etildi: </span>
-                            <span>{req.rejectionReason || "Talabga mos kelmagani sababli rad etildi."}</span>
+                            <span className="font-bold">Rejected: </span>
+                            <span>{req.rejectionReason || "Rejected due to photo quality or alignment standard non-compliance."}</span>
                           </div>
                         )}
 
@@ -5084,11 +5084,11 @@ function FaceIdIntegrationModal({
                             {isRejecting ? (
                               <div className="bg-rose-50/70 border border-rose-200 p-3 rounded-xl space-y-2">
                                 <label className="text-xs font-bold text-rose-900 block">
-                                  Reject sababini kiriting (Employeega ko'rinadi):
+                                  Enter rejection reason (visible to employee):
                                 </label>
                                 <input
                                   type="text"
-                                  placeholder="Masalan: Yuz qorong'i tushgan, iltimos yaxshi yorug'likda oling..."
+                                  placeholder="e.g. Face is underexposed, please retake in well-lit conditions..."
                                   value={rejectReasonText}
                                   onChange={(e) => setRejectReasonText(e.target.value)}
                                   className="w-full px-3 py-1.5 text-xs bg-white border border-rose-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-200"
@@ -5110,7 +5110,7 @@ function FaceIdIntegrationModal({
                                     disabled={isProcessing}
                                     className="px-4 py-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-lg cursor-pointer shadow-xs"
                                   >
-                                    {isProcessing ? "Rad etilmoqda..." : "✕ Rejectni tasdiqlash"}
+                                    {isProcessing ? "Rejecting..." : "✕ Confirm Rejection"}
                                   </button>
                                 </div>
                               </div>
@@ -5138,12 +5138,12 @@ function FaceIdIntegrationModal({
                                   {isProcessing ? (
                                     <>
                                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                      <span>Saqlanmoqda...</span>
+                                      <span>Saving...</span>
                                     </>
                                   ) : (
                                     <>
                                       <Check className="w-4 h-4" />
-                                      <span>✓ Confirm va etalon qilish</span>
+                                      <span>✓ Approve & Set Reference Photo</span>
                                     </>
                                   )}
                                 </button>

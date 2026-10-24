@@ -390,7 +390,7 @@ export async function verifyUserCredentialsInFirebase(username: string, password
           email: emp.email || `${emp.username}@toyonasavdo.uz`,
           role: 'Staff',
           branch: emp.branch || 'Headquarters',
-          status: 'Faol',
+          status: 'Active',
           isOnline: true,
           lastActive: 'Hozir',
           allowedModules: ['employee_portal'],
@@ -672,7 +672,7 @@ export interface AttendanceRecord {
   checkOut: string; // HH:MM
   checkInTimestamp?: string;
   checkOutTimestamp?: string;
-  status: 'On Time kelgan' | 'Kech qolgan' | 'Absent' | 'Check-out' | 'Dam olish kuni' | 'Bayram kuni' | 'Ta\'tilda' | 'Ish yuzasidan safarda';
+  status: 'On Time' | 'Late' | 'Absent' | 'Clocked Out' | 'Rest Day' | 'Public Holiday' | 'On Leave' | 'Business Trip';
   durationDays?: number;
   leaveType?: 'vacation' | 'trip' | string;
   startDate?: string;
@@ -809,7 +809,7 @@ export async function recordCheckIn(params: {
       if (data.checkIn && data.checkIn !== '--:--') {
         return {
           success: false,
-          message: `Bugun (${todayStr}) soat ${data.checkIn} da allaqachon 'Check-inm' deb belgilangansiz!`
+          message: `You have already clocked in today (${todayStr}) at ${data.checkIn}!`
         };
       }
     }
@@ -826,7 +826,7 @@ export async function recordCheckIn(params: {
       delayMin = currentTotalMin - scheduledTotalMin;
     }
 
-    const status = delayMin > 0 ? 'Kech qolgan' : 'On Time kelgan';
+    const status = delayMin > 0 ? 'Late' : 'On Time';
     const penaltyAmount = delayMin > 0 ? delayMin * 1000 : 0;
     const dailyBase = params.dailyRate || 250000;
     const net = dailyBase - penaltyAmount;
@@ -841,13 +841,13 @@ export async function recordCheckIn(params: {
       checkInTimestamp: now.toISOString(),
       status,
       delayMinutes: delayMin,
-      delayReason: delayMin > 0 ? 'Kechikish qayd etildi' : undefined,
+      delayReason: delayMin > 0 ? 'Late arrival recorded' : undefined,
       workedMinutes: 0,
       workedTime: '-',
       penalty: penaltyAmount > 0 ? `- ${penaltyAmount.toLocaleString()} $` : '-',
       bonus: delayMin === 0 ? "15,000 $" : '-',
       netPay: `${net.toLocaleString()} $`,
-      notes: delayMin > 0 ? `${delayMin} daqiqa kechikkan` : 'O\'z vaqtida keldi',
+      notes: delayMin > 0 ? `${delayMin} minutes late` : 'Punctual arrival',
       branch: params.branch,
       department: params.department,
       createdAt: now.toISOString(),
@@ -870,7 +870,7 @@ export async function recordCheckIn(params: {
     // Send notification if late
     if (delayMin > 0) {
       await sendHRNotification({
-        title: "Kechikish qayd etildi",
+        title: "Late arrival recorded",
         message: `${params.employeeName} (${params.branch}) bugun ${delayMin} daqiqa kechikib keldi.`,
         type: 'attendance',
         relatedId: docId
@@ -879,7 +879,7 @@ export async function recordCheckIn(params: {
 
     return {
       success: true,
-      message: `Checked in successfully! Arrival time: ${currentTimeStr} (${status})`,
+      message: `Checked in successfully! Time: ${currentTimeStr} (${status})`,
       record: newRecord
     };
   } catch (error: any) {
@@ -908,7 +908,7 @@ export async function recordCheckOut(params: {
     if (!existingSnap.exists() || !existingSnap.data()?.checkIn || existingSnap.data()?.checkIn === '--:--') {
       return {
         success: false,
-        message: "Avval 'Check-inm' deb belgilashingiz kerak! Hali bugungi kirish vaqti qayd etilmagan."
+        message: "You must check in first before checking out!"
       };
     }
 
@@ -1020,13 +1020,13 @@ export interface LeaveRequest {
   employeeName: string;
   department: string;
   branch: string;
-  type: 'Yillik ta\'til' | 'Kasallik ta\'tili' | 'Oilaviy sabab' | 'Boshqa ruxsat';
+  type: 'Annual Leave' | 'Sick Leave' | 'Family Emergency' | 'Other Leave';
   startDate: string;
   endDate: string;
   daysCount: number;
   reason: string;
   attachmentUrl?: string;
-  status: 'Kutilmoqda' | 'Tasdiqlangan' | 'Rad etilgan';
+  status: 'Pending' | 'Approved' | 'Rejected';
   reviewedBy?: string;
   reviewedAt?: string;
   reviewComment?: string;
@@ -1077,7 +1077,7 @@ export async function saveFirebaseLeaveRequest(req: Partial<LeaveRequest>): Prom
       daysCount: req.daysCount || 1,
       reason: req.reason || '',
       attachmentUrl: req.attachmentUrl,
-      status: req.status || 'Kutilmoqda',
+      status: req.status || 'Pending',
       createdAt: req.createdAt || now,
       updatedAt: now
     };
@@ -1087,14 +1087,14 @@ export async function saveFirebaseLeaveRequest(req: Partial<LeaveRequest>): Prom
 
     // Send notification to HR
     await sendHRNotification({
-      title: "Yangi ta'til so'rovi",
+      title: "New Leave Request",
       message: `${data.employeeName} (${data.type}) uchun ${data.daysCount} kunlik so'rov yubordi.`,
       type: 'leave',
       relatedId: docId
     });
 
     await logAuditEvent({
-      action: "Ta'til so'rovi yuborildi",
+      action: "Leave request submitted",
       module: 'Ta\'tillar',
       performedBy: data.employeeName,
       performedById: data.employeeId,
@@ -1247,7 +1247,7 @@ export interface HolidayItem {
   id: string;
   name: string;
   date: string; // YYYY-MM-DD
-  type: 'Davlat bayrami' | 'Kompaniya dam olish kuni';
+  type: 'Public Holiday' | 'Corporate Holiday';
   createdAt: string;
 }
 
@@ -1496,7 +1496,7 @@ export interface SystemSettings {
 
 export const DEFAULT_HRMS_SETTINGS: SystemSettings = {
   id: 'general',
-  companyName: "Toyona Savdo HRMS",
+  companyName: "NovaHR Enterprise HRMS",
   defaultGraceMinutes: 15,
   dailyLatePenaltyRate: 1000,
   defaultAnnualLeaveDays: 24,

@@ -186,7 +186,7 @@ export default function UsersManagement({
 
   const generatePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-    let pass = "Toyona#2026!";
+    let pass = "NovaHR#2026!";
     for (let i = 0; i < 4; i++) {
       pass += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -475,7 +475,7 @@ export default function UsersManagement({
                 onChange={(e) => setRoleeFilter(e.target.value)}
                 className="font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer w-full"
               >
-                <option value="All">Barcha Rolelar</option>
+                <option value="All">All User Roles</option>
                 {roles.map(r => (
                   <option key={r.id} value={r.name}>{r.name}</option>
                 ))}
@@ -491,7 +491,7 @@ export default function UsersManagement({
                 onChange={(e) => setBranchFilter(e.target.value)}
                 className="font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer w-full"
               >
-                <option value="All">Barcha Branchlar</option>
+                <option value="All">All Locations</option>
                 {ALL_BRANCHES.map(b => (
                   <option key={b} value={b}>{b}</option>
                 ))}
@@ -534,9 +534,9 @@ export default function UsersManagement({
               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
                   <th className="p-3.5">User</th>
-                  <th className="p-3.5">Login va Parol</th>
-                  <th className="p-3.5">Rolee & Branch</th>
-                  <th className="p-3.5">Permissions Ruxsati</th>
+                  <th className="p-3.5">Username & Password</th>
+                  <th className="p-3.5">Role & Branch</th>
+                  <th className="p-3.5">Module Permissions</th>
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
               </thead>
@@ -588,7 +588,7 @@ export default function UsersManagement({
                               className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#00A651] border border-emerald-200 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
                             >
                               <Key className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Parol</span>
+                              <span className="hidden sm:inline">Password</span>
                             </button>
                           </div>
                         </td>
@@ -1018,7 +1018,7 @@ export default function UsersManagement({
                         ref={newUserPassRef}
                         type={showPassword ? "text" : "password"}
                         required
-                        placeholder="Parol kiritish..."
+                        placeholder="Enter secure password..."
                         value={newUserPassword}
                         onChange={(e) => setNewUserPassword(e.target.value)}
                         className="w-full px-3 py-2 pr-10 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651]"
@@ -1041,7 +1041,7 @@ export default function UsersManagement({
                   </div>
                 </div>
 
-                {/* 6. FILIAL SELECT */}
+                {/* 6. BRANCH SELECT */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Assigned Branch *</label>
                   <select

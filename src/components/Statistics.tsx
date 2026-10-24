@@ -26,14 +26,14 @@ import { ExportButtons } from './ExportButtons';
 
 // Dasturda ishlatiladigan rasmiy Statuslar ro'yxati
 const STATUSES = [
-  "Yangi nomzod",
-  "Dastlabki saralash",
+  "New Applicant",
+  "Screening",
   "Suhbatga chaqirilgan",
-  "Ishga taklif qilingan",
-  "Hujjat yig'ish",
+  "Offer Extended",
+  "Documentation",
   "Trening",
   "Hujjatlashtirishda",
-  "Ishga qabul qilingan"
+  "Hired"
 ];
 
 const STATUS_COLORS = [
@@ -41,7 +41,7 @@ const STATUS_COLORS = [
   '#8b5cf6', // Dastlabki saralash - purple
   '#f59e0b', // Suhbat - orange
   '#10b981', // Ishga taklif - emerald
-  '#6366f1', // Hujjat yig'ish - indigo
+  '#6366f1', // Documentation - indigo
   '#ec4899', // Trening - pink
   '#14b8a6', // Hujjatlashtirish - teal
   '#00A651', // Qabul qilingan - our brand green
@@ -145,7 +145,7 @@ export default function Statistics() {
       // Normalizatsiya
       const normalized: CandidateItem[] = rawList.map((c, i) => {
         const fullName = c.fullName || c.fio || c.name || `Candidate #${i + 1}`;
-        const role = c.jobPosition || c.position || c.lavozim || c.role || 'Sotuvchi maslahatchi';
+        const role = c.jobPosition || c.position || c.role || 'Sales Consultant';
         const rawDate = c.submittedAt || c.date || c.createdAt || new Date().toISOString();
         let safeDate = rawDate;
         try {
@@ -168,13 +168,13 @@ export default function Statistics() {
           date: safeDate,
           submittedAt: safeDate,
           phone: c.phone1 || c.phone || c.telefon1 || '+998 -- --- -- --',
-          email: c.email || `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@toyona.uz`,
+          email: c.email || `${fullName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@novahr.com`,
           avatar: c.photoUrl || c.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=00A651&color=fff`,
           location: c.region || c.targetBranch || c.exactAddress || c.address || 'Headquarters',
           region: c.region,
           targetBranch: c.targetBranch,
           education: c.educationLevel || c.education || c.malumoti || 'O\'rta maxsus',
-          experience: c.pastExperience || c.candidateMessage || c.experience || 'Mavjud emas',
+          experience: c.pastExperience || c.candidateMessage || c.experience || 'None',
           expectedSalary: c.expectedSalary || 'Kelishilgan holda',
           skills: Array.isArray(c.skills) && c.skills.length > 0 
             ? c.skills 
@@ -546,7 +546,7 @@ export default function Statistics() {
         </div>
 
         <div className="flex flex-wrap items-end gap-3 sm:gap-4">
-          {/* DINAMIK LAVOZIM / ROL MENYUSI */}
+          {/* DYNAMIC ROLE & POSITION MENU */}
           <div className="flex flex-col gap-1.5 relative" ref={roleDropdownRef}>
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Filter by Position</label>
             <button
@@ -652,7 +652,7 @@ export default function Statistics() {
               <h3 className="text-lg font-bold text-slate-800">
                 Applicant Flow Trend {selectedMonth ? `(${selectedMonth})` : "(Over Time)"}
               </h3>
-              <p className="text-xs text-slate-500">Ariza berilgan sanalar bo'yicha dinamik tahlil</p>
+              <p className="text-xs text-slate-500">Dynamic analysis of candidate applications by submission date</p>
             </div>
             <AnimatePresence>
               {selectedMonth && (
@@ -798,7 +798,7 @@ export default function Statistics() {
                       <LucidePieChart className="w-10 h-10 text-slate-300" />
                       <p className="text-sm font-semibold text-slate-600">No candidate data available</p>
                       <p className="text-xs text-slate-400">
-                        Ariza topshirilganda statuslar bo'yicha doira diagrammasi hosil bo'ladi.
+                        Distribution breakdown of candidate applications by stage.
                       </p>
                     </div>
                   )}
@@ -815,7 +815,7 @@ export default function Statistics() {
           <div className="w-full flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-slate-800">Transfers & Promotions Breakdown</h3>
-              <p className="text-xs text-slate-500">Branches va lavozimlar bo'yicha xodimlar o'tkazmalari</p>
+              <p className="text-xs text-slate-500">Department and location employee transfer dynamics</p>
             </div>
             <span className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
@@ -932,7 +932,7 @@ export default function Statistics() {
                       {selectedCandidate ? selectedCandidate.name : selectedStatus}
                     </h3>
                     <p className="text-sm text-slate-500 mt-0.5">
-                      {selectedCandidate ? selectedCandidate.role : "Ushbu bosqichdagi barcha nomzodlar"}
+                      {selectedCandidate ? selectedCandidate.role : "All candidates in this stage"}
                     </p>
                   </div>
                 </div>
@@ -979,14 +979,14 @@ export default function Statistics() {
                           <div className="font-semibold text-slate-800 text-xs">{selectedCandidate.experience}</div>
                         </div>
                         <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="flex items-center gap-2.5 text-slate-500 font-medium"><Wallet className="w-4 h-4"/> Maosh</div>
+                          <div className="flex items-center gap-2.5 text-slate-500 font-medium"><Wallet className="w-4 h-4"/> Salary Expectation</div>
                           <div className="font-semibold text-slate-800 text-xs">{selectedCandidate.expectedSalary}</div>
                         </div>
                       </div>
 
                       <div className="w-full flex flex-col gap-3 mt-3">
                         <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                          <div className="flex items-center gap-2.5 text-slate-500 font-medium"><Calendar className="w-4 h-4"/> Ariza sanasi</div>
+                          <div className="flex items-center gap-2.5 text-slate-500 font-medium"><Calendar className="w-4 h-4"/> Application Date</div>
                           <div className="font-semibold text-slate-800 text-xs">
                             {(() => {
                               try {
@@ -1054,7 +1054,7 @@ export default function Statistics() {
                             <th className="py-2.5 px-3">Candidate (F.I.O)</th>
                             <th className="py-2.5 px-3">Designation</th>
                             <th className="py-2.5 px-3">Telefon</th>
-                            <th className="py-2.5 px-3">Holati</th>
+                            <th className="py-2.5 px-3">Status</th>
                             <th className="py-2.5 px-3 text-right">Amal</th>
                           </tr>
                         </thead>

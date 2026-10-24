@@ -59,7 +59,7 @@ export default function Attendance({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'all' | 'present' | 'late' | 'absent'>('all');
 
-  // Namuna davomat va kechikishlar yozuvlari
+  // Sample attendance and punctuality records
   const [liveLogs, setLiveLogs] = useState<any[]>([]);
   const [firestoreRecords, setFirestoreRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,62 +101,62 @@ export default function Attendance({
     {
       id: 'att-1',
       employeeName: 'Rustam Aliyev',
-      position: 'Katta sotuvchi-maslahatchi',
+      position: 'Senior Sales Consultant',
       branch: 'Downtown Branch',
-      department: 'Savdo bo\'limi',
+      department: 'Sales & Retail',
       scheduledTime: '09:00',
       checkInTime: '08:52',
       status: 'on_time',
       delayMinutes: 0,
-      notes: 'O\'z vaqtida keldi (GPS tasdiqlangan)'
+      notes: 'Punctual arrival (GPS verified)'
     },
     {
       id: 'att-2',
       employeeName: 'Nodira Qodirova',
-      position: 'Kassir-operator',
+      position: 'Cashier & POS Operator',
       branch: 'Westside Branch',
-      department: 'Kassalar va Moliya',
+      department: 'Finance & Cashiers',
       scheduledTime: '09:00',
       checkInTime: '09:24',
       status: 'late',
       delayMinutes: 24,
-      notes: 'Yo\'l tirbandligi sababli kechikkan'
+      notes: 'Late arrival due to traffic congestion'
     },
     {
       id: 'att-3',
       employeeName: 'Shohruh Bekmirzayev',
-      position: 'Ombor sektori mutaxassisi',
+      position: 'Logistics Specialist',
       branch: 'Downtown Branch',
-      department: 'Omborxona va Logistika',
+      department: 'Warehouse & Logistics',
       scheduledTime: '08:30',
       checkInTime: '09:05',
       status: 'late',
       delayMinutes: 35,
-      notes: 'Delay qayd etildi'
+      notes: 'Late check-in recorded'
     },
     {
       id: 'att-4',
       employeeName: 'Zilola Ergasheva',
-      position: 'Mijozlar bilan aloqa operatori',
+      position: 'Customer Relations Representative',
       branch: 'Headquarters',
-      department: 'Mijozlar bilan ishlash',
+      department: 'Customer Relations',
       scheduledTime: '09:00',
       checkInTime: '08:55',
       status: 'on_time',
       delayMinutes: 0,
-      notes: 'O\'z vaqtida keldi'
+      notes: 'Punctual arrival'
     },
     {
       id: 'att-5',
       employeeName: 'Jasur Temirov',
-      position: 'Yetkazib beruvchi kuryer',
+      position: 'Dispatch & Delivery Courier',
       branch: 'Central Branch',
-      department: 'Logistika va Yetkazib berish',
+      department: 'Logistics & Dispatch',
       scheduledTime: '09:00',
       checkInTime: '-',
       status: 'absent',
       delayMinutes: 0,
-      notes: 'Kasallik varaqasi (Sababli)'
+      notes: 'Approved Medical Leave'
     }
   ];
 
@@ -171,7 +171,7 @@ export default function Attendance({
     checkInTime: l.timeFormatted,
     status: l.success ? 'on_time' : 'late',
     delayMinutes: 0,
-    notes: `GPS "Check-inm" (${l.distanceMeters}m masofadan)`
+    notes: `GPS Check-in (${l.distanceMeters}m radius)`
   }));
 
   // Map real Firestore attendance records
@@ -180,16 +180,16 @@ export default function Attendance({
     employeeName: r.employeeName,
     position: 'Employee',
     branch: r.branch || 'Headquarters',
-    department: r.department || 'Savdo',
+    department: r.department || 'Operations',
     scheduledTime: r.scheduledTime || '09:00',
     checkInTime: r.checkIn || '-',
-    status: r.status === 'Kech qolgan' ? 'late' : 
-            r.status === 'Kelmadi' ? 'absent' : 
-            r.status === 'Ta\'tilda' ? 'leave' :
-            r.status === 'Ish yuzasidan safarda' ? 'trip' : 'on_time',
+    status: (r.status === 'Kech qolgan' || r.status === 'Late') ? 'late' : 
+            (r.status === 'Kelmadi' || r.status === 'Absent') ? 'absent' : 
+            (r.status === 'Ta\'tilda' || r.status === 'On Leave') ? 'leave' :
+            (r.status === 'Ish yuzasidan safarda' || r.status === 'Business Trip') ? 'trip' : 'on_time',
     delayMinutes: r.delayMinutes || 0,
     durationDays: r.durationDays,
-    notes: r.notes || (r.status === 'Kech qolgan' ? `${formatDelayText(r.delayMinutes)} late` : 'On Time kelgan')
+    notes: r.notes || ((r.status === 'Kech qolgan' || r.status === 'Late') ? `${formatDelayText(r.delayMinutes)} late` : 'Punctual arrival')
   }));
 
   const allRecords = [...mappedFirestore, ...dynamicLogs, ...baseSampleRecords];
@@ -264,7 +264,7 @@ export default function Attendance({
           <BranchGeozones />
         </div>
       ) : (
-        /* VIEW 2: DAVOMAT JURNALI */
+        /* VIEW 2: ATTENDANCE JOURNAL */
         <>
           {/* DATE & EXPORT ACTIONS */}
           <div className="flex items-center justify-between gap-2.5 mt-4">

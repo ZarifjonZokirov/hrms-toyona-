@@ -88,7 +88,7 @@ export const matchEmployeeToBranch = (empBranch: string | undefined, branchName:
   
   // Clean prefixes / suffixes
   const strip = (s: string) => s
-    .replace(/\b(branch|filial|markaziy|toshkent|shahri|shahar|viloyati)\b/gi, '')
+    .replace(/\b(branch|campus|hub|center|terminal|office|regional)\b/gi, '')
     .replace(/[()]/g, '')
     .trim();
 
@@ -97,15 +97,9 @@ export const matchEmployeeToBranch = (empBranch: string | undefined, branchName:
   if (se && sb && (se.includes(sb) || sb.includes(se))) return true;
 
   // Head office synonyms
-  const isHeadE = e.includes('bosh ofis') || e.includes('bosh idora') || e.includes('bosh bino') || e.includes('idora');
-  const isHeadB = b.includes('bosh ofis') || b.includes('bosh idora') || b.includes('bosh bino') || b.includes('idora');
+  const isHeadE = e.includes('headquarters') || e.includes('corporate') || e.includes('hq');
+  const isHeadB = b.includes('headquarters') || b.includes('corporate') || b.includes('hq');
   if (isHeadE && isHeadB) return true;
-
-  // Legacy city matches
-  if (e.includes('andijon') && (b.includes('turkiston') || b.includes('andijon'))) return true;
-  if (e.includes('namangan') && (b.includes('istiqlol') || b.includes('namangan'))) return true;
-  if (e.includes("farg'ona") && (b.includes('mingtut') || b.includes("farg'ona"))) return true;
-  if (e.includes('samarqand') && (b.includes('pop') || b.includes('samarqand'))) return true;
 
   return false;
 };
@@ -119,20 +113,21 @@ export const getEmployeeRegion = (emp: Employee, branchList: Branch[]): string =
   if (branch && branch.region) return branch.region;
   
   const eb = (emp.branch || '').toLowerCase();
-  if (eb.includes('andijon') || eb.includes('turkiston')) return 'New York State';
-  if (eb.includes('farg\'ona') || eb.includes('mingtut') || eb.includes('qo\'qon')) return "East Coast Region";
-  if (eb.includes('namangan') || eb.includes('istiqlol')) return 'Namangan viloyati';
-  if (eb.includes('toshkent') || eb.includes('bosh ofis') || eb.includes('bosh idora')) return 'New York City';
-  if (eb.includes('samarqand') || eb.includes('pop')) return 'Samarqand viloyati';
+  if (eb.includes('manhattan') || eb.includes('new york') || eb.includes('headquarters')) return 'New York City';
+  if (eb.includes('brooklyn') || eb.includes('queens')) return 'New York Metro';
+  if (eb.includes('california') || eb.includes('silicon') || eb.includes('francisco') || eb.includes('angeles')) return 'California Region';
+  if (eb.includes('texas') || eb.includes('austin')) return 'Texas Region';
+  if (eb.includes('chicago') || eb.includes('illinois')) return 'Illinois Metro';
+  if (eb.includes('boston') || eb.includes('massachusetts')) return 'Massachusetts Metro';
   return "East Coast Region";
 };
 
 const initialBranches: Branch[] = [
-  { id: '1', name: 'Andijon', code: 'Андижан', region: 'New York State', category: 'A', vacancyCount: 1, date: '7.9.2026' },
-  { id: '2', name: 'Andijon', code: 'Андижан', region: 'New York State', category: 'B', vacancyCount: 4, date: '7.9.2026' },
-  { id: '3', name: 'Andijon', code: 'Андижан', region: 'New York State', category: 'C', vacancyCount: 2, date: '7.9.2026' },
-  { id: '4', name: 'Andijon', code: 'Андижан', region: 'New York State', category: 'D', vacancyCount: 1, date: '7.9.2026' },
-  { id: '5', name: 'Andijon', code: 'Андижан', region: 'New York State', category: 'Mini', vacancyCount: 2, date: '7.9.2026' },
+  { id: '1', name: 'Downtown Manhattan Campus', code: 'DMC-01', region: 'New York State', category: 'A', vacancyCount: 1, date: '7.9.2026' },
+  { id: '2', name: 'Midtown Technology Center', code: 'MTC-02', region: 'New York State', category: 'B', vacancyCount: 4, date: '7.9.2026' },
+  { id: '3', name: 'Brooklyn Logistics Center', code: 'BLC-03', region: 'New York State', category: 'C', vacancyCount: 2, date: '7.9.2026' },
+  { id: '4', name: 'Queens Operations Terminal', code: 'QOT-04', region: 'New York State', category: 'D', vacancyCount: 1, date: '7.9.2026' },
+  { id: '5', name: 'Silicon Valley Campus', code: 'SVC-05', region: 'California Region', category: 'Mini', vacancyCount: 2, date: '7.9.2026' },
 ];
 
 const categoryColors: Record<BranchCategory, string> = {
@@ -150,7 +145,7 @@ interface BranchesProps {
 export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) {
   const [branches, setBranches] = useState<Branch[]>(() => {
     try {
-      const savedGeozones = localStorage.getItem('toyonasavdo_branch_geozones');
+      const savedGeozones = localStorage.getItem('novahr_branch_geozones');
       if (savedGeozones) {
         const parsed = JSON.parse(savedGeozones);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -159,7 +154,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             name: g.name,
             code: g.name,
             description: g.description,
-            region: 'Farg\'ona viloyati',
+            region: 'New York Metro',
             category: (['A', 'B', 'C', 'D', 'Mini'][idx % 5] || 'A') as BranchCategory,
             vacancyCount: Math.floor(Math.random() * 4) + 1,
             date: '15.9.2026',
@@ -175,7 +170,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
       name: g.name,
       code: g.name,
       description: g.description,
-      region: 'Farg\'ona viloyati',
+      region: 'New York Metro',
       category: (['A', 'B', 'C', 'D', 'Mini'][idx % 5] || 'A') as BranchCategory,
       vacancyCount: 2,
       date: '15.9.2026',
@@ -192,7 +187,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map(emp => {
             if (emp.branch === 'Headquarters (Toshkent)') return { ...emp, branch: 'Headquarters' };
-            if (emp.branch === 'Andijon Markaziy') return { ...emp, branch: 'Downtown Manhattan Branch' };
+            if (emp.branch === 'Downtown Manhattan Branch') return { ...emp, branch: 'Downtown Manhattan Branch' };
             if (emp.branch === 'Namangan Branchi') return { ...emp, branch: 'Brooklyn Logistics Center' };
             if (emp.branch === "Farg'ona Branchi") return { ...emp, branch: 'Queens Distribution Terminal' };
             if (emp.branch === 'Samarqand Branchi') return { ...emp, branch: 'Chicago Central Hub' };
@@ -216,7 +211,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
           name: g.name,
           code: g.name,
           description: g.description,
-          region: g.name.includes('Toshkent') ? 'New York City' : "East Coast Region",
+          region: g.region || 'New York Metro',
           category: (['A', 'B', 'C', 'D', 'Mini'][idx % 5] || 'A') as BranchCategory,
           vacancyCount: 2,
           date: '15.9.2026',
@@ -246,7 +241,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                 name: branchName,
                 code: fb.code || branchName,
                 description: fb.description,
-                region: fb.region || (branchName.includes('Toshkent') ? 'New York City' : "East Coast Region"),
+                region: fb.region || 'New York Metro',
                 category: fb.category || 'A',
                 vacancyCount: fb.vacancyCount ?? 2,
                 date: fb.date || '15.9.2026',
@@ -563,7 +558,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
 
       // Also sync to branch geozones so it appears in "Branch Geolocation & Radii"
       try {
-        const savedGeozones = localStorage.getItem('toyonasavdo_branch_geozones');
+        const savedGeozones = localStorage.getItem('novahr_branch_geozones');
         const list: BranchGeozone[] = savedGeozones ? JSON.parse(savedGeozones) : DEFAULT_GEOZONES;
         const newGeozone: BranchGeozone = {
           id: targetBranch.id,
@@ -572,12 +567,12 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
           lat: 40.5283 + (Math.random() * 0.04 - 0.02),
           lon: 70.9425 + (Math.random() * 0.04 - 0.02),
           radius: 100,
-          address: targetBranch.address || 'Qo\'qon shahar',
+          address: targetBranch.address || 'Corporate Headquarters',
           isCustom: true,
           updatedAt: new Date().toISOString()
         };
         const updatedGeozones = [newGeozone, ...list];
-        localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updatedGeozones));
+        localStorage.setItem('novahr_branch_geozones', JSON.stringify(updatedGeozones));
         await saveFirebaseGeozone(newGeozone);
       } catch (err) {}
 
@@ -609,18 +604,18 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
     });
     [
       'New York State',
-      'Buxoro viloyati',
-      'Farg\'ona viloyati',
-      'Jizzax viloyati',
-      'Namangan viloyati',
-      'Navoiy viloyati',
-      'Qashqadaryo viloyati',
-      'Samarqand viloyati',
-      'Sirdaryo viloyati',
-      'Surxondaryo viloyati',
+      'California Region',
+      'New York Metro',
+      'Illinois Metro',
+      'Texas Region',
+      'Florida Region',
+      'Washington Metro',
+      'Massachusetts Metro',
+      'Colorado Hub',
+      'Georgia Metro',
       'New York City',
-      'Toshkent viloyati',
-      'Xorazm viloyati',
+      'Mid-Atlantic Region',
+      'Pacific Northwest',
       'Qoraqalpog\'iston Respublikasi'
     ].forEach(r => set.add(r));
     return Array.from(set).sort();
@@ -796,7 +791,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
   const handleExport = (type: 'excel' | 'pdf') => {
     if (activeTab === 'branches') {
       const fileName = `Toyona_Branchlar_${new Date().toISOString().slice(0, 10)}`;
-      const headers = ['№', 'Branch Nomi', 'Viloyat', 'Category', 'Employees Soni', 'Vakansiya', 'Sana', 'Physical Address'];
+      const headers = ['#', 'Branch Name', 'Region', 'Category', 'Total Employees', 'Open Vacancies', 'Date', 'Physical Address'];
       const data = filteredBranches.map((b, i) => {
         const bEmps = employees.filter(emp => matchEmployeeToBranch(emp.branch, b.name));
         return [
@@ -818,11 +813,11 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             '№': i + 1,
             'Branch Nomi (UZ)': b.name,
             'Branch Nomi (RU)': b.code || '-',
-            'Viloyat': b.region,
+            'Region': b.region,
             'Category': b.category,
-            'Employees Soni': bEmps.length,
+            'Employee Count': bEmps.length,
             'Vakansiyalar': b.vacancyCount || 0,
-            'Sana': b.date,
+            'Date': b.date,
             'Physical Address': b.address || '-',
             'Telefon': b.phone || '-',
             'Operating Hours': b.workHours || '-',
@@ -835,7 +830,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
       }
     } else {
       const fileName = `Toyona_Branch_Employeesi_${new Date().toISOString().slice(0, 10)}`;
-      const headers = ['№', 'F.I.O', 'Employee ID', 'Branch', 'Viloyat', 'Designation', 'Department', 'Telefon', 'Status'];
+      const headers = ['№', 'Full Name', 'Employee ID', 'Branch', 'Region', 'Designation', 'Department', 'Telefon', 'Status'];
       const data = filteredEmployees.map((emp, i) => [
         i + 1,
         emp.fullName,
@@ -854,7 +849,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
           'F.I.O': emp.fullName,
           'Employee ID': emp.staffId,
           'Branch': emp.assignedBranch?.name || emp.branch,
-          'Viloyat': emp.computedRegion,
+          'Region': emp.computedRegion,
           'Position': emp.position,
           'Department': emp.department,
           'Telefon': emp.phone,
@@ -862,7 +857,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
         }));
         exportToExcel(excelData, fileName);
       } else {
-        exportToPDF(headers, data, fileName, "Toyona Savdo - Branch Employeesi Ro'yxati");
+        exportToPDF(headers, data, fileName, "Toyona Savdo - Branch Personnel Ro'yxati");
       }
     }
   };
@@ -879,7 +874,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Jami filiallar</div>
+            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Total Branches</div>
             <div className="text-lg font-extrabold text-slate-800 dark:text-slate-100">
               {isAnyFilterActive ? (
                 <span>{filteredBranches.length} <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 font-normal">/ {branches.length} ta</span></span>
@@ -895,7 +890,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Branch xodimlari</div>
+            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Total Staff</div>
             <div className="text-lg font-extrabold text-slate-800 dark:text-slate-100">
               {isAnyFilterActive ? (
                 <span>{filteredEmployees.length} <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 font-normal">/ {employees.length} nafar</span></span>
@@ -911,7 +906,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <UserCheck className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Employeeli filiallar</div>
+            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Staffed Branches</div>
             <div className="text-lg font-extrabold text-slate-800 dark:text-slate-100">
               {branches.filter(b => employees.some(e => matchEmployeeToBranch(e.branch, b.name))).length} ta
             </div>
@@ -923,7 +918,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Bo'sh o'rinlar</div>
+            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Open Vacancies</div>
             <div className="text-lg font-extrabold text-slate-800 dark:text-slate-100">
               {branches.reduce((acc, b) => acc + (Number(b.vacancyCount) || 0), 0)} ta
             </div>
@@ -944,7 +939,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>Branchlar kesimida</span>
+            <span>By Branches & Locations</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'branches' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
               {filteredBranches.length}
             </span>
@@ -959,7 +954,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Branch xodimlari kesimida</span>
+            <span>By Branch Personnel</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'employees' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
               {filteredEmployees.length}
             </span>
@@ -978,7 +973,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             className="flex items-center gap-1.5 bg-[#00A651] hover:bg-[#009045] text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Branch qo'shish</span>
+            <span>Add Branch</span>
           </button>
         </div>
       </div>
@@ -988,10 +983,10 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-[#00A651]" />
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Filtrlash paneli</span>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Filter Panel</span>
             {isAnyFilterActive && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
-                {activeFilterCount} ta filtr faol
+                {activeFilterCount} active filters
               </span>
             )}
           </div>
@@ -1002,7 +997,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
               className="flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100/80 px-2.5 py-1 rounded-lg border border-rose-200/60 dark:border-rose-900/60 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Filtrlarni tozalash</span>
+              <span>Reset Filters</span>
             </button>
           )}
         </div>
@@ -1014,7 +1009,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Employee ismi (F.I.O)..." 
+              placeholder="Employee full name..." 
               value={searchEmployeeName}
               onChange={(e) => setSearchEmployeeName(e.target.value)}
               className="pl-9 pr-7 py-2 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 rounded-lg text-xs transition-all outline-none"
@@ -1037,7 +1032,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
               onChange={(e) => setSelectedPositionFilter(e.target.value)}
               className="appearance-none w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg pl-9 pr-7 py-2 outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer font-medium"
             >
-              <option value="All">Barcha lavozimlar</option>
+              <option value="All">All Designations</option>
               {availablePositions.map(pos => (
                 <option key={pos} value={pos}>{pos}</option>
               ))}
@@ -1053,7 +1048,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
               onChange={(e) => setSelectedRegionFilter(e.target.value)}
               className="appearance-none w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg pl-9 pr-7 py-2 outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer font-medium"
             >
-              <option value="All">Barcha viloyatlar</option>
+              <option value="All">All Regions</option>
               {availableRegions.map(reg => (
                 <option key={reg} value={reg}>{reg}</option>
               ))}
@@ -1069,12 +1064,12 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
               className="appearance-none w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg pl-9 pr-7 py-2 outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer font-medium"
             >
-              <option value="All">Barcha toifalar</option>
-              <option value="A">A toifa</option>
-              <option value="B">B toifa</option>
-              <option value="C">C toifa</option>
-              <option value="D">D toifa</option>
-              <option value="Mini">Mini toifa</option>
+              <option value="All">All Categories</option>
+              <option value="A">Category A</option>
+              <option value="B">Category B</option>
+              <option value="C">Category C</option>
+              <option value="D">Category D</option>
+              <option value="Mini">Category Mini</option>
             </select>
             <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
@@ -1084,7 +1079,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Branch Name yoki manzil..." 
+              placeholder="Branch name or address..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-7 py-2 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-[#00A651] focus:ring-2 focus:ring-[#00A651]/20 rounded-lg text-xs transition-all outline-none"
@@ -1103,7 +1098,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
         {/* Active Filters Chips */}
         {isAnyFilterActive && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1.5 text-xs">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1">Faol filtrlar:</span>
+            <span className="text-[11px] font-semibold text-slate-400 mr-1">Active filters:</span>
 
             {searchEmployeeName && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-medium">
@@ -1128,7 +1123,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             {selectedRegionFilter !== 'All' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-medium">
                 <MapPin className="w-3 h-3 text-amber-600" />
-                <span>Viloyat: <strong>{selectedRegionFilter}</strong></span>
+                <span>Region: <strong>{selectedRegionFilter}</strong></span>
                 <button onClick={() => setSelectedRegionFilter('All')} className="hover:text-amber-900 cursor-pointer ml-1">
                   <X className="w-3 h-3" />
                 </button>
@@ -1138,7 +1133,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             {selectedCategoryFilter !== 'All' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-50 text-purple-800 border border-purple-200 text-[11px] font-medium">
                 <Building2 className="w-3 h-3 text-purple-600" />
-                <span>Toifa: <strong>{selectedCategoryFilter} toifa</strong></span>
+                <span>Category: <strong>Category {selectedCategoryFilter}</strong></span>
                 <button onClick={() => setSelectedCategoryFilter('All')} className="hover:text-purple-900 cursor-pointer ml-1">
                   <X className="w-3 h-3" />
                 </button>
@@ -1165,13 +1160,13 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <th className="p-4 w-12 text-center">№</th>
-                <th className="p-4">FILIAL NOMI</th>
-                <th className="p-4">VILOYAT</th>
-                <th className="p-4">KATEGORIYA</th>
-                <th className="p-4">FILIAL XODIMLARI (HRMS)</th>
-                <th className="p-4">VAKANSIYA</th>
-                <th className="p-4">FILIAL OCHILGAN SANA</th>
-                <th className="p-4 w-28 text-right">AMALLAR</th>
+                <th className="p-4">BRANCH NAME</th>
+                <th className="p-4">REGION / STATE</th>
+                <th className="p-4">CATEGORY</th>
+                <th className="p-4">BRANCH EMPLOYEES (HRMS)</th>
+                <th className="p-4">VACANCIES</th>
+                <th className="p-4">ESTABLISHED DATE</th>
+                <th className="p-4 w-28 text-right">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="text-sm text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800">
@@ -1181,7 +1176,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                     <div className="flex flex-col items-center justify-center gap-3">
                       <Loader2 className="w-8 h-8 text-[#00A651] animate-spin" />
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        Branchlar ro'yxati yuklanmoqda...
+                        Loading branch roster...
                       </span>
                     </div>
                   </td>
@@ -1215,7 +1210,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                       {branch.manager && (
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1.5 mt-0.5">
                           <User className="w-3 h-3 text-[#00A651] shrink-0" />
-                          <span>Mas'ul: <strong>{branch.manager}</strong></span>
+                          <span>Manager: <strong>{branch.manager}</strong></span>
                         </div>
                       )}
                       {branch.phone && (
@@ -1242,7 +1237,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                     </td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${categoryColors[branch.category]}`}>
-                        {branch.category} toifa
+                        Category {branch.category}
                       </span>
                     </td>
                     
@@ -1251,12 +1246,12 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                       {branchEmps.length > 0 ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border bg-emerald-50/80 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/40">
                           <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>{branchEmps.length} nafar xodim</span>
+                          <span>{branchEmps.length} employees</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700">
                           <Users className="w-3.5 h-3.5 text-slate-400" />
-                          Employee yo'q
+                          No assigned staff
                         </span>
                       )}
                     </td>
@@ -1292,7 +1287,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-3">
                 <Search className="w-6 h-6" />
               </div>
-              <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Branchlar yoki xodimlar topilmadi</p>
+              <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">No Branches or Employees Found</p>
               <p className="text-xs text-slate-400 dark:text-slate-500 max-w-md mx-auto mb-4">
                 Kiritilgan xodim ismi, lavozim, viloyat yoki kategoriya bo'yicha filial topilmadi. Filtrlarni tozalab qayta urinib ko'ring.
               </p>
@@ -1314,14 +1309,14 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <th className="p-4 w-12 text-center">№</th>
-                <th className="p-4">XODIM (F.I.O)</th>
-                <th className="p-4">BIRIKTIRILGAN FILIAL</th>
-                <th className="p-4">VILOYAT</th>
-                <th className="p-4">LAVOZIM</th>
-                <th className="p-4">BO'LIM</th>
-                <th className="p-4">TELEFON</th>
+                <th className="p-4">EMPLOYEE NAME</th>
+                <th className="p-4">ASSIGNED BRANCH</th>
+                <th className="p-4">REGION / STATE</th>
+                <th className="p-4">DESIGNATION</th>
+                <th className="p-4">DEPARTMENT</th>
+                <th className="p-4">PHONE</th>
                 <th className="p-4">STATUS</th>
-                <th className="p-4 w-28 text-right">AMAL</th>
+                <th className="p-4 w-28 text-right">ACTION</th>
               </tr>
             </thead>
             <tbody className="text-sm text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800">
@@ -1331,7 +1326,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                     <div className="flex flex-col items-center justify-center gap-3">
                       <Loader2 className="w-8 h-8 text-[#00A651] animate-spin" />
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        Branch xodimlari ro'yxati yuklanmoqda...
+                        Loading branch staff roster...
                       </span>
                     </div>
                   </td>
@@ -1450,9 +1445,9 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-3">
                 <Users className="w-6 h-6" />
               </div>
-              <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Branch xodimlari topilmadi</p>
+              <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">No Branch Employees Found</p>
               <p className="text-xs text-slate-400 max-w-md mx-auto mb-4">
-                Kiritilgan ism, lavozim yoki viloyat bo'yicha xodim topilmadi. Filtrlarni tozalab qayta qidiring.
+                No employees match the specified search query.
               </p>
               {isAnyFilterActive && (
                 <button
@@ -1486,7 +1481,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             >
               <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-                  {editingBranch ? 'Edit Branch Details' : 'Yangi filial qo\'shish'}
+                  {editingBranch ? 'Edit Branch Details' : 'Add New Branch'}
                 </h3>
                 <button 
                   onClick={closeModal}
@@ -1513,7 +1508,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
 
                   {/* Viloyat */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Viloyat / Hudud <span className="text-rose-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Region / State <span className="text-rose-500">*</span></label>
                     <div className="relative">
                       <select
                         required
@@ -1521,7 +1516,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                         onChange={e => setFormData({...formData, region: e.target.value})}
                         className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] appearance-none"
                       >
-                        <option value="">Viloyatni tanlang...</option>
+                        <option value="">Select Region / State...</option>
                         {availableRegions.map(reg => (
                           <option key={reg} value={reg}>{reg}</option>
                         ))}
@@ -1532,50 +1527,50 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
 
                   {/* Mas'ul shaxs (Branch mudiri) */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mas'ul shaxs nomi</label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Manager / Supervisor Name</label>
                     <input
                       type="text"
                       value={formData.manager || ''}
                       onChange={e => setFormData({...formData, manager: e.target.value})}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651]"
-                      placeholder="Masalan: Alisher Vohidov"
+                      placeholder="e.g. Alexander Mitchell"
                     />
                   </div>
 
                   {/* Telefon (Nomer) */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Aloqa telefoni (Nomer)</label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Contact Phone Number</label>
                     <input
                       type="text"
                       value={formData.phone || ''}
                       onChange={e => setFormData({...formData, phone: e.target.value})}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651]"
-                      placeholder="+998 90 123 45 67"
+                      placeholder="+1 (555) 019-2834"
                     />
                   </div>
 
                   {/* Aniq manzil (Joylashuvi) */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Joylashuvi (Aniq manzil) <span className="text-rose-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Physical Address <span className="text-rose-500">*</span></label>
                     <input
                       required
                       type="text"
                       value={formData.address || ''}
                       onChange={e => setFormData({...formData, address: e.target.value})}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651]"
-                      placeholder="Ko'cha, bino raqami..."
+                      placeholder="Street, suite, building number..."
                     />
                   </div>
 
                   {/* Aniq mo'ljal */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Aniq mo'ljal</label>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Landmark / Cross Street</label>
                     <input
                       type="text"
                       value={formData.landmark || ''}
                       onChange={e => setFormData({...formData, landmark: e.target.value})}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651]"
-                      placeholder="Masalan: Markaziy bozor ro'parasida, 2-qavat"
+                      placeholder="e.g. Opposite City Plaza, Suite 400"
                     />
                   </div>
 
@@ -1594,7 +1589,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
 
                 {/* Toifa tanlash */}
                 <div className="space-y-1 pt-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Branch Toifasi</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Branch Category Tier</label>
                   <div className="grid grid-cols-5 gap-2">
                     {(['A', 'B', 'C', 'D', 'Mini'] as BranchCategory[]).map((cat) => (
                       <button
@@ -1625,7 +1620,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                     type="submit"
                     className="px-5 py-2 text-xs font-bold text-white bg-[#00A651] hover:bg-[#009045] rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
-                    {editingBranch ? 'Save Branch' : 'Qo\'shish'}
+                    {editingBranch ? 'Save Branch' : 'Create Branch'}
                   </button>
                 </div>
               </form>
@@ -1655,10 +1650,10 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                 <Trash2 className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-800 mb-1">
-                Rostdan ham o'chirilsinmi?
+                Confirm Branch Deletion
               </h3>
               <p className="text-xs text-slate-500 mb-5">
-                Ushbu filialni o'chirib tashlamoqchimisiz? Ushbu amalni ortga qaytarib bo'lmaydi.
+                Are you sure you want to delete this branch? This action cannot be undone.
               </p>
               
               <div className="flex gap-3 justify-center">
@@ -1672,7 +1667,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                   onClick={handleDelete}
                   className="flex-1 py-2.5 px-4 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
-                  Ha, o'chirilsin
+                  Yes, Delete Branch
                 </button>
               </div>
             </motion.div>
@@ -1728,7 +1723,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                     <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
                       <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                         <MapPin className="w-5 h-5 text-[#00A651]" />
-                        Branch Ma'lumotlari
+                        Branch Details
                       </h3>
                       {!cardEditMode ? (
                         <button 
@@ -1771,7 +1766,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                           />
                         ) : (
                           <div className="text-sm font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50 px-4 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                            {selectedBranchCard.address || "Kiritilmagan"}
+                            {selectedBranchCard.address || "Not Specified"}
                           </div>
                         )}
                       </div>
@@ -1779,7 +1774,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                       {/* Telefon */}
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                          <Phone className="w-3.5 h-3.5" /> Telefon raqam
+                          <Phone className="w-3.5 h-3.5" /> Phone Number
                         </label>
                         {cardEditMode ? (
                           <input 
@@ -1827,12 +1822,12 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                           Branch Employeesi
                         </h3>
                         <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">
-                          Ushbu filialga biriktirilgan barcha xodimlar
+                          All active employees assigned to this branch
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="bg-[#00A651]/10 text-[#00A651] font-extrabold text-xs px-3.5 py-1.5 rounded-full">
-                          {branchCardEmployees.length} / {employees.filter(emp => matchEmployeeToBranch(emp.branch, selectedBranchCard.name)).length} nafar xodim
+                          {branchCardEmployees.length} / {employees.filter(emp => matchEmployeeToBranch(emp.branch, selectedBranchCard.name)).length} employees
                         </span>
                       </div>
                     </div>
@@ -1843,7 +1838,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                         <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                           type="text"
-                          placeholder="Branch Staffni ismi bo'yicha qidirish..."
+                          placeholder="Search personnel by name..."
                           value={cardEmpSearch}
                           onChange={(e) => setCardEmpSearch(e.target.value)}
                           className="w-full pl-8 pr-7 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs outline-none focus:border-[#00A651]"
@@ -1879,9 +1874,9 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                           className="appearance-none w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg pl-3 pr-7 py-1.5 outline-none focus:border-[#00A651] cursor-pointer"
                         >
                           <option value="All">Barcha statuslar</option>
-                          <option value="active">Doimiy</option>
-                          <option value="leave">Ta'tilda</option>
-                          <option value="probation">Sinovda</option>
+                          <option value="active">Active</option>
+                          <option value="leave">On Leave</option>
+                          <option value="probation">Probation</option>
                         </select>
                         <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                       </div>
@@ -1904,12 +1899,12 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                            <th className="p-4 w-16">Rasm</th>
-                            <th className="p-4">F.I.O</th>
+                            <th className="p-4 w-16">Photo</th>
+                            <th className="p-4">Full Name</th>
                             <th className="p-4">Designation</th>
                             <th className="p-4">Department</th>
-                            <th className="p-4">Telefon</th>
-                            <th className="p-4">Qabul sanasi</th>
+                            <th className="p-4">Phone</th>
+                            <th className="p-4">Hire Date</th>
                             <th className="p-4">Status</th>
                           </tr>
                         </thead>
@@ -1943,7 +1938,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                                     employee.status === 'leave' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' :
                                     'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
                                   }`}>
-                                    {employee.status === 'active' ? 'Doimiy' : employee.status === 'leave' ? 'Ta\'tilda' : 'Sinovda'}
+                                    {employee.status === 'active' ? 'Active' : employee.status === 'leave' ? 'On Leave' : 'Probation'}
                                   </span>
                                 </td>
                               </tr>
@@ -1951,7 +1946,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                           ) : (
                             <tr>
                               <td colSpan={7} className="p-12 text-center text-slate-400 dark:text-slate-500 font-medium">
-                                Searchga mos keluvchi xodimlar topilmadi.
+                                No employees found matching the search criteria.
                               </td>
                             </tr>
                           )}

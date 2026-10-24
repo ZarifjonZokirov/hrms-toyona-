@@ -125,7 +125,7 @@ export default function PhotoRequestsManager({
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`✅ ${req.employeeName} surati muvaffaqiyatli tasdiqlandi va Face ID etaloniga o'rnatildi!`);
+        showToast(`✅ Photo for ${req.employeeName} approved and set as Face ID reference profile!`);
         if (onPhotoApproved) {
           onPhotoApproved(req.employeeId, req.newPhotoUrl);
         }
@@ -144,7 +144,7 @@ export default function PhotoRequestsManager({
     if (!rejectModalReq) return;
     setProcessingId(rejectModalReq.id);
     try {
-      const reason = rejectReason.trim() || "Yuz aniq ko'rinmagan yoki sifat talabga javob bermaydi";
+      const reason = rejectReason.trim() || "Face is not clearly visible or image does not meet resolution criteria";
       const res = await fetch('/api/attendance/photo-request/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +158,7 @@ export default function PhotoRequestsManager({
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`❌ ${rejectModalReq.employeeName} surati rad etildi. Employeega sabab yetkazildi.`);
+        showToast(`❌ Photo request for ${rejectModalReq.employeeName} rejected.`);
         setRejectModalReq(null);
         setRejectReason('');
         await fetchRequests();
@@ -173,12 +173,12 @@ export default function PhotoRequestsManager({
   };
 
   const handleDelete = async (reqId: string) => {
-    if (!confirm("Ushbu so'rov tarixini ro'yxatdan butunlay o'chirmoqchimisiz?")) return;
+    if (!confirm("Permanently delete this photo request record?")) return;
     try {
       const res = await fetch(`/api/attendance/photo-request/${reqId}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
-        showToast("So'rov o'chirildi.");
+        showToast("Request record deleted.");
         await fetchRequests();
       }
     } catch {
@@ -187,10 +187,10 @@ export default function PhotoRequestsManager({
   };
 
   const REJECT_PRESETS = [
-    "Yuz qorong'i tushgan, iltimos yaxshi yorug'likda rasmga tushing",
+    "Face is underexposed, please retake photo in well-lit conditions",
     "Yuz kameraga to'g'ri qaramagan yoki chetga burilgan",
     "Ko'zoynak, niqob yoki bosh kiyim yuzni to'sib turibdi",
-    "Rasm sifati xira yoki piksellashgan",
+    "Image is blurry, pixelated or low-resolution",
     "Begona shaxs yoki fotosuratning surati yuklangan"
   ];
 
@@ -314,7 +314,7 @@ export default function PhotoRequestsManager({
             {counts.rejected}
           </div>
           <p className="text-[11px] text-rose-700 font-medium mt-0.5">
-            Talabga javob bermagan rasmlar
+            Rejected Photo Submissions
           </p>
         </div>
 
@@ -329,14 +329,14 @@ export default function PhotoRequestsManager({
           <div className="flex items-center justify-between text-xs font-bold text-purple-900 mb-1">
             <span className="flex items-center gap-1.5">
               <Camera className="w-4 h-4 text-purple-600" />
-              Jami keldi-ketdi
+              Total Check-ins
             </span>
           </div>
           <div className="text-2xl font-black text-purple-950 font-mono">
             {counts.all}
           </div>
           <p className="text-[11px] text-purple-700 font-medium mt-0.5">
-            Barcha surat aylanmasi
+            All Photo Records
           </p>
         </div>
       </div>
@@ -348,7 +348,7 @@ export default function PhotoRequestsManager({
           {(['pending', 'all', 'approved', 'rejected'] as const).map((st) => {
             const labels: Record<string, string> = {
               pending: '⏳ Pending Review',
-              all: 'Barcha keldi-ketdi',
+              all: 'All Records',
               approved: '✓ Approved',
               rejected: '✕ Rejected'
             };
@@ -383,7 +383,7 @@ export default function PhotoRequestsManager({
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Employee ismi yoki ID bo'yicha qidirish..."
+              placeholder="Search by employee name or ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-200"
@@ -410,7 +410,7 @@ export default function PhotoRequestsManager({
         {isLoading && requests.length === 0 ? (
           <div className="p-16 text-center bg-white rounded-2xl border border-slate-200 text-slate-500">
             <RefreshCw className="w-7 h-7 animate-spin mx-auto mb-2 text-purple-600" />
-            <p className="text-sm font-bold">Surat so'rovlari yuklanmoqda...</p>
+            <p className="text-sm font-bold">Loading photo verification requests...</p>
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="p-16 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 space-y-3">
@@ -420,7 +420,7 @@ export default function PhotoRequestsManager({
             <div>
               <h3 className="text-base font-bold text-slate-800">
                 {statusFilter === 'pending' 
-                  ? "Kutilayotgan yangi surat so'rovlari yo'q" 
+                  ? "No pending photo verification requests" 
                   : "No photo requests found"}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
@@ -517,7 +517,7 @@ export default function PhotoRequestsManager({
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                      Current Photo rasm
+                      Current Reference Photo
                     </span>
                     <div 
                       onClick={() => req.currentPhotoUrl && setZoomImage({ url: req.currentPhotoUrl, title: `${req.employeeName} (Joriy rasm)` })}
@@ -527,7 +527,7 @@ export default function PhotoRequestsManager({
                         <>
                           <img
                             src={req.currentPhotoUrl}
-                            alt="Joriy rasm"
+                            alt="Current profile photo"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           />
                           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
@@ -537,7 +537,7 @@ export default function PhotoRequestsManager({
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-2 text-center text-xs font-bold bg-slate-100">
                           <User className="w-6 h-6 mb-1 text-slate-300" />
-                          Oldingi rasm yo'q
+                          No previous photo on record
                         </div>
                       )}
                     </div>
@@ -556,7 +556,7 @@ export default function PhotoRequestsManager({
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                      Yangi yuborilgan rasm
+                      New Photo Submission
                     </span>
                     <div 
                       onClick={() => req.newPhotoUrl && setZoomImage({ url: req.newPhotoUrl, title: `${req.employeeName} (Yangi so'ralgan rasm)` })}
@@ -564,7 +564,7 @@ export default function PhotoRequestsManager({
                     >
                       <img
                         src={req.newPhotoUrl}
-                        alt="Yangi rasm"
+                        alt="Submitted new photo"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       />
                       <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
@@ -598,8 +598,8 @@ export default function PhotoRequestsManager({
                     <div className="flex items-start gap-1.5">
                       <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold">Rad etildi: </span>
-                        <span>{req.rejectionReason || "Talabga mos kelmagani sababli rad etildi."}</span>
+                        <span className="font-bold">Declined: </span>
+                        <span>{req.rejectionReason || "Photo declined due to resolution or orientation standards."} </span>
                         {req.reviewedBy && (
                           <span className="text-[11px] font-semibold text-rose-600 block mt-0.5">
                             Ko'rib chiquvchi: {req.reviewedBy} ({req.reviewedAt ? new Date(req.reviewedAt).toLocaleDateString('uz-UZ') : ''})
@@ -635,12 +635,12 @@ export default function PhotoRequestsManager({
                       {isBusy ? (
                         <>
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Tasdiqlanmoqda...</span>
+                          <span>Approving...</span>
                         </>
                       ) : (
                         <>
                           <Check className="w-4 h-4" />
-                          <span>Approve Photo & Yangi rasmga almashtirish</span>
+                          <span>Approve Photo & Update Reference Profile</span>
                         </>
                       )}
                     </button>
@@ -661,7 +661,7 @@ export default function PhotoRequestsManager({
                 <span className="p-1.5 rounded-lg bg-rose-100 text-rose-700">
                   <X className="w-4 h-4" />
                 </span>
-                Rasmni rad etish
+                Decline Photo Submission
               </h3>
               <button 
                 onClick={() => setRejectModalReq(null)}
@@ -672,12 +672,12 @@ export default function PhotoRequestsManager({
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              <strong>{rejectModalReq.employeeName}</strong> yuborgan rasmni nima sababdan rad etayotganingizni ko'rsating. Ushbu sabab xodimning ilovasida ko'rsatiladi:
+              Please specify why you are declining the photo submitted by <strong>{rejectModalReq.employeeName}</strong>. This feedback will be displayed to the employee:
             </p>
 
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                Tayyor sabablar (Birini tanlang):
+                Standard Reasons (Select one):
               </label>
               <div className="flex flex-col gap-1 max-h-36 overflow-y-auto">
                 {REJECT_PRESETS.map((p, idx) => (
@@ -701,7 +701,7 @@ export default function PhotoRequestsManager({
                 rows={3}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Reject Photo sababini batafsil yozing..."
+                placeholder="Enter detailed explanation for rejection..."
                 className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-200"
               />
             </div>
@@ -720,7 +720,7 @@ export default function PhotoRequestsManager({
                 onClick={handleRejectConfirm}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs"
               >
-                {processingId === rejectModalReq.id ? "Rad etilmoqda..." : "Reject Photoni tasdiqlash"}
+                {processingId === rejectModalReq.id ? "Declining..." : "Confirm Rejection"}
               </button>
             </div>
           </div>
@@ -755,7 +755,7 @@ export default function PhotoRequestsManager({
             </div>
             <div className="text-center">
               <span className="text-[11px] text-slate-400 font-medium">
-                Yuzning yorug'ligi va sifatini batafsil ko'rib chiqing
+                Inspect facial lighting, clarity, and resolution
               </span>
             </div>
           </div>

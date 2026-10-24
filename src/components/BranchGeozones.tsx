@@ -92,119 +92,119 @@ export const DEFAULT_GEOZONES: BranchGeozone[] = [
   {
     id: 'branch-1',
     name: 'Headquarters',
-    description: 'Qo\'qon markazidagi bosh savdo do\'koni. Mo\'ljal: Markaziy xiyobon ro\'parasi',
+    description: 'Corporate headquarters & executive administration campus',
     lat: 40.5283,
     lon: 70.9425,
     radius: 270,
-    address: 'Qo\'qon shahar, Turkiston ko\'chasi, 45-uy'
+    address: '100 World Trade Center, New York, NY'
   },
   {
     id: 'branch-2',
     name: 'Downtown Manhattan Branch',
-    description: 'A.Navoiy shoh ko\'chasidagi supermarket. Mo\'ljal: Markaziy bozor yonida',
+    description: 'Downtown retail center and corporate showcase showroom',
     lat: 40.5312,
     lon: 70.9388,
     radius: 500,
-    address: 'Qo\'qon shahar, A.Navoiy shoh ko\'chasi, 12-uy'
+    address: '45 Wall Street, New York, NY'
   },
   {
     id: 'branch-3',
     name: 'Westside Operations Hub',
-    description: 'Shahar markazi, Istiqlol savdo majmuasi 1-qavati',
+    description: 'West Coast hub, Financial Plaza, 1st Floor',
     lat: 40.5345,
     lon: 70.9450,
     radius: 100,
-    address: 'Qo\'qon shahar, Istiqlol ko\'chasi, 88-uy'
+    address: '88 Market St, San Francisco, CA'
   },
   {
     id: 'branch-4',
     name: 'Brooklyn Logistics Center',
-    description: 'Mingtut mavzesidagi savdo markazi, aholi gavjum nuqta',
+    description: 'Chicago metropolitan center, prime foot-traffic location',
     lat: 40.5200,
     lon: 70.9350,
     radius: 150,
-    address: 'Qo\'qon shahar, Mingtut mavzesi, 5-savdo markazi'
+    address: '500 Michigan Ave, Chicago, IL'
   },
   {
     id: 'branch-5',
     name: 'Queens Distribution Terminal',
-    description: 'Yakkatut ko\'chasidagi oziq-ovqat va maishiy mahsulotlar savdo bo\'limi',
+    description: 'Austin logistics terminal and regional distribution center',
     lat: 40.5400,
     lon: 70.9500,
     radius: 100,
-    address: 'Qo\'qon shahar, Yakkatut ko\'chasi, 10-uy'
+    address: '10 Congress St, Austin, TX'
   },
   {
     id: 'branch-6',
     name: 'Headquarters',
-    description: 'Toyona Savdo bosh boshqarmasi, ma\'muriyat va omborxona',
+    description: 'Central Administrative Center and regional logistics hub',
     lat: 40.55441164458834,
     lon: 71.10088818840296,
     radius: 500,
-    address: 'Qo\'qon shahar, Markaziy bino, Headquarters'
+    address: '100 World Trade Center, Suite 400, New York, NY'
   },
   {
     id: 'branch-7',
     name: 'Boston Regional Office',
-    description: 'Pop shahri markazidagi rasmiy savdo branch',
+    description: 'Los Angeles regional distribution campus',
     lat: 40.8750,
     lon: 71.1070,
     radius: 120,
-    address: 'Pop shahar, Markaziy ko\'cha, 18-uy'
+    address: '18 Sunset Blvd, Los Angeles, CA'
   },
   {
     id: 'branch-8',
     name: 'Chicago Central Hub',
-    description: 'Furqat tumani markaziy do\'koni',
+    description: 'Midwest distribution center and fulfillment depot',
     lat: 40.5300,
     lon: 70.7600,
     radius: 100,
-    address: 'Furqat tumani, Navbahor shaharchasi'
+    address: '200 W Madison St, Chicago, IL'
   },
   {
     id: 'branch-9',
     name: 'San Francisco Tech Center',
-    description: 'Buvayda tumani Ibrat MFY savdo nuqtasi',
+    description: 'Southwest innovation campus and client operations',
     lat: 40.5800,
     lon: 71.0500,
     radius: 100,
-    address: 'Buvayda tumani, Ibrat MFY'
+    address: '100 Congress Ave, Austin, TX'
   },
   {
     id: 'branch-10',
-    name: 'Yangiqo\'rg\'on (Buvayda) branch',
-    description: 'Yangiqo\'rg\'on markazidagi savdo shoxobchasi',
+    name: 'Seattle Operations Hub',
+    description: 'Pacific Northwest operations hub and technology center',
     lat: 40.5900,
     lon: 71.0700,
     radius: 100,
-    address: 'Buvayda, Yangiqo\'rg\'on markazi'
+    address: '400 Pine St, Seattle, WA'
   },
   {
     id: 'branch-11',
-    name: 'Yaypan branch',
-    description: 'Yaypan shahri markazi, Mustaqillik shoh ko\'chasidagi do\'kon',
+    name: 'Los Angeles Campus',
+    description: 'Southern California regional center and client offices',
     lat: 40.3700,
     lon: 70.8150,
     radius: 120,
-    address: 'O\'zbekiston tumani, Yaypan shahar, Mustaqillik shoh ko\'chasi'
+    address: '1800 Century Park East, Los Angeles, CA'
   },
   {
     id: 'branch-12',
-    name: 'Marg\'ilon branch',
-    description: 'Marg\'ilon shahridagi zamonaviy supermarket va chakana savdo markazi. Mo\'ljal: Ipakchilar xiyoboni ro\'parasi',
+    name: 'Atlanta Fulfillment Center',
+    description: 'Southeast regional distribution terminal and customer center',
     lat: 40.4720,
     lon: 71.7140,
     radius: 120,
-    address: 'Marg\'ilon shahar, B.Marg\'inoniy ko\'chasi, 42-uy'
+    address: '42 Peachtree St, Atlanta, GA'
   },
   {
     id: 'branch-13',
-    name: 'Toshkent Chilonzor branch',
-    description: 'Toshkent shahridagi yirik savdo majmuasi va tezkor logistika tarqatish markazi. Mo\'ljal: Bunyodkor stadioni yaqinida',
+    name: 'Boston Regional Hub',
+    description: 'New England distribution terminal and research center',
     lat: 41.2825,
     lon: 69.2045,
     radius: 150,
-    address: 'Toshkent shahar, Chilonzor tumani, Bunyodkor shoh ko\'chasi, 15-uy'
+    address: '15 Boylston St, Boston, MA'
   }
 ];
 
@@ -234,7 +234,7 @@ export function deduplicateGeozones(items: BranchGeozone[]): BranchGeozone[] {
 
 function loadSavedLocalGeozones(): BranchGeozone[] {
   try {
-    const raw = localStorage.getItem('toyonasavdo_branch_geozones');
+    const raw = localStorage.getItem('novahr_branch_geozones');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -330,7 +330,7 @@ export default function BranchGeozones() {
         const merged = deduplicateGeozones(Array.from(map.values()));
         setGeozones(merged);
         try {
-          localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(merged));
+          localStorage.setItem('novahr_branch_geozones', JSON.stringify(merged));
         } catch {}
 
         const first = merged.find(b => b.id === selectedBranchId) || merged[0] || DEFAULT_GEOZONES[0];
@@ -572,7 +572,7 @@ export default function BranchGeozones() {
 
       setGeozones(updated);
       try {
-        localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updated));
+        localStorage.setItem('novahr_branch_geozones', JSON.stringify(updated));
       } catch {}
 
       // Save to Backend API (Firestore REST + server memory) and Client Firebase
@@ -596,7 +596,7 @@ export default function BranchGeozones() {
       setTimeout(() => setSaveSuccess(null), 3500);
     } catch (err: any) {
       console.error("Save geozone error:", err);
-      showError("Branchni saqlashda xatolik yuz berdi!");
+      showError("An error occurred while saving branch geofence!");
     } finally {
       setIsSavingGeozone(false);
     }
@@ -606,7 +606,7 @@ export default function BranchGeozones() {
   const handleCreateNewBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranchName.trim()) {
-      showError("Please, filial nomini kiriting");
+      showError("Please enter branch name");
       return;
     }
 
@@ -621,7 +621,7 @@ export default function BranchGeozones() {
       lat: initialLat,
       lon: initialLon,
       radius: newBranchRadius || 100,
-      address: newBranchAddress.trim() || 'Qo\'qon shahar',
+      address: newBranchAddress.trim() || 'Corporate Headquarters',
       isCustom: true,
       isNewUnsaved: true,
       updatedAt: new Date().toISOString()
@@ -630,7 +630,7 @@ export default function BranchGeozones() {
     const updatedList = [newBranch, ...geozones];
     setGeozones(updatedList);
     try {
-      localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updatedList));
+      localStorage.setItem('novahr_branch_geozones', JSON.stringify(updatedList));
     } catch {}
 
     await Promise.allSettled([
@@ -666,13 +666,13 @@ export default function BranchGeozones() {
   // Delete branch
   const handleDeleteCurrentBranch = async () => {
     if (geozones.length <= 1) {
-      showError("Kamida bitta filial qolishi kerak");
+      showError("At least one active branch is required");
       return;
     }
     const idToDelete = selectedBranchId;
     const updated = geozones.filter(b => b.id !== idToDelete);
     try {
-      localStorage.setItem('toyonasavdo_branch_geozones', JSON.stringify(updated));
+      localStorage.setItem('novahr_branch_geozones', JSON.stringify(updated));
     } catch {}
 
     await Promise.allSettled([
@@ -710,7 +710,7 @@ export default function BranchGeozones() {
           const code = (err as any).code;
           if (code === 1) msg = "Geolokatsiyaga ruxsat berilmagan.";
           else if (code === 2) msg = "Joylashuvni aniqlab bo'lmadi.";
-          else if (code === 3) msg = "Joylashuvni aniqlash vaqti tugadi.";
+          else if (code === 3) msg = "Geolocation request timed out.";
         }
         showError(msg);
       },
@@ -730,8 +730,8 @@ export default function BranchGeozones() {
   );
 
   const handleExportGeozones = (type: 'excel' | 'pdf') => {
-    const fileName = `Toyona_Geozonalar_${new Date().toISOString().slice(0, 10)}`;
-    const headers = ['№', 'Branch Nomi', 'Manzili', 'Radius (meters)', 'Kenglik (Lat)', 'Uzunlik (Lon)'];
+    const fileName = `NovaHR_Geofences_${new Date().toISOString().slice(0, 10)}`;
+    const headers = ['#', 'Branch Name', 'Address', 'Radius (meters)', 'Latitude', 'Longitude'];
     const data = filteredBranches.map((b, i) => [
       i + 1,
       b.name,
@@ -744,8 +744,8 @@ export default function BranchGeozones() {
     if (type === 'excel') {
       const excelData = filteredBranches.map((b, i) => ({
         '№': i + 1,
-        'Branch Nomi': b.name,
-        'Manzili': b.address,
+        'Branch Name': b.name,
+        'Address': b.address,
         'Radius (meters)': b.radius,
         'Latitude': b.lat,
         'Longitude': b.lon,
@@ -753,7 +753,7 @@ export default function BranchGeozones() {
       }));
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Branch Geozonalari va Koordinatalari");
+      exportToPDF(headers, data, fileName, "NovaHR - Branch Geofences and GPS Coordinates");
     }
   };
 
@@ -767,7 +767,7 @@ export default function BranchGeozones() {
             <MapPin className="w-4 h-4 text-[#ED1C24]" />
           </span>
           <h1 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight truncate">
-            Branch Geozonalarini Belgilash
+            Branch Geofencing & GPS Boundaries
           </h1>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
             isLocked 
@@ -887,7 +887,7 @@ export default function BranchGeozones() {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-8 gap-2">
                   <Loader2 className="w-5 h-5 text-[#00A651] animate-spin" />
-                  <span className="text-[10px] text-slate-400 font-medium">Geozonalar yuklanmoqda...</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Loading geofence boundaries...</span>
                 </div>
               ) : filteredBranches.length === 0 ? (
                 <div className="text-center py-6 text-[11px] text-slate-400">Branchlar topilmadi</div>
@@ -917,7 +917,7 @@ export default function BranchGeozones() {
                           )}
                         </div>
                         <div className="text-[9px] text-slate-500 truncate leading-tight">
-                          {b.address || 'Qo\'qon shahar'}
+                          {b.address || 'Corporate Headquarters'}
                         </div>
                       </div>
                     </div>
@@ -966,7 +966,7 @@ export default function BranchGeozones() {
             {/* Branch Name Input */}
             <div>
               <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">
-                Branch Nomi
+                Branch Name
               </label>
               <input
                 type="text"
@@ -1160,7 +1160,7 @@ export default function BranchGeozones() {
             ) : (
               <div className="absolute top-2.5 left-2.5 bg-slate-900/70 backdrop-blur-xs text-white px-2.5 py-1 rounded-lg text-[10px] font-medium shadow-sm z-10 flex items-center gap-1 pointer-events-none">
                 <Lock className="w-3 h-3 text-emerald-400" />
-                <span>Geozona qulflangan: {editRadius}m doira qimirlamaydi</span>
+                <span>Geofence locked: {editRadius}m radius pinned</span>
               </div>
             )}
 
@@ -1209,13 +1209,13 @@ export default function BranchGeozones() {
             <form onSubmit={handleCreateNewBranch} className="space-y-3.5">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-                  Branch Nomi <span className="text-rose-500">*</span>
+                  Branch Name <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   autoFocus
-                  placeholder="Masalan: Quva branch, Marg'ilon branch..."
+                  placeholder="e.g. Downtown Manhattan Campus, Midtown Tech Hub..."
                   value={newBranchName}
                   onChange={(e) => setNewBranchName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#00A651]"
@@ -1224,11 +1224,11 @@ export default function BranchGeozones() {
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-                  Branch Manzili
+                  Branch Address
                 </label>
                 <input
                   type="text"
-                  placeholder="Masalan: Marg'ilon shahar, B.Marg'iloniy ko'chasi"
+                  placeholder="e.g., 100 Wall Street, New York, NY"
                   value={newBranchAddress}
                   onChange={(e) => setNewBranchAddress(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:border-[#00A651]"

@@ -70,7 +70,7 @@ export const exportToPDF = (
     doc.text(title, 14, 15);
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text(`Toyona Savdo HRMS • Sana: ${new Date().toLocaleDateString('uz-UZ')}`, 14, 20);
+    doc.text(`NovaHR Enterprise HRMS • Date: ${new Date().toLocaleDateString('en-US')}`, 14, 20);
   }
 
   (doc as any).autoTable({

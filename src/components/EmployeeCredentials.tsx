@@ -102,7 +102,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
   const [newEmployee, setNewEmployee] = useState({
     fullName: '',
     position: '',
-    department: 'Savdo va Chakana',
+    department: 'Sales & Retail',
     branch: 'Downtown Branch',
     phone: '+998 ',
     email: '',
@@ -123,10 +123,10 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
         return {
           ...emp,
           id: emp.id || (emp as any).firestoreId || 'emp-101',
-          fullName: emp.fullName || (emp as any).name || (emp as any).fio || 'Noma\'lum',
-          position: emp.position || (emp as any).jobPosition || (emp as any).lavozim || 'Employee',
-          department: emp.department || 'Savdo va Chakana',
-          branch: emp.branch || (emp as any).targetBranch || (emp as any).filial || 'Headquarters',
+          fullName: emp.fullName || (emp as any).name || 'Unknown Employee',
+          position: emp.position || (emp as any).jobPosition || 'Employee',
+          department: emp.department || 'Sales & Retail',
+          branch: emp.branch || (emp as any).targetBranch || 'Headquarters',
           phone: emp.phone || (emp as any).phone1 || '',
           staffId: emp.staffId || 'TS-0001',
           avatarUrl: emp.avatarUrl || (emp as any).photoUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(emp.fullName || 'User')}&backgroundColor=e2e8f0`,
@@ -180,19 +180,19 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
 
   // Username generator
   function generateDefaultUsername(fullName?: string): string {
-    if (!fullName) return 'xodim' + Math.floor(100 + Math.random() * 900);
+    if (!fullName) return 'emp' + Math.floor(100 + Math.random() * 900);
     const parts = (fullName || '').toLowerCase().replace(/['`ʻ’]/g, '').split(' ').filter(Boolean);
     if (parts.length >= 2) {
       return `${parts[1]}.${parts[0]}`.replace(/[^a-z0-9._]/g, '');
     }
-    return (parts[0] || 'xodim') + Math.floor(100 + Math.random() * 900);
+    return (parts[0] || 'emp') + Math.floor(100 + Math.random() * 900);
   }
 
   // Parol generator
   function generateDefaultPassword(fullName?: string): string {
     const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
     const numbers = '23456789';
-    let pass = 'Toyona#';
+    let pass = 'NovaHR#';
     for (let i = 0; i < 4; i++) {
       pass += numbers.charAt(Math.floor(Math.random() * numbers.length));
     }
@@ -217,7 +217,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
       pass += all.charAt(Math.floor(Math.random() * all.length));
     }
     setFormPassword(pass);
-    showNotice('Yangi xavfsiz parol yaratildi!', 'success');
+    showNotice('New secure password generated!', 'success');
   };
 
   const showNotice = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -247,11 +247,11 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
   const handleSaveCredentials = async () => {
     if (!selectedEmployee) return;
     if (!formUsername.trim()) {
-      showNotice('Username bo\'sh bo\'lishi mumkin emas!', 'error');
+      showNotice('Username cannot be empty!', 'error');
       return;
     }
     if (!formPassword.trim() || formPassword.length < 4) {
-      showNotice('Parol kamida 4 belgidan iborat bo\'lishi kerak!', 'error');
+      showNotice('Password must be at least 4 characters long!', 'error');
       return;
     }
 
@@ -275,7 +275,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
       setEmployees(prev => prev.map(e => e.id === updatedEmp.id ? updatedEmp : e));
       setSelectedEmployee(updatedEmp);
       setIsDetailModalOpen(false);
-      showNotice(`"${updatedEmp.fullName}" uchun login va parol muvaffaqiyatli saqlandi!`, 'success');
+      showNotice(`Credentials for "${updatedEmp.fullName}" updated successfully!`, 'success');
     } catch (err: any) {
       showNotice(err.message || 'Save Credentialsda xatolik yuz berdi', 'error');
     } finally {
@@ -288,8 +288,8 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     if (!emp) return;
 
     const confirmMsg = emp.username
-      ? `"${emp.fullName}" xodimining davomat logini va parolini o'chirishni tasdiqlaysizmi?`
-      : `"${emp.fullName}" xodimini tizimdan butunlay o'chirishni tasdiqlaysizmi?`;
+      ? `"${emp.fullName}" Are you sure you want to delete credentials for this employee?`
+      : `Are you sure you want to permanently delete "${emp.fullName}" and credentials?`;
 
     if (!window.confirm(confirmMsg)) {
       return;
@@ -313,7 +313,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
           setIsDetailModalOpen(false);
           setSelectedEmployee(null);
         }
-        showNotice(`"${emp.fullName}" xodimining login va paroli o'chirildi!`, 'success');
+        showNotice(`Credentials for "${emp.fullName}" deleted successfully!`, 'success');
       } else {
         // Employeeni o'chirish
         await deleteFirebaseEmployee(emp.id);
@@ -322,7 +322,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
           setIsDetailModalOpen(false);
           setSelectedEmployee(null);
         }
-        showNotice(`"${emp.fullName}" xodimi muvaffaqiyatli o'chirildi!`, 'success');
+        showNotice(`Employee "${emp.fullName}" removed successfully!`, 'success');
       }
     } catch (err: any) {
       showNotice(err.message || "Deleteda xatolik yuz berdi", 'error');
@@ -334,17 +334,17 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     if (!selectedEmployee) return;
     const branchInfo = branches.find(b => b.name === selectedEmployee.branch);
     const text = `Assalomu alaykum, ${selectedEmployee.fullName}!
-Siz uchun "Toyona Savdo" Davomat Tizimi hisobi yaratildi:
+Your NovaHR Workforce Portal credentials have been generated:
 
 🏢 Biriktirilgan Branch: ${selectedEmployee.branch}
-📍 Branch manzili: ${branchInfo?.address || 'Qo\'qon shahar'}
+📍 Branch Location: ${branchInfo?.address || 'Corporate Headquarters'}
 👤 Username: ${formUsername}
 🔑 Password: ${formPassword}
 
 Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiring va o'z filaligingiz hududida "Check-inm" tugmasini bosing!`;
 
     navigator.clipboard.writeText(text);
-    showNotice('SMS / Telegram uchun xabar matni copied to clipboard!', 'success');
+    showNotice('Credential notification message copied to clipboard!', 'success');
   };
 
   // Yangi xodim va hisob qo'shish
@@ -372,7 +372,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
       department: newEmployee.department,
       branch: newEmployee.branch,
       phone: newEmployee.phone.trim(),
-      email: newEmployee.email.trim() || `${username}@toyona.uz`,
+      email: newEmployee.email.trim() || `${username}@novahr.com`,
       hireDate: new Date().toISOString().split('T')[0],
       status: 'active',
       avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(newEmployee.fullName)}&background=00A651&color=fff`,
@@ -401,12 +401,12 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
 
       setEmployees(prev => [created, ...prev]);
       setIsAddEmployeeModalOpen(false);
-      showNotice(`Yangi xodim "${created.fullName}" va uning hisobi yaratildi!`, 'success');
+      showNotice(`Employee "${created.fullName}" and credentials created successfully!`, 'success');
       // Reset form
       setNewEmployee({
         fullName: '',
         position: '',
-        department: 'Savdo va Chakana',
+        department: 'Sales & Retail',
         branch: selectedBranchName || 'Downtown Branch',
         phone: '+998 ',
         email: '',
@@ -465,25 +465,18 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
         
         // Map branches to their respective default regions
         let resolvedRegion = '';
-        if (
-          empBranch.includes('turkiston') || 
-          empBranch.includes('navoiy') || 
-          empBranch.includes('istiqlol') || 
-          empBranch.includes('mingtut') || 
-          empBranch.includes('qo\'qon') ||
-          empBranch.includes('fergana') ||
-          empBranch.includes('farg\'ona')
-        ) {
-          resolvedRegion = 'farg\'ona';
-        } else if (
-          empBranch.includes('bosh ofis') || 
-          empBranch.includes('toshkent')
-        ) {
-          resolvedRegion = 'toshkent';
-        } else if (empBranch.includes('andijon')) {
-          resolvedRegion = 'andijon';
-        } else if (empBranch.includes('namangan')) {
-          resolvedRegion = 'namangan';
+        if (empBranch.includes('manhattan') || empBranch.includes('new york') || empBranch.includes('headquarters')) {
+          resolvedRegion = 'new york';
+        } else if (empBranch.includes('brooklyn') || empBranch.includes('queens')) {
+          resolvedRegion = 'new york metro';
+        } else if (empBranch.includes('california') || empBranch.includes('angeles') || empBranch.includes('francisco')) {
+          resolvedRegion = 'california';
+        } else if (empBranch.includes('texas') || empBranch.includes('austin')) {
+          resolvedRegion = 'texas';
+        } else if (empBranch.includes('chicago') || empBranch.includes('illinois')) {
+          resolvedRegion = 'illinois';
+        } else if (empBranch.includes('boston')) {
+          resolvedRegion = 'massachusetts';
         }
 
         matchesRegion = 
@@ -542,13 +535,13 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-800">Employees Davomat Hisoblari (Login & Parol)</h1>
+                <h1 className="text-xl font-bold text-slate-800">Employee Attendance Credentials (Logins & Passwords)</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#00A651]/10 text-[#00A651]">
                   Davomat Moduli
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Branchlar bo'yicha xodimlarga davomat tizimi uchun shaxsiy login va parollarni yaratish va boshqarish
+                Generate, manage, and assign attendance access credentials across all branches
               </p>
             </div>
           </div>
@@ -588,7 +581,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                   e.username ? 'Mavjud' : 'Kiritilmagan'
                 ]),
                 `Employees_Login_Parol_${selectedBranchName}`,
-                `Employees Login va Parollari - ${selectedBranchName}`
+                `Employee Attendance Credentials - ${selectedBranchName}`
               )}
             />
           </div>
@@ -597,7 +590,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
         {/* STATISTIKA BLOKLARI */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-100">
           <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Jami Branchlar</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Branches</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xl font-black text-slate-800">{branches.length} ta</span>
               <Building2 className="w-5 h-5 text-slate-400" />
@@ -630,7 +623,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
         </div>
       </div>
 
-      {/* XODIMLAR RO'YXATI VA HISOBLARI */}
+      {/* EMPLOYEE ROSTER & CREDENTIALS */}
       <div className="bg-white rounded-2xl p-6 shadow-xs border border-slate-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -641,10 +634,10 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
               <h2 className="text-base font-bold text-slate-800">
                 {selectedBranchName === 'all' 
                   ? 'Barcha Branchlar Employeesi' 
-                  : `"${selectedBranchName}" xodimlari ro'yxati`}
+                  : `"${selectedBranchName}" Employee Roster`}
               </h2>
               <p className="text-xs text-slate-500">
-                Istalgan xodim ustiga bosib uning barcha shaxsiy ma'lumotlarini va login/parolini boshqaring
+                Click on any employee to inspect records and manage access credentials
               </p>
             </div>
           </div>
@@ -656,7 +649,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder="Ism, familya yoki lavozim..."
+                placeholder="Search by name or position title..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#00A651] focus:outline-none"
@@ -710,7 +703,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
         ) : currentBranchEmployees.length === 0 ? (
           <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
             <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-bold text-slate-600">Ushbu filialda xodimlar topilmadi</p>
+            <p className="text-sm font-bold text-slate-600">No employees registered at this branch</p>
             <p className="text-xs text-slate-400 mt-1">Yangi xodim qo'shish yoki qidiruv parametrlarini o'zgartirib ko'ring</p>
             <button
               onClick={() => {
@@ -720,7 +713,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
               className="mt-3 px-3 py-1.5 bg-[#00A651] text-white rounded-lg text-xs font-bold cursor-pointer inline-flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Yangi xodim qo'shish</span>
+              <span>Add New Employee</span>
             </button>
           </div>
         ) : (
@@ -731,10 +724,10 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                   <th className="py-3 px-3">Employee (F.I.SH)</th>
                   <th className="py-3 px-3">Designation & Department</th>
                   <th className="py-3 px-3">Branch</th>
-                  <th className="py-3 px-3">Davomat Logini</th>
+                  <th className="py-3 px-3">Attendance Username</th>
                   <th className="py-3 px-3">
                     <div className="flex items-center gap-2">
-                      <span>Parol</span>
+                      <span>Password</span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -823,7 +816,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                                 handleCopy(emp.password || '', 'password');
                               }}
                               className="p-1 text-slate-400 hover:text-[#00A651] rounded-md transition-colors shrink-0"
-                              title="Parolni nusxalash"
+                              title="Copy Password"
                             >
                               <Copy className="w-3 h-3" />
                             </button>
@@ -856,7 +849,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                               handleDeleteCredentials(emp);
                             }}
                             className="px-2.5 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs"
-                            title={emp.username ? "Login va parolni o'chirish" : "Employeeni o'chirish"}
+                            title={emp.username ? "Delete credentials" : "Delete employee"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Delete</span>
@@ -940,7 +933,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                       className="text-[11px] text-[#00A651] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
                     >
                       <Copy className="w-3 h-3" />
-                      <span>{copiedField === 'username' ? 'Nusxalandi!' : 'Logini nusxalash'}</span>
+                      <span>{copiedField === 'username' ? 'Nusxalandi!' : 'Copy Username'}</span>
                     </button>
                   </div>
                   <input
@@ -963,7 +956,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                         className="text-[11px] text-amber-700 hover:underline flex items-center gap-1 font-bold cursor-pointer"
                       >
                         <Sparkles className="w-3 h-3 text-amber-600" />
-                        <span>Yangi parol</span>
+                        <span>Generate New Password</span>
                       </button>
                       <button
                         type="button"
@@ -1060,7 +1053,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                         placeholder="Yoki rasm URL havolasini kiriting..."
                       />
                       <span className="text-[10px] text-slate-400 mt-0.5 block">
-                        Narigi AI xodim "Check-inm" deb kameraga qaraganda aynan shu rasmni oladi.
+                        AI facial verification terminals compare against this stored reference photo during check-in.
                       </span>
                     </div>
                   </div>
@@ -1073,7 +1066,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                   type="button"
                   onClick={() => handleDeleteCredentials(selectedEmployee)}
                   className="px-3.5 py-2 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Employeening login va parolini o'chirish"
+                  title="Delete employee login credentials"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Hisobni o'chirish</span>
@@ -1134,7 +1127,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">Yangi Employee va Davomat Hisobi</h3>
-                    <p className="text-xs text-white/80">Branchga yangi xodim qo'shish va unga login/parol belgilash</p>
+                    <p className="text-xs text-white/80">Add new branch employee and configure portal access credentials</p>
                   </div>
                 </div>
                 <button
@@ -1232,7 +1225,7 @@ Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kirin
                       type="text"
                       value={newEmployee.password}
                       onChange={(e) => setNewEmployee(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Toyona#2026"
+                      placeholder="NovaHR#2026"
                       className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-[#00A651] focus:outline-none"
                     />
                   </div>

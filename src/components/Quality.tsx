@@ -51,7 +51,7 @@ export interface QualityProfile {
   experienceBracket: '<1 years' | '1-3 years' | '3-5 years' | '5+ yil';
   languages: string[];
   skills: string[];
-  qualificationLevel: 'Boshlang\'ich' | 'Mutaxassis' | 'Katta mutaxassis' | 'Yetakchi';
+  qualificationLevel: 'Boshlang\'ich' | 'Specialist' | 'Senior Specialist' | 'Lead Specialist';
 }
 
 function calculateAge(birthDate?: string): number {
@@ -102,11 +102,11 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
   if (!education) {
     const pos = (emp.position || '').toLowerCase();
     if (pos.includes('direktor') || pos.includes('rahbar') || pos.includes('boshqaruvchi') || pos.includes('menejer')) {
-      education = 'Oliy';
+      education = 'Higher Education';
     } else if (pos.includes('mutaxassis') || pos.includes('operator') || pos.includes('kassir')) {
-      education = 'O\'rta-maxsus';
+      education = 'Associate Degree';
     } else {
-      education = 'O\'rta-maxsus';
+      education = 'Associate Degree';
     }
   }
 
@@ -116,7 +116,7 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
     if (expYears > 3) {
       pastExp = `${emp.position} sohasida ${Math.floor(expYears)} yillik muvaffaqiyatli tajriba`;
     } else {
-      pastExp = 'Savdo va xizmat ko\'rsatish yo\'nalishida tajribaga ega';
+      pastExp = 'Extensive experience in retail sales and customer operations';
     }
   }
 
@@ -131,7 +131,7 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
   if (skills.length === 0) {
     const p = (emp.position || '').toLowerCase();
     if (p.includes('sotuvchi') || p.includes('kassir')) {
-      skills = ['Mijozlar bilan muloqot', '1C Savdo', 'Kassa intizomi'];
+      skills = ['Client Communications', 'Enterprise ERP', 'POS Terminal Operations'];
     } else if (p.includes('menejer') || p.includes('direktor')) {
       skills = ['Liderlik', 'Jamoani boshqarish', 'Analitika', 'KPI monitoring'];
     } else if (p.includes('ombor')) {
@@ -142,15 +142,15 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
   }
 
   // Qualification Level
-  let qualificationLevel: 'Boshlang\'ich' | 'Mutaxassis' | 'Katta mutaxassis' | 'Yetakchi' = 'Mutaxassis';
+  let qualificationLevel: 'Entry Level' | 'Specialist' | 'Senior Specialist' | 'Lead Specialist' = 'Specialist';
   if (expYears >= 4 || education.toLowerCase().includes('magistr')) {
-    qualificationLevel = 'Yetakchi';
+    qualificationLevel = 'Lead Specialist';
   } else if (expYears >= 2 || education.toLowerCase().includes('oliy')) {
-    qualificationLevel = 'Katta mutaxassis';
+    qualificationLevel = 'Senior Specialist';
   } else if (expYears >= 1) {
-    qualificationLevel = 'Mutaxassis';
+    qualificationLevel = 'Specialist';
   } else {
-    qualificationLevel = 'Boshlang\'ich';
+    qualificationLevel = 'Entry Level';
   }
 
   return {
@@ -168,19 +168,19 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
 }
 
 const EDUCATION_COLORS: Record<string, string> = {
-  'Oliy': '#00A651',
-  'Magistr': '#059669',
-  'O\'rta-maxsus': '#3b82f6',
-  'O\'rta maxsus': '#3b82f6',
-  'O\'rta': '#f59e0b',
-  'Boshqa': '#8b5cf6'
+  'Higher Education': '#00A651',
+  'Master Degree': '#059669',
+  'Associate Degree': '#3b82f6',
+  'Vocational Certificate': '#3b82f6',
+  'High School Diploma': '#f59e0b',
+  'Other': '#8b5cf6'
 };
 
 const QUALIFICATION_BADGES: Record<string, { bg: string; text: string; border: string }> = {
-  'Yetakchi': { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800' },
-  'Katta mutaxassis': { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' },
-  'Mutaxassis': { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800' },
-  'Boshlang\'ich': { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' }
+  'Lead Specialist': { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800' },
+  'Senior Specialist': { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' },
+  'Specialist': { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800' },
+  'Entry Level': { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' }
 };
 
 export default function Quality() {
@@ -267,7 +267,7 @@ export default function Quality() {
       return { total: 0, higherEduPct: 0, avgAge: 0, avgExp: 0, highSkillPct: 0 };
     }
     const higherEduCount = filteredProfiles.filter(p =>
-      p.education.toLowerCase().includes('oliy') || p.education.toLowerCase().includes('magistr')
+      p.education.toLowerCase().includes('higher') || p.education.toLowerCase().includes('master') || p.education.toLowerCase().includes('oliy')
     ).length;
     const higherEduPct = Math.round((higherEduCount / total) * 100);
 
@@ -278,7 +278,7 @@ export default function Quality() {
     const avgExp = +(sumExp / total).toFixed(1);
 
     const highSkillCount = filteredProfiles.filter(p =>
-      p.qualificationLevel === 'Yetakchi' || p.qualificationLevel === 'Katta mutaxassis'
+      p.qualificationLevel === 'Lead Specialist' || p.qualificationLevel === 'Senior Specialist'
     ).length;
     const highSkillPct = Math.round((highSkillCount / total) * 100);
 
@@ -299,28 +299,28 @@ export default function Quality() {
 
   // Age Distribution Chart Data
   const ageChartData = useMemo(() => {
-    const counts: Record<string, number> = { '<25 yosh': 0, '25-35 yosh': 0, '35-45 yosh': 0, '45+ yosh': 0 };
+    const counts: Record<string, number> = { '<25 years': 0, '25-35 years': 0, '35-45 years': 0, '45+ years': 0 };
     filteredProfiles.forEach(p => {
-      if (p.ageBracket === '<25') counts['<25 yosh']++;
-      else if (p.ageBracket === '25-35') counts['25-35 yosh']++;
-      else if (p.ageBracket === '35-45') counts['35-45 yosh']++;
-      else counts['45+ yosh']++;
+      if (p.ageBracket === '<25') counts['<25 years']++;
+      else if (p.ageBracket === '25-35') counts['25-35 years']++;
+      else if (p.ageBracket === '35-45') counts['35-45 years']++;
+      else counts['45+ years']++;
     });
     return Object.keys(counts).map(name => ({
       name,
-      xodimlar: counts[name]
+      employees: counts[name]
     }));
   }, [filteredProfiles]);
 
   // Experience Distribution Chart Data
   const experienceChartData = useMemo(() => {
-    const counts: Record<string, number> = { '<1 years': 0, '1-3 years': 0, '3-5 years': 0, '5+ yil': 0 };
+    const counts: Record<string, number> = { '<1 years': 0, '1-3 years': 0, '3-5 years': 0, '5+ years': 0 };
     filteredProfiles.forEach(p => {
       counts[p.experienceBracket] = (counts[p.experienceBracket] || 0) + 1;
     });
     return Object.keys(counts).map(name => ({
       name,
-      xodimlar: counts[name]
+      employees: counts[name]
     }));
   }, [filteredProfiles]);
 
@@ -343,11 +343,11 @@ export default function Quality() {
   // Export handlers
   const handleExport = (type: 'excel' | 'pdf') => {
     const title = selectedBranch !== 'All'
-      ? `Toyona Savdo - ${selectedBranch} Employeesi Sifat Tarkibi`
-      : `Toyona Savdo - Barcha Branchlar Employeesi Sifat Tarkibi`;
+      ? `NovaHR - ${selectedBranch} Workforce Qualifications`
+      : `NovaHR - Enterprise Workforce Qualifications`;
     const fileName = `Toyona_Sifat_Tarkibi_${selectedBranch !== 'All' ? selectedBranch.replace(/\s+/g, '_') : 'All'}_${new Date().toISOString().slice(0, 10)}`;
 
-    const headers = ['№', 'Tabel ID', 'Employee (Full Name)', 'Branch', 'Position', 'Ma\'lumoti', 'Yoshi', 'Staj (yil)', 'Darajasi', 'Oldingi tajribasi'];
+    const headers = ['#', 'Staff ID', 'Employee (Full Name)', 'Branch', 'Position', 'Education', 'Age', 'Tenure (Years)', 'Qualification Tier', 'Prior Experience'];
     const data = filteredProfiles.map((p, i) => [
       i + 1,
       p.employee.staffId || '-',
@@ -369,9 +369,9 @@ export default function Quality() {
         'Branch': p.employee.branch,
         'Position': p.employee.position,
         'Ma\'lumoti': p.education,
-        'Yoshi': p.age,
+        'Age': p.age,
         'Ish staji': `${p.experienceYears} yil`,
-        'Malaka darajasi': p.qualificationLevel,
+        'Qualification Tier': p.qualificationLevel,
         'Oldingi ish tajribasi': p.pastExperience,
         'Tillar': p.languages.join(', '),
         'Telefon': p.employee.phone || '-'
@@ -396,11 +396,11 @@ export default function Quality() {
                 Sifat Tarkibi va Kompetensiyalar
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-950/60 text-[#00A651] border border-emerald-200 dark:border-emerald-800">
-                Tahlil & Daraja
+                Analytics & Qualification Tiers
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-              Employeesning ma'lumoti, yoshi, ish tajribasi (staji) va malaka salohiyati tahlili
+              Workforce education, age demographics, tenure, and qualification potential analytics
             </p>
           </div>
         </div>
@@ -422,7 +422,7 @@ export default function Quality() {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Jami xodimlar</p>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Workforce</p>
               <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.total} nafar</h3>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
                 {selectedBranch === 'All' ? 'All Branches' : selectedBranch}
@@ -435,7 +435,7 @@ export default function Quality() {
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Oliy ma'lumotlilar</p>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Higher Education Ratio</p>
               <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400">{stats.higherEduPct}%</h3>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
                 Bakalavr va Magistrlar ulushi
@@ -448,10 +448,10 @@ export default function Quality() {
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">O'rtacha staj</p>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Average Tenure</p>
               <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.avgExp} <span className="text-base font-bold text-slate-500">yil</span></h3>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                Kompaniyadagi o'rtacha tajriba
+                Average company tenure
               </p>
             </div>
           </div>
@@ -461,10 +461,10 @@ export default function Quality() {
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">O'rtacha yosh</p>
-              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.avgAge} <span className="text-base font-bold text-slate-500">yosh</span></h3>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Average Age</p>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.avgAge} <span className="text-base font-bold text-slate-500">years</span></h3>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                Faol va yosh mutaxassislar
+                Active workforce demographics
               </p>
             </div>
           </div>
@@ -478,7 +478,7 @@ export default function Quality() {
               <div className="flex items-center gap-2">
                 <PieIcon className="w-4 h-4 text-[#00A651]" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Ma'lumot darajasi bo'yicha
+                  Education Level Distribution
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-slate-400">{filteredProfiles.length} nafar</span>
@@ -511,7 +511,7 @@ export default function Quality() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}
-                    formatter={(val: any, name: any) => [`${val} nafar xodim`, name]}
+                    formatter={(val: any, name: any) => [`${val}  employees`, name]}
                   />
                   <Legend
                     wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }}
@@ -528,7 +528,7 @@ export default function Quality() {
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-purple-600" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Yosh toifalari kesimida
+                  Age Demographics Breakdown
                 </h3>
               </div>
               <span className="text-[11px] font-bold text-slate-400">Demografiya</span>
@@ -548,9 +548,9 @@ export default function Quality() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}
-                    formatter={(val: any) => [`${val} nafar`, 'Employees soni']}
+                    formatter={(val: any) => [`${val} staff`, 'Headcount']}
                   />
-                  <Bar dataKey="xodimlar" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="employees" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -562,10 +562,10 @@ export default function Quality() {
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-500" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Ish staji / Tajriba kesimida
+                  Tenure & Work Experience Breakdown
                 </h3>
               </div>
-              <span className="text-[11px] font-bold text-slate-400">Tajriba</span>
+              <span className="text-[11px] font-bold text-slate-400">Tenure</span>
             </div>
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -582,9 +582,9 @@ export default function Quality() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}
-                    formatter={(val: any) => [`${val} nafar`, 'Employees soni']}
+                    formatter={(val: any) => [`${val} staff`, 'Headcount']}
                   />
-                  <Bar dataKey="xodimlar" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="employees" fill="#f59e0b" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -637,7 +637,7 @@ export default function Quality() {
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
             >
               {educationList.map(ed => (
-                <option key={ed} value={ed}>{ed === 'All' ? 'Barcha ma\'lumotlar' : ed}</option>
+                <option key={ed} value={ed}>{ed === 'All' ? 'All Degrees' : ed}</option>
               ))}
             </select>
 
@@ -647,11 +647,11 @@ export default function Quality() {
               onChange={(e) => setSelectedAgeBracket(e.target.value)}
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
             >
-              <option value="All">Barcha yoshlar</option>
-              <option value="<25">&lt; 25 yosh</option>
-              <option value="25-35">25 - 35 yosh</option>
-              <option value="35-45">35 - 45 yosh</option>
-              <option value="45+">45+ yosh</option>
+              <option value="All">All Age Groups</option>
+              <option value="<25">&lt; 25 years</option>
+              <option value="25-35">25 - 35 years</option>
+              <option value="35-45">35 - 45 years</option>
+              <option value="45+">45+ years</option>
             </select>
 
             {/* Experience Filter */}
@@ -673,7 +673,7 @@ export default function Quality() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Full Name, ma'lumoti, tajriba..."
+              placeholder="Search by name, education, experience..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-7 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
@@ -701,10 +701,10 @@ export default function Quality() {
                     <th className="py-3.5 px-3.5">Tabel ID</th>
                     <th className="py-3.5 px-3.5">Branchi</th>
                     <th className="py-3.5 px-3.5">Positioni</th>
-                    <th className="py-3.5 px-3.5">Ma'lumoti</th>
-                    <th className="py-3.5 px-3.5 text-center">Yoshi</th>
+                    <th className="py-3.5 px-3.5">Education</th>
+                    <th className="py-3.5 px-3.5 text-center">Age</th>
                     <th className="py-3.5 px-3.5 text-center">Umumiy Staji</th>
-                    <th className="py-3.5 px-3.5">Malaka Darajasi</th>
+                    <th className="py-3.5 px-3.5">Qualification Tier</th>
                     <th className="py-3.5 px-3.5">Oldingi Tajribasi</th>
                     <th className="py-3.5 px-3.5 text-right w-24">Amal</th>
                   </tr>
@@ -712,7 +712,7 @@ export default function Quality() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                   {filteredProfiles.map((profile, idx) => {
                     const emp = profile.employee;
-                    const badge = QUALIFICATION_BADGES[profile.qualificationLevel] || QUALIFICATION_BADGES['Mutaxassis'];
+                    const badge = QUALIFICATION_BADGES[profile.qualificationLevel] || QUALIFICATION_BADGES['Specialist'];
                     return (
                       <tr
                         key={`${emp.id}-${idx}`}
@@ -756,7 +756,7 @@ export default function Quality() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3.5 text-center font-bold text-slate-800 dark:text-slate-200">
-                          {profile.age} yosh
+                          {profile.age} years
                         </td>
                         <td className="py-3.5 px-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
                           <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px]">
@@ -786,7 +786,7 @@ export default function Quality() {
                   {filteredProfiles.length === 0 && (
                     <tr>
                       <td colSpan={11} className="py-12 text-center text-slate-400 dark:text-slate-500 font-medium">
-                        Hech qanday ma'lumot topilmadi
+                        No Quality Profiles Found
                       </td>
                     </tr>
                   )}
@@ -795,8 +795,8 @@ export default function Quality() {
             </div>
 
             <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-              <span>Total duration: <strong className="text-slate-800 dark:text-slate-100 font-bold">{filteredProfiles.length}</strong> nafar xodim sifat tarkibi</span>
-              <span>Oliy ma'lumot: <strong className="text-emerald-600 font-bold">{stats.higherEduPct}%</strong> | O'rtacha yosh: <strong className="text-slate-700 dark:text-slate-300 font-bold">{stats.avgAge}</strong></span>
+              <span>Total duration: <strong className="text-slate-800 dark:text-slate-100 font-bold">{filteredProfiles.length}</strong>  employees sifat tarkibi</span>
+              <span>Higher Education: <strong className="text-emerald-600 font-bold">{stats.higherEduPct}%</strong> | Average Age: <strong className="text-slate-700 dark:text-slate-300 font-bold">{stats.avgAge}</strong></span>
             </div>
           </div>
         ) : (
@@ -805,7 +805,7 @@ export default function Quality() {
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Branchlar Kesimida Sifat Salohiyati</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Har bir filialning ma'lumot darajasi, o'rtacha yoshi va staj ko'rsatkichi</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Branch breakdown of education attainment, average age, and tenure metrics</p>
               </div>
             </div>
             <div className="overflow-x-auto w-full">
@@ -815,9 +815,9 @@ export default function Quality() {
                     <th className="py-3 px-4 w-12 text-center text-slate-400">№</th>
                     <th className="py-3 px-4">Branch Nomi</th>
                     <th className="py-3 px-4">Employees Soni</th>
-                    <th className="py-3 px-4">Oliy Ma'lumot Ulushi</th>
-                    <th className="py-3 px-4 text-center">O'rtacha Yosh</th>
-                    <th className="py-3 px-4 text-center">O'rtacha Staj</th>
+                    <th className="py-3 px-4">Higher Education Share</th>
+                    <th className="py-3 px-4 text-center">Average Age</th>
+                    <th className="py-3 px-4 text-center">Average Tenure</th>
                     <th className="py-3 px-4 text-right w-36">Amal</th>
                   </tr>
                 </thead>
@@ -857,7 +857,7 @@ export default function Quality() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-center font-bold text-slate-700 dark:text-slate-300">
-                        {row.avgAge} yosh
+                        {row.avgAge} years
                       </td>
                       <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">
                         {row.avgExp} yil
@@ -903,7 +903,7 @@ export default function Quality() {
                       Employee Sifat va Kompetensiya Kartochkasi
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      Ma'lumot, yosh, ish tajribasi va ko'nikmalar tahlili
+                      Comprehensive education, demographics, tenure, and competencies review
                     </p>
                   </div>
                 </div>
@@ -954,7 +954,7 @@ export default function Quality() {
                   <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60">
                     <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 mb-1">
                       <GraduationCap className="w-3.5 h-3.5 text-[#00A651]" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Ma'lumot Darajasi</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Education Level</span>
                     </div>
                     <div className="text-sm font-black text-slate-800 dark:text-slate-100">
                       {selectedProfile.education}
@@ -969,10 +969,10 @@ export default function Quality() {
                   <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60">
                     <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 mb-1">
                       <Calendar className="w-3.5 h-3.5 text-purple-500" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Yoshi & Tug'ilgan Sana</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Age & Birth Date</span>
                     </div>
                     <div className="text-sm font-black text-slate-800 dark:text-slate-100">
-                      {selectedProfile.age} yosh
+                      {selectedProfile.age} years
                     </div>
                     <div className="text-[11px] font-medium text-slate-500 mt-0.5">
                       {selectedProfile.employee.birthDate?.split('-').reverse().join('.') || 'Ko\'rsatilmagan'}
@@ -984,7 +984,7 @@ export default function Quality() {
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60 space-y-2">
                   <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
                     <Briefcase className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs font-black uppercase tracking-wider">Ish Faoliyati va Tajribasi</span>
+                    <span className="text-xs font-black uppercase tracking-wider">Professional Experience & History</span>
                   </div>
                   <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200/60 dark:border-slate-700">
                     {selectedProfile.pastExperience}
@@ -1017,7 +1017,7 @@ export default function Quality() {
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60 space-y-2">
                   <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
                     <Globe className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-black uppercase tracking-wider">Til Bilish Darajasi</span>
+                    <span className="text-xs font-black uppercase tracking-wider">Language Proficiencies</span>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {selectedProfile.languages.map((lang, i) => (

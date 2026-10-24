@@ -165,7 +165,7 @@ export default function TelegramAttendance() {
         }
       } catch (err: any) {
         console.error("Initialization error:", err);
-        setErrorMessage("Modellarni yuklashda xatolik yuz berdi. Sahifani qayta yuklang.");
+        setErrorMessage("Error loading biometric AI models. Please refresh the page.");
       }
     }
 
@@ -237,13 +237,13 @@ export default function TelegramAttendance() {
           // Within branch area
           startCameraStep();
         } else {
-          setErrorMessage(`You are outside permitted branch geofence radius! Branchgacha masofa: ${Math.round(dist)} metr. Ruxsat etilgan radius: ${allowedRadius} metr.`);
+          setErrorMessage(`You are outside permitted branch geofence radius! Distance to branch: ${Math.round(dist)} meters. Authorized radius: ${allowedRadius} meters.`);
         }
       },
       (err) => {
         console.warn("Geo error:", err);
         setIsVerifyingGeo(false);
-        setErrorMessage("GPS joylashuvni aniqlab bo'lmadi. Please, brauzerda geolokatsiyaga ruxsat bering.");
+        setErrorMessage("Unable to determine GPS location. Please enable location permissions in browser.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -271,7 +271,7 @@ export default function TelegramAttendance() {
       startFaceMatcher();
     } catch (err: any) {
       console.error("Camera access error:", err);
-      setErrorMessage("Kameraga ulanib bo'lmadi. Please, kameradan foydalanishga ruxsat bering.");
+      setErrorMessage("Unable to access camera. Please grant camera permissions.");
     }
   };
 
@@ -352,14 +352,14 @@ export default function TelegramAttendance() {
       if (attempts >= maxAttempts) {
         clearInterval(interval);
         stopCamera();
-        setErrorMessage("Yuz aniqlanmadi yoki mos kelmadi. Please, yuzingizni yorug'roq joyda kameraga to'g'rilab qayta urinib ko'ring.");
+        setErrorMessage("Face not detected or does not match reference photo. Please ensure good lighting and try again.");
       }
     }, 300);
   };
 
   // 5. Save attendance record directly into Firebase Firestore
   const completeAttendance = async (emp: Employee, confidence: number) => {
-    setStatusMessage("Davomat qayd qilinmoqda...");
+    setStatusMessage("Recording attendance in system...");
     try {
       const res = await recordCheckIn({
         employeeId: emp.id || emp.staffId || 'emp',
@@ -377,7 +377,7 @@ export default function TelegramAttendance() {
       }
     } catch (err: any) {
       console.error("Attendance save error:", err);
-      setErrorMessage("Davomatni saqlashda xatolik yuz berdi: " + (err.message || 'Server xatosi'));
+      setErrorMessage("Error saving attendance record: " + (err.message || 'Server error'));
       setStep('error');
     }
   };
@@ -392,12 +392,12 @@ export default function TelegramAttendance() {
           </div>
           <div>
             <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-              <span>TOYONA SAVDO</span>
+              <span>NOVA HRMS</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 Face ID
               </span>
             </h1>
-            <p className="text-xs text-slate-400">Telegram Mobil Davomat Tizimi</p>
+            <p className="text-xs text-slate-400">Mobile Biometric Attendance Portal</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -426,7 +426,7 @@ export default function TelegramAttendance() {
               </div>
               <h2 className="text-lg font-bold text-white">Select Employee Profile</h2>
               <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                Davomatdan o'tish uchun o'z ism-familiyangizni tanlang
+                Select your name from the roster to log attendance
               </p>
             </div>
 
@@ -565,13 +565,13 @@ export default function TelegramAttendance() {
                 className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                Qayta skanerlash
+                Rescan Biometrics
               </button>
               <button
                 onClick={() => { stopCamera(); setStep('select'); }}
                 className="py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-bold transition-all"
               >
-                Chiqish
+                Cancel / Exit
               </button>
             </div>
           </div>
@@ -585,9 +585,9 @@ export default function TelegramAttendance() {
             </div>
 
             <div>
-              <h2 className="text-xl font-black text-white">Davomat Qabul Qilindi!</h2>
+              <h2 className="text-xl font-black text-white">Attendance Verified Successfully!</h2>
               <p className="text-xs text-emerald-400 font-semibold mt-1">
-                Yuzingiz muvaffaqiyatli tanildi va Firebase bazasiga yozildi
+                Biometric face verification completed and logged to cloud database
               </p>
             </div>
 
@@ -605,7 +605,7 @@ export default function TelegramAttendance() {
                 <span className="font-mono text-slate-200">{new Date().toLocaleDateString('uz-UZ')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Kelgan vaqti:</span>
+                <span className="text-slate-400">Check-in time:</span>
                 <span className="font-mono font-bold text-emerald-400">
                   {new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -616,7 +616,7 @@ export default function TelegramAttendance() {
               onClick={() => { setStep('select'); setSelectedEmp(null); }}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-md cursor-pointer"
             >
-              Yangi davomat qilish
+              Check Another Employee
             </button>
           </div>
         )}
@@ -629,7 +629,7 @@ export default function TelegramAttendance() {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-white">Davomat Saqlanmadi</h2>
+              <h2 className="text-lg font-bold text-white">Attendance Not Recorded</h2>
               <p className="text-xs text-rose-300 mt-1 max-w-xs mx-auto">
                 {errorMessage}
               </p>
@@ -647,7 +647,7 @@ export default function TelegramAttendance() {
 
       {/* Footer */}
       <footer className="p-4 text-center text-[11px] text-slate-500 border-t border-slate-800">
-        Toyona Savdo • Barcha huquqlar himoyalangan © 2026
+        NovaHR Enterprise Suite • All rights reserved © 2026
       </footer>
     </div>
   );

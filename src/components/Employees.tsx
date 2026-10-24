@@ -179,11 +179,11 @@ export default function Employees() {
     if (parts.length >= 2) {
       return `${parts[1]}.${parts[0]}`.replace(/[^a-z0-9._]/g, '');
     }
-    return (parts[0] || 'xodim') + (emp.staffId ? emp.staffId.replace(/\D/g, '') : '101');
+    return (parts[0] || 'emp') + (emp.staffId ? emp.staffId.replace(/\D/g, '') : '101');
   };
 
   const getEmployeePassword = (emp: Employee): string => {
-    return emp.password || 'Toyona#2026';
+    return emp.password || 'NovaHR#2026';
   };
 
   const handleCopyCard = (text: string, field: string) => {
@@ -213,7 +213,7 @@ export default function Employees() {
   useEffect(() => {
     async function loadBranches() {
       try {
-        const savedGeozones = localStorage.getItem('toyonasavdo_branch_geozones');
+        const savedGeozones = localStorage.getItem('novahr_branch_geozones');
         if (savedGeozones) {
           const parsed: BranchGeozone[] = JSON.parse(savedGeozones);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -230,7 +230,7 @@ export default function Employees() {
   const [formData, setFormData] = useState<Partial<Employee>>({
     fullName: '',
     position: '',
-    department: 'Savdo va Chakana',
+    department: 'Sales & Retail',
     branch: '',
     phone: '+998 ',
     email: '',
@@ -462,21 +462,21 @@ export default function Employees() {
           id: `emp-${Date.now()}`,
           fullName: formData.fullName || 'Add Employee',
           position: formData.position || 'Employee',
-          department: formData.department || 'Savdo va Chakana',
+          department: formData.department || 'Sales & Retail',
           branch: formData.branch || availableBranches[0] || 'Headquarters',
           phone: formData.phone || '+998 90 000 00 00',
-          email: formData.email || `${formData.fullName?.toLowerCase().replace(/\s+/g, '.')}@toyona.uz`,
+          email: formData.email || `${formData.fullName?.toLowerCase().replace(/\s+/g, '.')}@novahr.com`,
           hireDate: formData.hireDate || new Date().toISOString().split('T')[0],
           status: formData.status as any || 'active',
           avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 100000)}?w=150&auto=format&fit=crop&q=80`,
           staffId: nextStaffId,
           salary: formData.salary || '7,000,000 USD',
-          address: formData.address || 'Toshkent sh.',
+          address: formData.address || 'New York, NY',
           birthDate: formData.birthDate || '1995-01-01',
           gender: formData.gender as any || 'Male',
           educationLevel: formData.educationLevel || 'Oliy',
           graduationYear: formData.graduationYear,
-          pastExperience: formData.pastExperience || 'Mavjud emas',
+          pastExperience: formData.pastExperience || 'None',
           experienceYears: formData.experienceYears || (formData.pastExperience ? 2 : 1)
         };
         setEmployees(prev => [newEmp, ...prev]);
@@ -494,24 +494,24 @@ export default function Employees() {
           setDismissedEmployees(prev => prev.filter(d => d.id !== rehiringDismissedId));
           setRehiringDismissedId(null);
           recordSystemHistory({
-            action: "Employee qayta ishga olindi",
+            action: "Employee reinstated",
             module: 'Employees',
             type: 'create',
             performedBy: 'Zarifjon Zokirov',
             role: 'Super Admin',
-            details: `Employee "${newEmp.fullName}" qayta ishga olindi: ${newEmp.position} (${newEmp.branch})`
+            details: `Employee "${newEmp.fullName}" reinstated: ${newEmp.position} (${newEmp.branch})`
           });
-          setToastMessage(`Employee "${newEmp.fullName}" muvaffaqiyatli qayta ishga olindi!`);
+          setToastMessage(`Employee "${newEmp.fullName}" muvaffaqiyatli reinstated!`);
         } else {
           recordSystemHistory({
-            action: "Yangi xodim qo'shildi",
+            action: "New employee created",
             module: 'Employees',
             type: 'create',
             performedBy: 'Zarifjon Zokirov',
             role: 'Super Admin',
-            details: `Yangi xodim ro'yxatga olindi: ${newEmp.fullName} (${newEmp.position}, ${newEmp.branch})`
+            details: `New employee profile registered: ${newEmp.fullName} (${newEmp.position}, ${newEmp.branch})`
           });
-          setToastMessage(`Yangi xodim "${newEmp.fullName}" muvaffaqiyatli qo'shildi!`);
+          setToastMessage(`Employee "${newEmp.fullName}" added successfully!`);
         }
       }
 
@@ -526,15 +526,15 @@ export default function Employees() {
     setDismissingEmployee(emp);
     setDismissReason('');
     
-    // Pre-map status to human-readable Uzb category
+    // Pre-map status to human-readable category
     const statusMap: Record<string, string> = {
-      'active': 'Doimiy ishda',
-      'probation': 'Sinovda',
-      'intern': 'Stajyor',
-      'blacklisted': 'Qora ro\'yxatda',
-      'leave': 'Ta\'tilda'
+      'active': 'Active Staff',
+      'probation': 'Probationary Period',
+      'intern': 'Intern / Apprentice',
+      'blacklisted': 'Blacklisted',
+      'leave': 'On Leave'
     };
-    setDismissCategory(statusMap[emp.status] || 'Doimiy ishda');
+    setDismissCategory(statusMap[emp.status] || 'Active Staff');
     setIsDismissModalOpen(true);
   };
 
@@ -552,7 +552,7 @@ export default function Employees() {
       email: dismissingEmployee.email,
       hireDate: dismissingEmployee.hireDate,
       dismissDate: new Date().toISOString().split('T')[0],
-      dismissReason: dismissReason || "Sabab ko'rsatilmadi",
+      dismissReason: dismissReason || "No reason specified",
       dismissCategory: dismissCategory,
       staffId: dismissingEmployee.staffId
     };
@@ -564,17 +564,17 @@ export default function Employees() {
       setDismissedEmployees(prev => [dismissedObj, ...prev]);
 
       recordSystemHistory({
-        action: "Employee ishdan bo'shatildi",
+        action: "Employee terminated",
         module: 'Employees',
         type: 'delete',
-        performedBy: 'Zarifjon Zokirov',
+        performedBy: 'Alexander Mitchell',
         role: 'Super Admin',
-        details: `Employee "${dismissingEmployee.fullName}" ishdan bo'shatildi. Toifa: ${dismissCategory}. Sabab: ${dismissReason}`
+        details: `Employee "${dismissingEmployee.fullName}" terminated. Category: ${dismissCategory}. Reason: ${dismissReason}`
       });
 
-      setToastMessage(`"${dismissingEmployee.fullName}" ishdan bo'shatildi va arxivlandi!`);
+      setToastMessage(`"${dismissingEmployee.fullName}" terminated and archived!`);
     } else {
-      setToastMessage("Error yuz berdi. Qayta urinib ko'ring.");
+      setToastMessage("Failed to process request. Please try again.");
     }
 
     setIsDismissModalOpen(false);
@@ -592,12 +592,12 @@ export default function Employees() {
         action: "Employee tizimdan o'chirildi",
         module: 'Employees',
         type: 'delete',
-        performedBy: 'Zarifjon Zokirov',
+        performedBy: 'Alexander Mitchell',
         role: 'Super Admin',
-        details: `Employee "${target.fullName}" (${target.position}, ${target.branch}) bazadan o'chirildi`
+        details: `Employee "${target.fullName}" (${target.position}, ${target.branch}) deleted from directory`
       });
     }
-    setToastMessage(`Employee "${target?.fullName || ''}" tizimdan o'chirildi`);
+    setToastMessage(`Employee "${target?.fullName || ''}" has been removed from system`);
   };
 
   const handleDeleteDismissed = async (id: string) => {
@@ -607,15 +607,15 @@ export default function Employees() {
     await deleteFirebaseDismissedEmployee(id);
     if (target) {
       recordSystemHistory({
-        action: "Terminated xodim arxivi o'chirildi",
+        action: "Terminated employee archive deleted",
         module: 'Employees',
         type: 'delete',
-        performedBy: 'Zarifjon Zokirov',
+        performedBy: 'Alexander Mitchell',
         role: 'Super Admin',
-        details: `Ishdan bo'shatilgan xodim "${target.fullName}" arxivi butunlay o'chirildi`
+        details: `Terminated employee "${target.fullName}" archive record permanently deleted`
       });
     }
-    setToastMessage("Employee arxivi butunlay o'chirildi!");
+    setToastMessage("Employee archive record permanently deleted!");
   };
 
   const handleRehireEmployee = (dismissed: DismissedEmployee) => {
@@ -664,22 +664,22 @@ export default function Employees() {
     saveFirebaseEmployee(updatedEmp).catch(console.error);
 
     const now = new Date();
-    const nowStr = `${now.toLocaleDateString('uz-UZ')}, ${now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
+    const nowStr = `${now.toLocaleDateString('en-US')}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
     const transferRecord = {
       id: `tr-${Date.now()}`,
       num: Date.now() % 100000,
       fio: transferringEmployee.fullName,
       filial: targetBranch,
-      viloyat: "Farg'ona",
+      viloyat: "New York Metro",
       kategoriya: transferringEmployee.department,
       qaysiDesignationdan: `${transferringEmployee.position} (${oldBranch})`,
       qaysiDesignationga: `${newPos} (${targetBranch})`,
-      status: 'Yakunlangan' as const,
-      sana: `${now.getDate()}.${now.getMonth() + 1}.${now.getFullYear()}`,
+      status: 'Completed' as const,
+      sana: `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`,
       boshlanganSana: nowStr,
       yakunlanganSana: nowStr,
-      sababi: transferReason || "Branchlararo xizmat rotatsiyasi",
-      tasdiqlovchi: "Zarifjon Zokirov"
+      sababi: transferReason || "Inter-branch corporate rotation",
+      tasdiqlovchi: "Alexander Mitchell"
     };
 
     saveFirebaseTransfer(transferRecord).catch(console.error);
@@ -691,12 +691,12 @@ export default function Employees() {
     } catch (err) {}
 
     recordSystemHistory({
-      action: "Employee boshqa filialga o'tkazildi",
-      module: 'Rotatsiya',
+      action: "Employee transferred to branch",
+      module: 'Transfers',
       type: 'update',
-      performedBy: 'Zarifjon Zokirov',
+      performedBy: 'Alexander Mitchell',
       role: 'Super Admin',
-      details: `Employee "${transferringEmployee.fullName}" "${oldBranch}" branchdan "${targetBranch}" branchga muvaffaqiyatli o'tkazildi`
+      details: `Employee "${transferringEmployee.fullName}" transferred from "${oldBranch}" to "${targetBranch}" successfully`
     });
 
     setToastMessage(`"${transferringEmployee.fullName}" muvaffaqiyatli ${targetBranch} branchga o'tkazildi!`);
@@ -713,8 +713,8 @@ export default function Employees() {
     setFormData({
       fullName: '',
       position: '',
-      department: 'Savdo va Chakana',
-      branch: availableBranches[0] || 'Headquarters (Toshkent)',
+      department: 'Sales & Retail',
+      branch: availableBranches[0] || 'Headquarters',
       phone: '+998 ',
       email: '',
       hireDate: new Date().toISOString().split('T')[0],
@@ -734,7 +734,7 @@ export default function Employees() {
   };
 
   const handleExportEmployees = (format: 'excel' | 'pdf') => {
-    const headers = ['№', 'ID', 'F.I.O', 'Job Designation', 'Branch', 'Telefon', 'Salary', 'Gender', 'Status', 'Ishga kirgan sana'];
+    const headers = ['#', 'ID', 'Full Name', 'Job Designation', 'Branch', 'Phone', 'Salary', 'Gender', 'Status', 'Hire Date'];
     const data = filteredEmployees.map((e, idx) => [
       idx + 1,
       e.staffId,
@@ -747,7 +747,7 @@ export default function Employees() {
       e.status === 'active' ? 'Doimiy ishda' : e.status === 'leave' ? 'Ta\'tilda' : e.status === 'probation' ? 'Sinovda' : e.status === 'intern' ? 'Stajyor' : 'Qora ro\'yxatda',
       e.hireDate
     ]);
-    const fileName = `Toyona_Employees_Jadvali_${new Date().toISOString().split('T')[0]}`;
+    const fileName = `NovaHR_Employees_Roster_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       const excelData = filteredEmployees.map((e, idx) => ({
         '№': idx + 1,
@@ -765,12 +765,12 @@ export default function Employees() {
       }));
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Employees Jadvali (HRMS)");
+      exportToPDF(headers, data, fileName, "NovaHR - Employee Roster (HRMS)");
     }
   };
 
   const handleExportDismissed = (format: 'excel' | 'pdf') => {
-    const headers = ['№', 'ID', 'F.I.O', 'Job Designation', 'Branch', 'Telefon', 'Ishga kirgan', 'Bo\'shatilgan', 'Toifasi', 'Sababi'];
+    const headers = ['#', 'ID', 'Full Name', 'Job Designation', 'Branch', 'Phone', 'Hire Date', 'Termination Date', 'Category', 'Reason'];
     const data = filteredDismissed.map((e, idx) => [
       idx + 1,
       e.staffId,
@@ -783,7 +783,7 @@ export default function Employees() {
       e.dismissCategory,
       e.dismissReason
     ]);
-    const fileName = `Toyona_Terminated_Employees_${new Date().toISOString().split('T')[0]}`;
+    const fileName = `NovaHR_Terminated_Employees_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       const excelData = filteredDismissed.map((e, idx) => ({
         '№': idx + 1,
@@ -796,11 +796,11 @@ export default function Employees() {
         'Ishga kirgan sana': e.hireDate,
         'Bo\'shatilgan sana': e.dismissDate,
         'Bo\'shatilgan vaqtdagi toifa': e.dismissCategory,
-        'Sababi': e.dismissReason
+        'Reason': e.dismissReason
       }));
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Ishdan Terminatedlar Arxivi");
+      exportToPDF(headers, data, fileName, "NovaHR - Terminated Employees Archive");
     }
   };
 
@@ -893,7 +893,7 @@ export default function Employees() {
         </button>
       </div>
 
-      {/* 1. FAOL XODIMLAR TAB VIEW */}
+      {/* 1. ACTIVE EMPLOYEES TAB VIEW */}
       {activeTab === 'employees' && (
         <>
           {/* Top Action & Status Pills Bar (HR talabiga ko'ra ixcham status paneli) */}
@@ -923,7 +923,7 @@ export default function Employees() {
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Doimiy xodimlar</span>
+            <span>Permanent Staff</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${selectedStatus === 'active' ? 'bg-white/20 text-white' : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200'}`}>
               {activeCount}
             </span>
@@ -1006,7 +1006,7 @@ export default function Employees() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
-              placeholder="F.I.O, ID, lavozim, telefon..."
+              placeholder="Search by name, ID, position, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-7 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all"
@@ -1058,7 +1058,7 @@ export default function Employees() {
               onChange={(e) => setSelectedGender(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer appearance-none truncate pr-7"
             >
-              <option value="All">Barcha jinslar</option>
+              <option value="All">All Genders</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
@@ -1071,7 +1071,7 @@ export default function Employees() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2.5 h-2.5 rounded-full bg-[#00A651] animate-pulse"></span>
             <span className="text-slate-700 dark:text-slate-200 font-bold">
-              Bazada jami: <span className="text-[#00A651] font-black">{employees.length} nafar</span> xodim mavjud
+              Total Roster: <span className="text-[#00A651] font-black">{employees.length}</span> employees active
               {filteredEmployees.length !== employees.length && (
                 <span className="text-slate-500 dark:text-slate-400 font-normal ml-2">
                   (filtr natijasi: <strong className="text-slate-800 dark:text-slate-100 font-bold">{filteredEmployees.length} nafar</strong>)
@@ -1112,9 +1112,9 @@ export default function Employees() {
           <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center mx-auto">
             <User className="w-8 h-8" />
           </div>
-          <h3 className="font-bold text-slate-700 dark:text-slate-200 text-base">Hech qanday xodim topilmadi</h3>
+          <h3 className="font-bold text-slate-700 dark:text-slate-200 text-base">No Employees Found</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
-            Search so'rovi yoki filtrlash shartlariga mos keladigan xodimlar ro'yxatda mavjud emas.
+            No employee records match the search and filter criteria.
           </p>
           <button
             onClick={resetAllFilters}
@@ -1206,7 +1206,7 @@ export default function Employees() {
                       onClick={() => handleSort('salary')}
                       className="flex items-center gap-1 font-extrabold hover:text-[#00A651] transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
                     >
-                      <span>Maosh</span>
+                      <span>Salary</span>
                       {sortField === 'salary' ? (
                         sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#00A651]" /> : <ArrowDown className="w-3 h-3 text-[#00A651]" />
                       ) : (
@@ -1374,7 +1374,7 @@ export default function Employees() {
                         <button
                           onClick={() => openTransferModal(emp)}
                           className="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-600 dark:text-slate-400 hover:text-[#00A651] rounded-md transition-all cursor-pointer"
-                          title="Boshqa filialga o'tkazish (Rotatsiya)"
+                          title="Transfer to another branch / location (Rotation)"
                         >
                           <ArrowRightLeft className="w-3.5 h-3.5" />
                         </button>
@@ -1410,7 +1410,7 @@ export default function Employees() {
           {/* Table Footer with Summary */}
           <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 font-medium">
             <div className="flex items-center gap-3 flex-wrap">
-              <span>Jami ko'rsatilmoqda: <strong className="text-slate-800 dark:text-slate-100 font-bold">{filteredEmployees.length}</strong> nafar xodim</span>
+              <span>Displaying total: <strong className="text-slate-800 dark:text-slate-100 font-bold">{filteredEmployees.length}</strong> employees</span>
               <span>•</span>
               <span className="text-[#00A651] font-semibold">Doimiy: {filteredEmployees.filter(e => e.status === 'active').length} nafar</span>
               <span>•</span>
@@ -1445,7 +1445,7 @@ export default function Employees() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
-                placeholder="Terminated xodimlar bo'yicha qidiruv (ism, sabab, toifa)..."
+                placeholder="Search terminated employees (name, reason, category)..."
                 value={dismissSearchQuery}
                 onChange={(e) => setDismissSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-7 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-600/20 focus:border-amber-600"
@@ -1475,7 +1475,7 @@ export default function Employees() {
               <div className="flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Arxivdagi xodimlar ro'yxati yuklanmoqda...
+                  Loading archived employee records...
                 </span>
               </div>
             </div>
@@ -1484,9 +1484,9 @@ export default function Employees() {
               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center mx-auto">
                 <UserX className="w-8 h-8" />
               </div>
-              <h3 className="font-bold text-slate-700 dark:text-slate-200 text-base">Terminated xodimlar topilmadi</h3>
+              <h3 className="font-bold text-slate-700 dark:text-slate-200 text-base">No Terminated Records Found</h3>
               <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
-                Tizimda hozircha ishdan bo'shatilgan yoki qidiruvga mos keladigan xodimlar ro'yxati mavjud emas.
+                No terminated or archived employee records match your query.
               </p>
             </div>
           ) : (
@@ -1503,7 +1503,7 @@ export default function Employees() {
                       <th className="py-2.5 px-2 w-20">Kirgan</th>
                       <th className="py-2.5 px-2 w-20">Ketgan</th>
                       <th className="py-2.5 px-2 w-24">Toifasi</th>
-                      <th className="py-2.5 px-2 min-w-[120px] max-w-[180px]">Sababi</th>
+                      <th className="py-2.5 px-2 min-w-[120px] max-w-[180px]">Termination Reason</th>
                       <th className="py-2.5 px-2 text-right w-36">Actions</th>
                     </tr>
                   </thead>
@@ -1592,7 +1592,7 @@ export default function Employees() {
                 </table>
               </div>
               <div className="p-3 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 font-bold">
-                Jami arxivlangan xodimlar soni: {filteredDismissed.length} nafar
+                Total archived records: {filteredDismissed.length} nafar
               </div>
             </div>
           )}
@@ -1761,7 +1761,7 @@ export default function Employees() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Belgilangan Maoshi</label>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Base Salary</label>
                     <input
                       type="text"
                       placeholder="Masalan: 8,000,000 USD"
@@ -1779,7 +1779,7 @@ export default function Employees() {
                     <input
                       type="email"
                       required={false}
-                      placeholder="Ixtiyoriy (masalan: email@toyona.uz)"
+                      placeholder="Ixtiyoriy (masalan: email@novahr.com)"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
@@ -1791,7 +1791,7 @@ export default function Employees() {
                   <label className="block text-slate-700 dark:text-slate-300 mb-1">Yashash Manzili</label>
                   <input
                     type="text"
-                    placeholder="Viloyat, shahar, tuman..."
+                    placeholder="State, City, Postal Code..."
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
@@ -1869,7 +1869,7 @@ export default function Employees() {
                   <div>
                     <label className="block text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                       <span>Oldingi Ish Tajribasi va Activeiyati</span>
-                      <span className="text-[10px] text-slate-400 font-normal">Kompaniyalar, lavozimlar</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Prior companies, roles held</span>
                     </label>
                     <textarea
                       rows={2}
@@ -1967,7 +1967,7 @@ export default function Employees() {
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">Rostdan ham o'chirilsinmi?</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Ushbu xodim ma'lumotlari tizimdan batamom o'chiriladi. Ushbu amalni ortga qaytarib bo'lmaydi.
+                  This employee record will be permanently deleted from the database. This action cannot be undone.
                 </p>
               </div>
 
@@ -2031,7 +2031,7 @@ export default function Employees() {
                   <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm block truncate">{transferringEmployee.fullName}</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-bold block truncate">{transferringEmployee.position} • {transferringEmployee.department}</span>
                   <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md w-fit">
-                    <span>Hozirgi filial:</span>
+                    <span>Current Branch:</span>
                     <span className="font-extrabold">{transferringEmployee.branch}</span>
                   </div>
                 </div>
@@ -2168,7 +2168,7 @@ export default function Employees() {
                   <textarea
                     required
                     rows={3}
-                    placeholder="Masalan: O'z xohishiga ko'ra arizasiga binoan, yoki intizomiy jazo chorasi sifatida..."
+                    placeholder="e.g. Voluntary resignation, contract completion, or relocation..."
                     value={dismissReason}
                     onChange={(e) => setDismissReason(e.target.value)}
                     className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-600/20 focus:border-amber-600 resize-none"
@@ -2219,7 +2219,7 @@ export default function Employees() {
               <div>
                 <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">Arxiv butunlay o'chirilsinmi?</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Ushbu sobiq xodimning barcha arxiv ma'lumotlari tizimdan qaytarib bo'lmas darajada o'chib ketadi.
+                  All archived data for this former employee will be permanently removed.
                 </p>
               </div>
 

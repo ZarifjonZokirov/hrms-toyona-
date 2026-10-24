@@ -40,43 +40,43 @@ export interface Candidate {
 }
 
 export const POSITIONS_LIST = [
-  "Sotuvchi maslahatchi",
-  "Bosh sotuvchi maslahatchisi",
-  "Kassir yordamchisi",
-  "Shartnoma rasmiylashtirish bo‘limi bosh mutaxassisi",
-  "Shartnoma rasmiylashtirish bo‘limi mutaxassisi",
-  "Savdo bo‘limi boshlig‘i (Boshqaruvchi)",
-  "Taklif va shikoyatlar bilan ishlash operatori",
-  "Ombor sektori mudiri",
-  "Ombor sektori mutaxassisi",
-  "Oshpaz",
-  "Oshxona ishchisi",
-  "Hudud tozalovchi",
-  "Haydovchi",
-  "Kuryer",
-  "Undiruv bo‘limi mutaxassisi",
-  "Marketolog",
-  "Targetolog",
-  "SMM menejer",
-  "Texnik",
+  "Sales Consultant",
+  "Senior Sales Consultant",
+  "Assistant Cashier",
+  "Senior Contracts Specialist",
+  "Contracts Specialist",
+  "Retail Sales Director (General Manager)",
+  "Customer Support Specialist",
+  "Warehouse Supervisor",
+  "Warehouse Specialist",
+  "Corporate Chef",
+  "Kitchen Staff",
+  "Facilities & Sanitation Specialist",
+  "Logistics Driver",
+  "Delivery Courier",
+  "Collections Specialist",
+  "Marketing Strategist",
+  "Performance Marketing Specialist",
+  "Digital Marketing Specialist",
+  "Hardware & Network Technician",
   "Motion designer",
   "Copywriter"
 ];
 
 export const BRANCHES_LIST = [
-  "Downtown Branch",
-  "Westside Branch",
-  "Central Branch",
-  "Mingtut branch",
-  "Yakkatut branch",
+  "Downtown Manhattan Campus",
+  "Midtown Technology Center",
+  "Brooklyn Logistics Center",
+  "Chicago Central Hub",
+  "Austin Tech Center",
   "Headquarters",
-  "Pop branch",
-  "Furqat branch",
-  "Buvayda branch",
-  "Yangiqo'rg'on (Buvayda) branch",
-  "Yaypan branch",
-  "Marg'ilon branch",
-  "Toshkent Chilonzor branch"
+  "Boston Regional Hub",
+  "Silicon Valley Campus",
+  "Manhattan Downtown Campus",
+  "Brooklyn Logistics Center",
+  "Los Angeles Campus",
+  "Atlanta Fulfillment Center",
+  "Midtown Technology Hub"
 ];
 
 export const EDUCATION_LEVELS_LIST = [
@@ -165,7 +165,7 @@ export default function Candidates() {
         ...c,
         id: c.id || (c as any).firestoreId || `cand_${Math.random()}`,
         fullName: c.fullName || (c as any).fio || 'Noma\'lum',
-        jobPosition: c.jobPosition || (c as any).position || (c as any).lavozim || 'Noma\'lum',
+        jobPosition: c.jobPosition || (c as any).position || 'Unknown',
         photoUrl: c.photoUrl || (c as any).photo_url || (c as any).avatarUrl || (c as any).photo || '',
       }));
 
@@ -262,8 +262,8 @@ export default function Candidates() {
   };
 
   const handleExportCandidates = (type: 'excel' | 'pdf') => {
-    const fileName = `Toyona_Candidates_${new Date().toISOString().slice(0, 10)}`;
-    const headers = ['№', 'F.I.O', 'Designation', 'Branch', 'Viloyat', 'Telefon', 'Status', 'Sana'];
+    const fileName = `NovaHR_Candidates_${new Date().toISOString().slice(0, 10)}`;
+    const headers = ['#', 'Full Name', 'Designation', 'Branch', 'Region', 'Phone Number', 'Status', 'Date'];
     const data = filteredCandidates.map((c, i) => [
       i + 1,
       c.fullName,
@@ -281,13 +281,13 @@ export default function Candidates() {
         'F.I.O': c.fullName,
         'Position': c.jobPosition || c.position || '-',
         'Branch': c.targetBranch || '-',
-        'Viloyat': c.region || '-',
-        'Manzil': c.address || c.exactAddress || '-',
-        'Telefon 1': c.phone1 || '-',
-        'Telefon 2': c.phone2 || '-',
+        'Region': c.region || '-',
+        'Address': c.address || c.exactAddress || '-',
+        'Phone 1': c.phone1 || '-',
+        'Phone 2': c.phone2 || '-',
         'Ma\'lumoti': c.educationLevel || '-',
         'Status': c.status || '-',
-        'Sana': c.date || (c.submittedAt ? new Date(c.submittedAt).toLocaleDateString('uz-UZ') : '-')
+        'Date': c.date || (c.submittedAt ? new Date(c.submittedAt).toLocaleDateString('uz-UZ') : '-')
       }));
       exportToExcel(excelData, fileName);
     } else {
@@ -301,7 +301,7 @@ export default function Candidates() {
         {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
       </AnimatePresence>
 
-      {/* Module Header with Toyona Savdo Logo */}
+      {/* Module Header with NovaHR Logo */}
       <ModuleHeaderLogo title="Candidates Boshqaruvi" icon={UserCheck} />
 
       {/* Top Header Controls & Multi-Filter Bar */}
@@ -314,7 +314,7 @@ export default function Candidates() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input 
               type="text" 
-              placeholder="F.I.O, lavozim, filial, telefon, manzil..." 
+              placeholder="Search by candidate name, role, branch, phone..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all"
@@ -366,11 +366,11 @@ export default function Candidates() {
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="w-full pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] transition-all appearance-none cursor-pointer"
             >
-              <option value="all">Barcha statuslar</option>
+              <option value="all">All Application Statuses</option>
               <option value="New Applicant">New Applicant</option>
-              <option value="Suhbat belgilangan">Suhbat belgilangan</option>
+              <option value="Interview Scheduled">Interview Scheduled</option>
               <option value="Ko'rib chiqilmoqda">Ko'rib chiqilmoqda</option>
-              <option value="Qabul qilingan">Qabul qilingan</option>
+              <option value="Hired">Hired</option>
               <option value="Rejected">Rejected</option>
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -429,7 +429,7 @@ export default function Candidates() {
               <th className="p-3">Designation</th>
               <th className="p-3">Tanlangan Branch</th>
               <th className="p-3">Education Level</th>
-              <th className="p-3">Viloyat & Manzil</th>
+              <th className="p-3">State & Address</th>
               <th className="p-3">Aloqa raqamlari</th>
               <th className="p-3">Status</th>
               <th className="p-3">Sana</th>
@@ -443,7 +443,7 @@ export default function Candidates() {
                   <div className="flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A651] animate-spin" />
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Candidates arizalari yuklanmoqda...
+                      Loading candidate applications...
                     </span>
                   </div>
                 </td>
@@ -497,7 +497,7 @@ export default function Candidates() {
                       {candidate.targetBranch}
                     </span>
                   ) : (
-                    <span className="text-xs text-slate-400 dark:text-slate-500 italic">Ixtiyoriy filial</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 italic">Any Branch</span>
                   )}
                 </td>
                 <td className="p-3 border-y border-slate-100 dark:border-slate-700/60">
@@ -561,7 +561,7 @@ export default function Candidates() {
         {!isInitialLoading && filteredCandidates.length === 0 && (
           <div className="p-12 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center gap-2">
             <UserCheck className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Search bo'yicha nomzodlar topilmadi</span>
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Candidates found by search topilmadi</span>
             <span className="text-xs text-slate-400 dark:text-slate-500">Filtr parametrlarini o'zgartirib ko'ring</span>
             {isAnyFilterActive && (
               <button
@@ -671,22 +671,22 @@ export default function Candidates() {
                       <span className="font-bold text-slate-800 dark:text-slate-100">{selectedCandidate.fatherName || 'Ko\'rsatilmadi'}</span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Jinsi</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-100">{selectedCandidate.gender || 'Erkak'}</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Gender</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">{selectedCandidate.gender || 'Male'}</span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
                       <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Tug'ilgan yili / sana</span>
                       <span className="font-bold text-slate-800 dark:text-slate-100">{selectedCandidate.dob || 'Ko\'rsatilmadi'}</span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Oilaviy holati</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Marital Status</span>
                       <span className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1">
                         <Heart className="w-3.5 h-3.5 text-rose-500" />
                         {selectedCandidate.maritalStatus || 'Ko\'rsatilmadi'}
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Ariza topshirilgan sana</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Application Date</span>
                       <span className="font-bold text-slate-800 dark:text-slate-100">
                         {new Date(selectedCandidate.submittedAt).toLocaleString('uz-UZ')}
                       </span>
@@ -694,7 +694,7 @@ export default function Candidates() {
                   </div>
                 </div>
 
-                {/* 2. Tanlangan lavozim va Branch */}
+                {/* 2. Selected Position and Branch */}
                 <div className="space-y-2">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
                     <Briefcase className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -745,11 +745,11 @@ export default function Candidates() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Viloyat / Hudud</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">State / Region</span>
                       <span className="font-bold text-slate-800 dark:text-slate-100">{selectedCandidate.region || 'Ko\'rsatilmadi'}</span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Aniq yashash manzili (ko'cha, uy)</span>
+                      <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 block">Residential Address (Street, Apt)</span>
                       <span className="font-bold text-slate-800 dark:text-slate-100">{selectedCandidate.address || 'Ko\'rsatilmadi'}</span>
                     </div>
                     <div className="p-3 bg-emerald-50/40 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
@@ -815,7 +815,7 @@ export default function Candidates() {
                   Rostdan ham o'chirilsinmi?
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Ushbu nomzod anketasini o'chirib tashlamoqchimisiz? Ushbu amalni ortga qaytarib bo'lmaydi.
+                  Are you sure you want to delete this candidate application? This action cannot be undone.
                 </p>
               </div>
 

@@ -12,7 +12,7 @@ export interface HistoryLogItem {
   id: string;
   timestamp: string; // YYYY-MM-DD HH:mm:ss
   action: string;
-  module: 'Employees' | 'Candidates' | 'Davomat' | 'Rotatsiya' | 'Vakansiyalar' | 'Userlar' | 'Branchlar' | 'Xavfsizlik';
+  module: 'Employees' | 'Candidates' | 'Attendance' | 'Transfers' | 'Vacancies' | 'Users' | 'Branches' | 'Security';
   type: 'create' | 'update' | 'delete' | 'status_change' | 'login' | 'export';
   performedBy: string;
   role: string;
@@ -35,7 +35,7 @@ export async function getClientNetworkInfo(): Promise<{ ip: string; device: stri
   // Detect device
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   let dev = 'Windows PC';
-  if (/Android/i.test(ua)) dev = 'Android Telefon';
+  if (/Android/i.test(ua)) dev = 'Android Device';
   else if (/iPhone/i.test(ua)) dev = 'iPhone';
   else if (/iPad/i.test(ua)) dev = 'iPad';
   else if (/Windows/i.test(ua)) dev = 'Windows PC';
@@ -193,14 +193,14 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
     setShowAddLogModal(false);
     setNewAction('');
     setNewDetails('');
-    showToast('Yangi tizim qaydi muvaffaqiyatli qo\'shildi!');
+    showToast('Audit log entry created successfully!');
   };
 
   const handleDeleteLog = async (id: string) => {
     const { deleteFirebaseHistory } = await import('../firebase');
     setLogs(prev => prev.filter(l => l.id !== id));
     await deleteFirebaseHistory(id);
-    showToast('Tizim qaydi o\'chirildi');
+    showToast('Audit log entry deleted');
   };
 
   // Filtered raw logs
@@ -378,40 +378,40 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
       '№': idx + 1,
       'ID': l.id,
       'Vaqt': l.timestamp,
-      'IP Manzili': l.ipAddress || '127.0.0.1',
+      'IP Address': l.ipAddress || '127.0.0.1',
       'Qurilma': l.device || '-',
       'User': l.performedBy,
       'Roleei': l.role,
       'Module': l.module,
       'Amal Turi': l.type,
       'Amal': l.action,
-      'Batafsil Tafsilot': l.details
+      'Audit Details': l.details
     }));
 
     exportToExcel(excelData, `Toyona_Savdo_Tizim_Tarixi_${new Date().toISOString().slice(0, 10)}`);
-    showToast(`Tizim tarixi Excel formatida muvaffaqiyatli yuklandi (${filteredLogs.length} ta yozuv)`);
+    showToast(`System audit log exported to Excel successfully (${filteredLogs.length} records)`);
   };
 
   // Clear history
   const handleClearHistory = () => {
-    if (window.confirm("Barcha tizim tarixini tozalashni xohlaysizmi? Bu amalni orqaga qaytarib bo'lmaydi.")) {
+    if (window.confirm("Are you sure you want to clear the entire audit history? This action cannot be undone.")) {
       const resetLogs = [
         {
           id: `log-${Date.now()}`,
           timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
-          action: "Tizim tarixi tozalandi",
+          action: "Audit Logs Cleared",
           module: 'Xavfsizlik' as const,
           type: 'delete' as const,
           performedBy: currentUser?.name || 'Zarifjon Zokirov',
           role: currentUser?.role || 'Super Admin',
-          details: "Administrator tomonidan barcha eski audit yozuvlari tozalandi",
+          details: "System audit log records permanently cleared by Administrator",
           ipAddress: '127.0.0.1',
           device: navigator.userAgent.slice(0, 30)
         }
       ];
       setLogs(resetLogs);
       localStorage.setItem(STORAGE_KEY_SYSTEM_HISTORY, JSON.stringify(resetLogs));
-      showToast("Tizim tarixi tozalandi!");
+      showToast("System audit log history cleared!");
     }
   };
 
@@ -430,12 +430,12 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
 
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'create': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"><Plus className="w-3 h-3" /> Yaratildi</span>;
-      case 'update': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30"><RefreshCw className="w-3 h-3" /> O'zgartirildi</span>;
-      case 'delete': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30"><Trash2 className="w-3 h-3" /> O'chirildi</span>;
+      case 'create': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"><Plus className="w-3 h-3" /> Created</span>;
+      case 'update': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30"><RefreshCw className="w-3 h-3" /> Updated</span>;
+      case 'delete': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30"><Trash2 className="w-3 h-3" /> Deleted</span>;
       case 'status_change': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"><Activity className="w-3 h-3" /> Status</span>;
-      case 'login': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"><Lock className="w-3 h-3" /> Kirish</span>;
-      case 'export': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700 text-slate-200 border border-slate-600"><Download className="w-3 h-3" /> Eksport</span>;
+      case 'login': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"><Lock className="w-3 h-3" /> Login</span>;
+      case 'export': return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700 text-slate-200 border border-slate-600"><Download className="w-3 h-3" /> Export</span>;
       default: return null;
     }
   };
@@ -456,10 +456,10 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
           <button
             onClick={onBack}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-sm font-bold text-white transition-all shadow cursor-pointer group shrink-0"
-            title="HRMS ga qaytish"
+            title="Return to HRMS"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span>HRMS ga qaytish</span>
+            <span>Return to HRMS</span>
           </button>
 
           <div className="flex items-center gap-3">
@@ -469,15 +469,15 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-black text-white tracking-tight">
-                  Tizim Tarixi & IP Audit Nazorati
+                  System Audit Trail & IP Security Log
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
-                  Maxfiy Rejim (tarix)
+                  Security Audit Mode
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium mt-0.5">
-                Har bir IP manzildagi insonlar, qurilmalar va HR xodimlarining faoliyat monitoringi
+                Audit trail monitoring across client IP addresses, authentication devices, and administrative operations
               </p>
             </div>
           </div>
@@ -489,7 +489,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Qayd qo'shish</span>
+            <span>Add Audit Log</span>
           </button>
 
           <button
@@ -497,13 +497,13 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
             <Download className="w-4 h-4 text-emerald-400" />
-            <span>Eksport (Excel)</span>
+            <span>Export (Excel)</span>
           </button>
 
           <button
             onClick={handleClearHistory}
             className="flex items-center gap-2 px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer"
-            title="Tarixni tozalash"
+            title="Clear audit log history"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear Filters</span>
@@ -515,24 +515,24 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Jami IP Manzillar</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Total IP Addresses</span>
             <Globe className="w-4 h-4 text-cyan-400" />
           </div>
-          <span className="text-2xl font-black text-cyan-300">{stats.uniqueIps} ta IP</span>
-          <span className="text-[11px] text-slate-400 mt-1">Har bir IP alohida kategoriya</span>
+          <span className="text-2xl font-black text-cyan-300">{stats.uniqueIps} IPs</span>
+          <span className="text-[11px] text-slate-400 mt-1">Unique IP subnet classifications</span>
         </div>
 
         <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Jami Qurilmalar</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Total Devices</span>
             <Smartphone className="w-4 h-4 text-purple-400" />
           </div>
-          <span className="text-2xl font-black text-purple-300">{stats.uniqueDevices} ta</span>
+          <span className="text-2xl font-black text-purple-300">{stats.uniqueDevices} devices</span>
           <span className="text-[11px] text-slate-400 mt-1">
             {stats.multiDeviceUsersCount > 0 ? (
-              <span className="text-amber-400 font-bold">⚠️ {stats.multiDeviceUsersCount} hisobda ko'p qurilma</span>
+              <span className="text-amber-400 font-bold">⚠️ {stats.multiDeviceUsersCount} accounts with multi-device logins</span>
             ) : (
-              'Barcha qurilmalar barqaror'
+              'All devices operating normally'
             )}
           </span>
         </div>
@@ -543,27 +543,27 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             : 'bg-rose-950/20 border-rose-800/40'
         }`}>
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">HR Faolligi</span>
+            <span className="text-xs font-bold uppercase tracking-wider">HR Activity Status</span>
             <User className={`w-4 h-4 ${stats.isHrActiveToday ? 'text-emerald-400' : 'text-rose-400'}`} />
           </div>
           <div className="flex items-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full ${stats.isHrActiveToday ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
             <span className={`text-xl font-black ${stats.isHrActiveToday ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {stats.isHrActiveToday ? 'Bugun Kirgan' : 'Bugun Kirmagan'}
+              {stats.isHrActiveToday ? 'Active Today' : 'Offline Today'}
             </span>
           </div>
           <span className="text-[11px] text-slate-400 mt-1 truncate" title={stats.lastHrTime}>
-            Oxirgi kirish: {stats.lastHrTime.split(' ')[1] || stats.lastHrTime}
+            Last Login: {stats.lastHrTime.split(' ')[1] || stats.lastHrTime}
           </span>
         </div>
 
         <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Oxirgi Amal</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Latest Action</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
           <span className="text-sm font-black text-amber-300 truncate">{stats.lastActivity}</span>
-          <span className="text-[11px] text-slate-400 mt-1">Bugun jami: {stats.todayCount} ta amal</span>
+          <span className="text-[11px] text-slate-400 mt-1">Today total: {stats.todayCount} operations</span>
         </div>
       </div>
 
@@ -579,7 +579,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
           }`}
         >
           <Globe className="w-4 h-4" />
-          <span>🌐 IP Manzillar Kategoriyasi ({ipGroups.length})</span>
+          <span>🌐 IP Address Clusters ({ipGroups.length})</span>
         </button>
 
         <button
@@ -592,7 +592,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
           }`}
         >
           <Monitor className="w-4 h-4" />
-          <span>📱 Qurilmalar & HR Tahlili</span>
+          <span>📱 Device & Admin Insights</span>
           {stats.multiDeviceUsersCount > 0 && (
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-900">
               {stats.multiDeviceUsersCount}
@@ -610,7 +610,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>📋 Barcha Audit Qaydlari ({filteredLogs.length})</span>
+          <span>📋 All Audit Log Records ({filteredLogs.length})</span>
         </button>
       </div>
 
@@ -623,14 +623,14 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="IP manzil, ism yoki amal bo'yicha qidirish..."
+                placeholder="Search by IP address, user, or action..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
               />
             </div>
             <div className="text-xs text-slate-400 font-medium">
-              Har bir IP manzil ustiga bossangiz, aynan o'sha IP dan qilingan amallar to'liq xronologiyasi ochiladi.
+              Click any IP card to view chronological audit logs from that address.
             </div>
           </div>
 
@@ -638,13 +638,13 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
           {isLoading ? (
             <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-              <span className="text-xs font-semibold text-slate-400">IP manzillar bo'yicha tarix saralanmoqda...</span>
+              <span className="text-xs font-semibold text-slate-400">Sorting audit logs by IP address...</span>
             </div>
           ) : ipGroups.length === 0 ? (
             <div className="bg-slate-800/50 border border-slate-700/70 rounded-2xl p-12 text-center text-slate-400">
               <Globe className="w-12 h-12 mx-auto text-slate-600 mb-3 opacity-60" />
-              <p className="text-base font-bold text-slate-300">Hech qanday IP manzili topilmadi</p>
-              <p className="text-xs text-slate-500 mt-1">Search parametrlarini tozalab ko'ring</p>
+              <p className="text-base font-bold text-slate-300">No IP Address Records Found</p>
+              <p className="text-xs text-slate-500 mt-1">Try adjusting your search query</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -673,24 +673,24 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                           <div className="text-base font-black font-mono text-white tracking-wide flex items-center gap-2">
                             <span>{grp.ip}</span>
                             {grp.ip === '127.0.0.1' && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-700 text-slate-300">Lokal</span>
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-700 text-slate-300">Local</span>
                             )}
                           </div>
                           <div className="text-[10px] text-slate-400">
-                            Oxirgi faollik: {grp.lastActive.split(' ')[1]} ({grp.lastActive.split(' ')[0]})
+                            Last active: {grp.lastActive.split(' ')[1]} ({grp.lastActive.split(' ')[0]})
                           </div>
                         </div>
                       </div>
 
                       <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 shrink-0">
-                        {grp.logs.length} ta amal
+                        {grp.logs.length} actions
                       </span>
                     </div>
 
                     {/* Middle: People who logged from this IP */}
                     <div className="bg-slate-900/80 rounded-xl p-3 mb-3 border border-slate-700/50">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                        Ushbu IP dan kirgan shaxslar ({userNames.length}):
+                        Users logged in from this IP ({userNames.length}):
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {userNames.length > 0 ? (
@@ -713,7 +713,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                             );
                           })
                         ) : (
-                          <span className="text-xs text-slate-500">Noma'lum foydalanuvchi</span>
+                          <span className="text-xs text-slate-500">Unknown User</span>
                         )}
                       </div>
                     </div>
@@ -722,7 +722,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                     <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-700/50">
                       <div className="flex items-center gap-1.5 truncate max-w-[220px]" title={devices.join(', ')}>
                         <Smartphone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                        <span className="truncate">{devices.length > 0 ? devices[0] : 'Standart qurilma'}</span>
+                        <span className="truncate">{devices.length > 0 ? devices[0] : 'Standard Device'}</span>
                         {devices.length > 1 && (
                           <span className="text-[10px] font-bold text-purple-400">+{devices.length - 1}</span>
                         )}
@@ -753,7 +753,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white flex items-center gap-2">
-                    <span>Kadrlar Departmenti (HR) Faoliyat Tahlili</span>
+                    <span>Human Resources (HR) Operational Activity Analytics</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                       stats.isHrActiveToday ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                     }`}>
@@ -761,13 +761,13 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    HR xodimlarining tizimga kirish vaqti, foydalangan qurilmasi va bajargan operatsiyalari nazorati
+                    Track HR administrator logins, authenticating devices, and system operational audit trail
                   </p>
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-xs font-bold text-slate-300">Oxirgi amal vaqti:</div>
+                <div className="text-xs font-bold text-slate-300">Last Action:</div>
                 <div className="text-sm font-mono font-black text-amber-400">{stats.lastHrTime}</div>
               </div>
             </div>
@@ -781,14 +781,14 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                     <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
                       hrUser.isOnlineToday ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
                     }`}>
-                      {hrUser.isOnlineToday ? 'Bugun Faol' : 'Bugun Kirmagan'}
+                      {hrUser.isOnlineToday ? 'Active Today' : 'Offline Today'}
                     </span>
                   </div>
                   <div className="text-xs text-slate-400 space-y-1">
                     <div>Roleei: <span className="text-slate-200 font-semibold">{hrUser.role}</span></div>
-                    <div>Oxirgi kirish: <span className="text-amber-400 font-mono font-bold">{hrUser.lastLogin}</span></div>
+                    <div>Last Login: <span className="text-amber-400 font-mono font-bold">{hrUser.lastLogin}</span></div>
                     <div>Qurilmalar: <span className="text-cyan-400 font-bold">{hrUser.uniqueDevicesCount} ta qurilma</span></div>
-                    <div>Jami amallari: <span className="text-slate-200 font-bold">{hrUser.logs.length} ta</span></div>
+                    <div>Total actions: <span className="text-slate-200 font-bold">{hrUser.logs.length}</span></div>
                   </div>
                 </div>
               ))}
@@ -814,7 +814,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
               </div>
 
               <span className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-900 border border-slate-700 text-slate-300">
-                Jami hisoblar: {userAccountGroups.length} ta
+                Total accounts: {userAccountGroups.length}
               </span>
             </div>
 
@@ -846,13 +846,13 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                           )}
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          Oxirgi kirish vaqti: <span className="font-mono text-slate-300">{u.lastLogin}</span>
+                          Last Login Time: <span className="font-mono text-slate-300">{u.lastLogin}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="text-xs font-bold text-slate-400">
-                      Jami amallar: <span className="text-cyan-400">{u.logs.length} ta</span>
+                      Total actions: <span className="text-cyan-400">{u.logs.length}</span>
                     </div>
                   </div>
 
@@ -869,7 +869,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-400 flex items-center justify-between">
-                          <span>Vaqti:</span>
+                          <span>Time:</span>
                           <span className="font-mono text-slate-300">{devItem.lastSeen}</span>
                         </div>
                       </div>
@@ -893,7 +893,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Amal, admin, tavsif yoki IP qidirish..."
+                  placeholder="Search by action, administrator, description, or IP..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium"
@@ -927,7 +927,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                   onChange={(e) => setSelectedType(e.target.value)}
                   className="bg-transparent outline-none cursor-pointer font-bold text-slate-200"
                 >
-                  <option value="all" className="bg-slate-800">Barcha turlar</option>
+                  <option value="all" className="bg-slate-800">All Event Types</option>
                   <option value="create" className="bg-slate-800">Yaratildi</option>
                   <option value="update" className="bg-slate-800">O'zgartirildi</option>
                   <option value="delete" className="bg-slate-800">O'chirildi</option>
@@ -950,7 +950,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                   <button 
                     onClick={() => setSelectedDate('')}
                     className="text-slate-500 hover:text-slate-300 text-xs ml-1"
-                    title="Sanani bekor qilish"
+                    title="Clear date filter"
                   >
                     &times;
                   </button>
@@ -974,7 +974,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                     <th className="py-3.5 px-4 w-32">Module</th>
                     <th className="py-3.5 px-4 w-28 text-center">Turi</th>
                     <th className="py-3.5 px-4 w-48">Bajaruvchi</th>
-                    <th className="py-3.5 px-4">Amal & Batafsil Tafsilot</th>
+                    <th className="py-3.5 px-4">Action & Event Details</th>
                     <th className="py-3.5 px-4 w-44">IP & Qurilma</th>
                   </tr>
                 </thead>
@@ -1063,7 +1063,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             <div className="px-5 py-3.5 bg-slate-900/90 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
               <div className="flex items-center gap-2">
                 <Info className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Yashirin joydan chiqish uchun yuqoridagi <b>"HRMS ga qaytish"</b> tugmasini yoki klaviaturadagi <b>ESC</b> tugmasini bosing.</span>
+                <span>To exit audit logs, click the <b>"Return to HRMS"</b> button above or press <b>ESC</b>.</span>
               </div>
               <span className="font-semibold text-slate-300">
                 Total duration: {logs.length} ta yozuv saqlanmoqda
@@ -1204,7 +1204,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             <div className="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Plus className="w-5 h-5 text-emerald-400" />
-                Yangi Tizim Audit Qaydini Kiritish
+                Log New System Audit Record
               </h3>
               <button 
                 onClick={() => setShowAddLogModal(false)}
@@ -1216,11 +1216,11 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
 
             <form onSubmit={handleAddCustomLog} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Amal nomi / Sarlovha *</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Action Title / Header *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Masalan: Maxsus xavfsizlik tekshiruvi o'tkazildi"
+                  placeholder="e.g. Periodic security compliance inspection performed"
                   value={newAction}
                   onChange={(e) => setNewAction(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
@@ -1237,37 +1237,37 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                   >
                     <option value="Employees">Employees</option>
                     <option value="Candidates">Candidates</option>
-                    <option value="Davomat">Davomat</option>
-                    <option value="Rotatsiya">Rotatsiya</option>
-                    <option value="Vakansiyalar">Vakansiyalar</option>
-                    <option value="Branchlar">Branchlar</option>
-                    <option value="Xavfsizlik">Xavfsizlik</option>
+                    <option value="Davomat">Attendance</option>
+                    <option value="Rotatsiya">Transfers</option>
+                    <option value="Vakansiyalar">Vacancies</option>
+                    <option value="Branchlar">Branches</option>
+                    <option value="Xavfsizlik">Security</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Amal turi</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Event Type</label>
                   <select
                     value={newType}
                     onChange={(e) => setNewType(e.target.value as any)}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
                   >
-                    <option value="create">Yaratildi (Create)</option>
-                    <option value="update">O'zgartirildi (Update)</option>
-                    <option value="delete">O'chirildi (Delete)</option>
-                    <option value="status_change">Status o'zgardi</option>
+                    <option value="create">Created</option>
+                    <option value="update">Updated</option>
+                    <option value="delete">Deleted</option>
+                    <option value="status_change">Status Changed</option>
                     <option value="login">User Login</option>
-                    <option value="export">Eksport</option>
+                    <option value="export">Export</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Batafsil tafsilot / Izoh *</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Detailed Description / Notes *</label>
                 <textarea
                   required
                   rows={3}
-                  placeholder="Nima sodir bo'lganligi haqida batafsil ma'lumot kiriting..."
+                  placeholder="Enter detailed description of the event or operation..."
                   value={newDetails}
                   onChange={(e) => setNewDetails(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 resize-none"
