@@ -129,7 +129,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
           branch: emp.branch || (emp as any).targetBranch || (emp as any).filial || 'Headquarters',
           phone: emp.phone || (emp as any).phone1 || '',
           staffId: emp.staffId || 'TS-0001',
-          avatarUrl: emp.avatarUrl || (emp as any).photoUrl || (emp as any).rasmUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
+          avatarUrl: emp.avatarUrl || (emp as any).photoUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(emp.fullName || 'User')}&backgroundColor=e2e8f0`,
           username: uname,
           password: upass,
           isAccountActive: !!(uname && upass && emp.isAccountActive !== false)
