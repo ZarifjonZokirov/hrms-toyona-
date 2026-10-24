@@ -182,7 +182,7 @@ export default function PhotoRequestsManager({
         await fetchRequests();
       }
     } catch {
-      showToast("O'chirishda xatolik");
+      showToast("Deleteda xatolik");
     }
   };
 
@@ -247,7 +247,7 @@ export default function PhotoRequestsManager({
         </div>
       </div>
 
-      {/* KPI Stats / Keldi-ketdi hisoboti */}
+      {/* KPI Stats / Check-in-ketdi hisoboti */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div 
           onClick={() => setStatusFilter('pending')}
@@ -426,7 +426,7 @@ export default function PhotoRequestsManager({
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
                 {statusFilter === 'pending'
                   ? "Employeelar o'z profilidan yangi surat yuklaganida ular zudlik bilan shu yerda paydo bo'ladi."
-                  : "Qidiruv parametrlarini o'zgartiring yoki filtrlarni tozalang."}
+                  : "Search parametrlarini o'zgartiring yoki filtrlarni tozalang."}
               </p>
             </div>
           </div>

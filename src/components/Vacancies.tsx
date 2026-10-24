@@ -186,7 +186,7 @@ export const INITIAL_21_VACANCIES: Vacancy[] = [
     department: 'Undiruv bo\'limi',
     headcount: 2,
     salaryRange: '5,000,000 - 8,000,000 USD',
-    requirements: 'Kechikkan to\'lovlar bo\'yicha mijozlar bilan muzokaralar olib borish',
+    requirements: 'Late to\'lovlar bo\'yicha mijozlar bilan muzokaralar olib borish',
     status: 'Active',
     createdAt: '10.09.2026'
   },
@@ -512,20 +512,20 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
         const candCount = getMatchedCandidatesForVacancy(v).length;
         return {
           '№': i + 1,
-          'Lavozim': v.title,
+          'Position': v.title,
           'Branch': v.branch,
           'Department': v.department,
           'Kvota / Open o\'rin': v.headcount,
           'Salary Range': v.salaryRange,
           'Status': v.status,
-          'Tegishli nomzodlar soni': candCount,
+          'Total Applicants': candCount,
           'Talablar': v.requirements || '-',
           'Yaratilgan sana': v.createdAt
         };
       });
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Bo'sh Ish O'rinlari (Vakansiyalar)");
+      exportToPDF(headers, data, fileName, "Toyona Savdo - Job Openings & Vacancies");
     }
   };
 
@@ -555,7 +555,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
               <Briefcase className="w-5 h-5" />
             </span>
             <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-              Bo'sh Ish O'rinlari (Vakansiyalar)
+              Job Openings & Vacancies
             </h1>
             <span className="ml-2 text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#00A651]/15 text-[#00A651] border border-[#00A651]/20">
               {vacancies.length} ta ish o'rni
@@ -595,7 +595,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
-            Barchasi ({vacancies.length})
+            All ({vacancies.length})
           </button>
 
           <button
@@ -644,16 +644,16 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
             }`}
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>Nomzodi borlar ({vacanciesWithCandidatesCount})</span>
+            <span>Candidatei borlar ({vacanciesWithCandidatesCount})</span>
           </button>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
           <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
-            Jami shtat kvotasi: <b>{totalSpots} ta o'rin</b>
+            Total Headcount Quota: <b>{totalSpots} ta o'rin</b>
           </span>
           <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40">
-            Nomzodlar bazasi: <b>{candidates.length} nafar</b>
+            Candidate Talent Pool: <b>{candidates.length} nafar</b>
           </span>
         </div>
       </div>
@@ -729,14 +729,14 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
           <thead>
             <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               <th className="py-3 px-4 w-12 text-center">#</th>
-              <th className="py-3 px-4">Bo'sh Ish O'rni (Lavozim)</th>
+              <th className="py-3 px-4">Job Title & Designation</th>
               <th className="py-3 px-4">Branch</th>
               <th className="py-3 px-4">Department</th>
-              <th className="py-3 px-4 text-center">Kvota / Shtat</th>
+              <th className="py-3 px-4 text-center">Headcount Quota</th>
               <th className="py-3 px-4">Salary</th>
-              <th className="py-3 px-4 text-center">Kelgan Nomzodlar</th>
+              <th className="py-3 px-4 text-center">Applicants</th>
               <th className="py-3 px-4 text-center">Holat</th>
-              <th className="py-3 px-4 text-right">Amallar</th>
+              <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -746,7 +746,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                   <div className="flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A651] animate-spin" />
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Vakansiyalar ro'yxati yuklanmoqda...
+                      Loading job openings...
                     </span>
                   </div>
                 </td>
@@ -835,7 +835,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[11px] font-medium">
-                          Nomzod yo'q
+                          No applicants yet
                         </span>
                       )}
                     </td>
@@ -950,7 +950,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                           Ushbu filialdagi "{selectedVacancyForCandidates.title}" has no candidates yet
                         </h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                          Currently, <b className="text-slate-700 dark:text-slate-300">{selectedVacancyForCandidates.branch}</b> branchga ushbu lavozim bo'yicha ariza tushmagan. Nomzodlar anketani to'ldirishi bilan bu yerda bir zumda ko'rinadi.
+                          Currently, <b className="text-slate-700 dark:text-slate-300">{selectedVacancyForCandidates.branch}</b> branchga ushbu lavozim bo'yicha ariza tushmagan. Candidates anketani to'ldirishi bilan bu yerda bir zumda ko'rinadi.
                         </p>
                         <div className="pt-2 flex items-center gap-2">
                           <a
@@ -1003,7 +1003,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                                   </a>
                                 )}
                                 <span>•</span>
-                                <span>{cand.region || cand.address || "Manzil ko'rsatilmagan"}</span>
+                                <span>{cand.region || cand.address || "Address not specified"}</span>
                                 <span>•</span>
                                 <span className="text-[11px] text-slate-400 dark:text-slate-500">
                                   Topshirgan sana: {new Date(cand.submittedAt).toLocaleDateString('uz-UZ')}
@@ -1090,7 +1090,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-400 dark:text-slate-500">Viloyat / Manzil:</span>
+                  <span className="text-slate-400 dark:text-slate-500">Location / Address:</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedCandidateDetail.region} {selectedCandidateDetail.address ? `(${selectedCandidateDetail.address})` : ''}</span>
                 </div>
                 <div className="flex justify-between">
@@ -1161,7 +1161,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                 {/* 1. Job title */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Ish Nomi / Lavozim *
+                    Job Title / Role *
                   </label>
                   <input
                     type="text"

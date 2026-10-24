@@ -51,7 +51,7 @@ export default function AttendanceSettings() {
         }
       })
       .catch(err => {
-        console.warn('Sozlamalarni yuklab bo\'lmadi:', err);
+        console.warn('Settingsni yuklab bo\'lmadi:', err);
       })
       .finally(() => setIsLoading(false));
   };
@@ -102,7 +102,7 @@ export default function AttendanceSettings() {
       if (data.success) {
         showToast('✅ Jarima, ish vaqti va dam kunlari muvaffaqiyatli saqlandi!');
       } else {
-        showToast(data.message || 'Xatolik yuz berdi');
+        showToast(data.message || 'Error yuz berdi');
       }
     } catch (e: any) {
       showToast('Server bilan bog\'lanishda xatolik yuz berdi');
@@ -132,7 +132,7 @@ export default function AttendanceSettings() {
             </h1>
           </div>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            Kechikkanlar uchun har bir minutes yoki hourslik jarima miqdori, rasmiy ish hourslari va dam kunlarini belgilash
+            Latelar uchun har bir minutes yoki hourslik jarima miqdori, rasmiy ish hourslari va dam kunlarini belgilash
           </p>
         </div>
 
@@ -356,7 +356,7 @@ export default function AttendanceSettings() {
 
             <div>
               <p className="text-xs text-slate-500 mb-3">
-                Xodimlar dam oladigan kunlarni belgilang (Bir yoki bir nechta kunni tanlash mumkin):
+                Employees dam oladigan kunlarni belgilang (Bir yoki bir nechta kunni tanlash mumkin):
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
@@ -453,7 +453,7 @@ export default function AttendanceSettings() {
               className="px-6 py-3 bg-[#00A651] hover:bg-[#008f45] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all flex items-center gap-2 active:scale-98"
             >
               <Save className="w-4 h-4" />
-              <span>{isSaving ? "Saving..." : "Barcha Sozlamalarni Save Policy Changes"}</span>
+              <span>{isSaving ? "Saving..." : "Barcha Settingsni Save Policy Changes"}</span>
             </button>
           </div>
         </form>

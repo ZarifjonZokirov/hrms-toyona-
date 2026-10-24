@@ -138,7 +138,7 @@ export default function TelegramAttendance() {
 
         if (!isMounted) return;
         setModelsLoaded(true);
-        setStatusMessage("Xodimlar ma'lumotlari yuklanmoqda...");
+        setStatusMessage("Employees ma'lumotlari yuklanmoqda...");
 
         // Load employees and geozones directly from Firebase
         const [empList, gzList] = await Promise.all([
@@ -243,7 +243,7 @@ export default function TelegramAttendance() {
       (err) => {
         console.warn("Geo error:", err);
         setIsVerifyingGeo(false);
-        setErrorMessage("GPS joylashuvni aniqlab bo'lmadi. Iltimos, brauzerda geolokatsiyaga ruxsat bering.");
+        setErrorMessage("GPS joylashuvni aniqlab bo'lmadi. Please, brauzerda geolokatsiyaga ruxsat bering.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -271,7 +271,7 @@ export default function TelegramAttendance() {
       startFaceMatcher();
     } catch (err: any) {
       console.error("Camera access error:", err);
-      setErrorMessage("Kameraga ulanib bo'lmadi. Iltimos, kameradan foydalanishga ruxsat bering.");
+      setErrorMessage("Kameraga ulanib bo'lmadi. Please, kameradan foydalanishga ruxsat bering.");
     }
   };
 
@@ -352,7 +352,7 @@ export default function TelegramAttendance() {
       if (attempts >= maxAttempts) {
         clearInterval(interval);
         stopCamera();
-        setErrorMessage("Yuz aniqlanmadi yoki mos kelmadi. Iltimos, yuzingizni yorug'roq joyda kameraga to'g'rilab qayta urinib ko'ring.");
+        setErrorMessage("Yuz aniqlanmadi yoki mos kelmadi. Please, yuzingizni yorug'roq joyda kameraga to'g'rilab qayta urinib ko'ring.");
       }
     }, 300);
   };

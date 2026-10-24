@@ -606,7 +606,7 @@ export default function BranchGeozones() {
   const handleCreateNewBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranchName.trim()) {
-      showError("Iltimos, filial nomini kiriting");
+      showError("Please, filial nomini kiriting");
       return;
     }
 
@@ -705,7 +705,7 @@ export default function BranchGeozones() {
         }
       },
       (err) => {
-        let msg = "Joylashuvni aniqlab bo'lmadi. Iltimos, brauzer sozlamalarida geolokatsiyaga ruxsat berilganligini tekshiring.";
+        let msg = "Joylashuvni aniqlab bo'lmadi. Please, brauzer sozlamalarida geolokatsiyaga ruxsat berilganligini tekshiring.";
         if (err) {
           const code = (err as any).code;
           if (code === 1) msg = "Geolokatsiyaga ruxsat berilmagan.";

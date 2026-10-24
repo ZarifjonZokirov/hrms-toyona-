@@ -42,7 +42,7 @@ export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number
   return Math.round(R * c);
 }
 
-// Xodim branch bo'yicha geozona qidirish (aniq va moslashuvchan)
+// Employee branch bo'yicha geozona qidirish (aniq va moslashuvchan)
 export function getBranchGeozone(branchName: string, geozones: BranchGeozone[] = DEFAULT_GEOZONES): BranchGeozone {
   if (!branchName) return geozones[0] || DEFAULT_GEOZONES[0];
   
@@ -99,7 +99,7 @@ export interface EmployeeData {
   avatarUrl?: string;
   schedule: string; // e.g., '09:00 - 18:00'
   phone?: string;
-  dailyRate?: number; // kunlik stavka (so'm)
+  dailyRate?: number; // kunlik stavka ($)
   login?: string;
   password?: string;
 }
@@ -161,12 +161,12 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           workedTime: '-',
           penalty: '-',
           bonus: '-',
-          netPay: "0 so'm",
+          netPay: "0 $",
           notes: 'Sunday scheduled rest day'
         };
       }
 
-      // Seed 1: Employee index 2 is on Vacation (✈️ Ta'tilda - Samolyot, 14 kun)
+      // Seed 1: Employee index 2 is on Vacation (✈️ Ta'tilda - Samolyot, 14 days)
       if (empIdx === 2 && monthIndex === 9 && day >= 1 && day <= 14) {
         return {
           id: `att-${emp.id}-${dateStr}`,
@@ -179,8 +179,8 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           workedTime: 'On Leave',
           penalty: '-',
           bonus: '-',
-          netPay: `${dailyBase.toLocaleString()} so'm`,
-          notes: '✈️ Yillik mehnat ta\'tili (14 kun: 01.10.2026 - 14.10.2026)',
+          netPay: `${dailyBase.toLocaleString()} $`,
+          notes: '✈️ Yillik mehnat ta\'tili (14 days: 01.10.2026 - 14.10.2026)',
           durationDays: 14,
           leaveType: 'vacation',
           startDate: '2026-10-01',
@@ -188,7 +188,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
         };
       }
 
-      // Seed 2: Employee index 4 is on Business trip (🍃 Ish yuzasidan safarda - Barg, 5 kun)
+      // Seed 2: Employee index 4 is on Business trip (🍃 Ish yuzasidan safarda - Barg, 5 days)
       if (empIdx === 4 && monthIndex === 9 && day >= 5 && day <= 9) {
         return {
           id: `att-${emp.id}-${dateStr}`,
@@ -201,7 +201,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           workedTime: 'Business Trip',
           penalty: '-',
           bonus: '-',
-          netPay: `${dailyBase.toLocaleString()} so'm`,
+          netPay: `${dailyBase.toLocaleString()} $`,
           notes: '🍃 Business trip (5 days: 05.10.2026 - 09.10.2026) — Branch inspection and audit',
           durationDays: 5,
           leaveType: 'trip',
@@ -213,7 +213,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
       const patternMod = (empIdx * 3 + day) % 10;
 
       if (patternMod === 9) {
-        // Absent (Kelmagan)
+        // Absent (Absent)
         return {
           id: `att-${emp.id}-${dateStr}`,
           employeeId: emp.id,
@@ -225,7 +225,7 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           workedTime: '-',
           penalty: '-',
           bonus: '-',
-          netPay: "0 so'm",
+          netPay: "0 $",
           notes: 'Sababsiz kelmadi'
         };
       } else if (patternMod === 4 || patternMod === 7) {
@@ -248,9 +248,9 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           delayMinutes: lateMin,
           delayReason: chosenReason,
           workedTime: '8 h 45 min',
-          penalty: `- ${penaltyAmount.toLocaleString()} so'm`,
+          penalty: `- ${penaltyAmount.toLocaleString()} $`,
           bonus: '-',
-          netPay: `${net.toLocaleString()} so'm`,
+          netPay: `${net.toLocaleString()} $`,
           notes: `${chosenReason} tufayli ${formatDelayText(lateMin)} kechikkan`
         };
       } else {
@@ -268,12 +268,12 @@ function generateSeedAttendance(employees: EmployeeData[]): DailyAttendance[] {
           date: dateStr,
           checkIn: `${inHour}:${inMinStr}`,
           checkOut: '18:20',
-          status: (monthIndex === 9 && day === 7) ? 'On Time' as const : 'Ketdi' as const,
+          status: (monthIndex === 9 && day === 7) ? 'On Time' as const : 'Check-out' as const,
           delayMinutes: 0,
           workedTime: '9 h 10 min',
           penalty: '-',
-          bonus: `${bonusAmount.toLocaleString()} so'm`,
-          netPay: `${net.toLocaleString()} so'm`,
+          bonus: `${bonusAmount.toLocaleString()} $`,
+          netPay: `${net.toLocaleString()} $`,
           notes: 'Punctual arrival and full shift completed'
         };
       }
@@ -413,7 +413,7 @@ export default function AttendanceJournal({
         workedTime: isLeave ? 'Ta\'tilda' : 'Xizmat safari',
         penalty: '-',
         bonus: '-',
-        netPay: config.isPaid ? `${(emp.dailyRate || 280000).toLocaleString()} so'm` : "0 so'm",
+        netPay: config.isPaid ? `${(emp.dailyRate || 280000).toLocaleString()} $` : "0 $",
         notes: `${isLeave ? "✈️ Ta'tilda" : "🍃 Ish yuzasidan safarda"} (${config.durationDays} kun: ${config.startDate} - ${config.endDate}) — ${config.reason}`,
         durationDays: config.durationDays,
         leaveType: config.type,
@@ -434,7 +434,7 @@ export default function AttendanceJournal({
     }
 
     setShowLeaveTripModal(false);
-    showToast(`${emp.fullName} uchun ${config.durationDays} kunlik ${isLeave ? "ta'til (Samolyot ✈️)" : "xizmat safari (Barg 🍃)"} muvaffaqiyatli saqlandi!`);
+    showToast(`${emp.fullName} uchun ${config.durationDays} kunlik ${isLeave ? "Annual Leave (Flight ✈️)" : "Business Trip (Field 🍃)"} muvaffaqiyatli saqlandi!`);
   };
 
   // Sync with Firebase & Backend API on mount
@@ -504,7 +504,7 @@ export default function AttendanceJournal({
               status: 'On Time' as const,
               delayMinutes: Number(log.delayMinutes) || 0,
               workedTime: 'Ish davom etmoqda',
-              penalty: log.penaltyFormatted && log.penaltyFormatted !== "0 so'm" ? `- ${log.penaltyFormatted}` : '-',
+              penalty: log.penaltyFormatted && log.penaltyFormatted !== "0 $" ? `- ${log.penaltyFormatted}` : '-',
               bonus: '-',
               netPay: '280 000 so\'m',
               notes: log.status || ''
@@ -515,7 +515,7 @@ export default function AttendanceJournal({
               existing.status = existing.delayMinutes > 0 ? 'Late' : 'On Time';
             } else if (log.action === 'ketdim' && log.timeFormatted && log.timeFormatted !== '--:--') {
               existing.checkOut = log.timeFormatted;
-              existing.status = 'Ketdi';
+              existing.status = 'Check-out';
             }
             recMap.set(recId, existing);
           });
@@ -645,11 +645,11 @@ export default function AttendanceJournal({
       if (statusFilter === 'all') return true;
       const record = dateAttendanceMap.get(emp.id);
       const isSunday = selectedDate ? new Date(selectedDate).getDay() === 0 : false;
-      const effectiveStatus = record?.status || (isSunday ? 'Rest Day' : 'Kelmagan');
+      const effectiveStatus = record?.status || (isSunday ? 'Rest Day' : 'Absent');
 
-      if (statusFilter === 'on_time') return effectiveStatus === 'On Time' || effectiveStatus === 'Ketdi';
+      if (statusFilter === 'on_time') return effectiveStatus === 'On Time' || effectiveStatus === 'Check-out';
       if (statusFilter === 'late') return effectiveStatus === 'Late';
-      if (statusFilter === 'absent') return effectiveStatus === 'Kelmagan';
+      if (statusFilter === 'absent') return effectiveStatus === 'Absent';
       if (statusFilter === 'leave') return effectiveStatus === 'Ta\'tilda';
       if (statusFilter === 'trip') return effectiveStatus === 'Ish yuzasidan safarda';
       if (statusFilter === 'rest') return effectiveStatus === 'Rest Day';
@@ -682,7 +682,7 @@ export default function AttendanceJournal({
   // Export report (Excel and PDF)
   const handleExportAttendance = (format: 'excel' | 'pdf') => {
     const fileName = `NovaHR_Attendance_${selectedDate}`;
-    const headers = ['№', 'F.I.Sh', 'Branch', 'Department', 'Designation', 'Keldi', 'Ketdi', 'Status', 'Total Worked', 'Qo\'lga tegadi'];
+    const headers = ['№', 'Full Name', 'Branch', 'Department', 'Designation', 'Check-in', 'Check-out', 'Status', 'Total Worked', 'Qo\'lga tegadi'];
     const data = filteredEmployees.map((emp, idx) => {
       const record = dateAttendanceMap.get(emp.id);
       return [
@@ -693,7 +693,7 @@ export default function AttendanceJournal({
         emp.position,
         record?.checkIn || '--:--',
         record?.checkOut || '--:--',
-        record?.status || 'Ishga kelmagan',
+        record?.status || 'Absent',
         record?.workedTime || '-',
         record?.netPay || '0 so\'m'
       ];
@@ -704,7 +704,7 @@ export default function AttendanceJournal({
         const record = dateAttendanceMap.get(emp.id);
         return {
           '№': idx + 1,
-          'F.I.Sh': emp.fullName,
+          'Full Name': emp.fullName,
           'Branch': emp.branch,
           'Department': emp.department,
           'Designation': emp.position,
@@ -712,7 +712,7 @@ export default function AttendanceJournal({
           'Ish jadvali': emp.schedule,
           'Kelish vaqti': record?.checkIn || '--:--',
           'Ketish vaqti': record?.checkOut || '--:--',
-          'Statusi': record?.status || 'Ishga kelmagan',
+          'Status': record?.status || 'Absent',
           'Total Worked': record?.workedTime || '-',
           'Delay Duration (min)': record?.delayMinutes || 0,
           'Jarima': record?.penalty || '-',
@@ -731,8 +731,8 @@ export default function AttendanceJournal({
   // Export report to CSV
   const handleExportCSV = () => {
     const headers = [
-      'T/r', 'Ism va familiya', 'Branch', 'Department', 'Designation', 
-      'Date', 'Ish vaqti', 'Keldi', 'Ketdi', 'Status', 'Total Worked', 'Jarimasi', 'Bonusi', 'Qo\'lga tegadi'
+      '#', 'Employee Name', 'Branch', 'Department', 'Designation', 
+      'Date', 'Shift Schedule', 'Check-in', 'Check-out', 'Status', 'Total Worked', 'Penalty', 'Bonus', 'Qo\'lga tegadi'
     ];
 
     const rows = filteredEmployees.map((emp, idx) => {
@@ -747,7 +747,7 @@ export default function AttendanceJournal({
         emp.schedule,
         record?.checkIn || '--:--',
         record?.checkOut || '--:--',
-        `"${record?.status || 'Ishga kelmagan'}"`,
+        `"${record?.status || 'Absent'}"`,
         `"${record?.workedTime || '-'}"`,
         `"${record?.penalty || '-'}"`,
         `"${record?.bonus || '-'}"`,
@@ -796,8 +796,8 @@ export default function AttendanceJournal({
       delayMinutes: 0,
       workedTime: 'Boshlangan',
       penalty: '-',
-      bonus: "15 000 so'm",
-      netPay: "295 000 so'm",
+      bonus: "15 000 $",
+      netPay: "295 000 $",
       notes: 'Tizimga yangi qo\'shildi'
     };
 
@@ -1031,7 +1031,7 @@ export default function AttendanceJournal({
             </div>
           </div>
           <div className="flex items-center justify-center gap-3 text-[11px] font-semibold text-slate-500 mt-2 flex-wrap">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Vaqtida: {stats.onTimeCount + stats.leftCount}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>On Time: {stats.onTimeCount + stats.leftCount}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Kech: {stats.lateCount}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Absent: {stats.absentCount}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500"></span>Ta'tilda: {stats.leaveCount}</span>
@@ -1057,7 +1057,7 @@ export default function AttendanceJournal({
           />
           <StatCard 
             icon={<div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center"><UserX className="w-4 h-4 text-rose-600" /></div>} 
-            title="Kelmagan" 
+            title="Absent" 
             value={stats.absentCount.toString()} 
             onClick={() => setStatusFilter(statusFilter === 'absent' ? 'all' : 'absent')}
             isActive={statusFilter === 'absent'}
@@ -1167,7 +1167,7 @@ export default function AttendanceJournal({
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
-          <span>Barchasi</span>
+          <span>All</span>
           <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{stats.total}</span>
         </button>
 
@@ -1248,7 +1248,7 @@ export default function AttendanceJournal({
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <b>Delay Durationlar nazorati faol:</b> Today jami <b>{stats.lateCount} nafar</b> xodim kechikib kelgan. Xodim ustiga bosib batafsil sabab va jarimani ko'rishingiz mumkin.
+              <b>Delay Durationlar nazorati faol:</b> Today jami <b>{stats.lateCount} nafar</b> xodim kechikib kelgan. Employee ustiga bosib batafsil sabab va jarimani ko'rishingiz mumkin.
             </span>
           </div>
           <button 
@@ -1285,7 +1285,7 @@ export default function AttendanceJournal({
                 const isRest = record?.status === 'Rest Day';
                 const parts = (selectedDate || '').split('-');
                 const dayOfWeek = parts.length === 3 ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getDay() : 1;
-                const status = record?.status || (dayOfWeek === 0 ? 'Rest Day' : 'Kelmagan');
+                const status = record?.status || (dayOfWeek === 0 ? 'Rest Day' : 'Absent');
 
                 return (
                   <tr 
@@ -1610,16 +1610,13 @@ function EmployeeDetailView({
   const getStatusStyle = (status: string) => {
     switch(status) {
       case 'Clocked Out':
-      case 'Ketdi':
+      case 'Check-out':
       case 'On Time': return 'bg-emerald-100 text-emerald-700';
       case 'Late': return 'bg-amber-100 text-amber-700';
-      case 'Kelmagan':
       case 'Absent': return 'bg-rose-100 text-rose-700';
       case 'Rest Day': return 'bg-blue-100 text-blue-700';
-      case 'On Leave':
-      case 'Ta\'tilda': return 'bg-sky-100 text-sky-800 border border-sky-200';
-      case 'Business Trip':
-      case 'Ish yuzasidan safarda': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+      case 'On Leave': return 'bg-sky-100 text-sky-800 border border-sky-200';
+      case 'Business Trip': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
       default: return 'bg-slate-100 text-slate-700';
     }
   };
@@ -1627,16 +1624,13 @@ function EmployeeDetailView({
   const getRowBorder = (status: string) => {
     switch(status) {
       case 'Clocked Out':
-      case 'Ketdi':
+      case 'Check-out':
       case 'On Time': return 'border-l-[4px] border-l-emerald-500';
       case 'Late': return 'border-l-[4px] border-l-amber-500';
-      case 'Kelmagan':
       case 'Absent': return 'border-l-[4px] border-l-rose-500';
       case 'Rest Day': return 'border-l-[4px] border-l-blue-500';
-      case 'On Leave':
-      case 'Ta\'tilda': return 'border-l-[4px] border-l-sky-500';
-      case 'Business Trip':
-      case 'Ish yuzasidan safarda': return 'border-l-[4px] border-l-emerald-600';
+      case 'On Leave': return 'border-l-[4px] border-l-sky-500';
+      case 'Business Trip': return 'border-l-[4px] border-l-emerald-600';
       default: return 'border-l-[4px] border-l-slate-200';
     }
   };
@@ -1726,7 +1720,7 @@ function EmployeeDetailView({
               title="GPS Attendance: Verify employee is inside branch radius"
             >
               <Navigation className="w-3.5 h-3.5" />
-              <span>📍 GPS Keldim</span>
+              <span>📍 GPS Check-inm</span>
             </button>
           )}
 
@@ -1835,9 +1829,9 @@ function EmployeeDetailView({
       <div className="px-6 py-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-50/70 border-b border-slate-200">
         <h3 className="font-bold text-slate-800 text-sm">Kunlik tafsilot jurnali</h3>
         <div className="flex flex-wrap items-center gap-5">
-          <LegendItem color="bg-emerald-500" label="Vaqtida yoki erta kelgan" />
+          <LegendItem color="bg-emerald-500" label="On Time yoki erta kelgan" />
           <LegendItem color="bg-amber-500" label="Kech kelgan / erta ketgan" />
-          <LegendItem color="bg-rose-500" label="Kelmagan" />
+          <LegendItem color="bg-rose-500" label="Absent" />
           <LegendItem color="bg-blue-500" label="Rest Day" />
         </div>
         <button 
@@ -1856,7 +1850,7 @@ function EmployeeDetailView({
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500">
                 <th className="py-3 px-6">Date</th>
-                <th className="py-3 px-6">Ish vaqti</th>
+                <th className="py-3 px-6">Shift Schedule</th>
                 <th className="py-3 px-6">Check-in</th>
                 <th className="py-3 px-6">Check-out</th>
                 <th className="py-3 px-6 text-center">Status</th>
@@ -1864,7 +1858,7 @@ function EmployeeDetailView({
                 <th className="py-3 px-6 text-center">Daily Penalty</th>
                 <th className="py-3 px-6 text-center">Daily Bonus</th>
                 <th className="py-3 px-6 text-right">Net Payout</th>
-                <th className="py-3 px-6 text-center">Amallar</th>
+                <th className="py-3 px-6 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1894,7 +1888,7 @@ function EmployeeDetailView({
                             <Leaf className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                             <span>Safarda {att.durationDays ? `(${att.durationDays} kun)` : ''}</span>
                           </>
-                        ) : statusDisplay === 'Ketdi' ? (
+                        ) : statusDisplay === 'Check-out' ? (
                           'Ishdan ketgan'
                         ) : (
                           statusDisplay
@@ -1969,7 +1963,7 @@ function EmployeeDetailView({
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Vaqtida', value: metrics.onTimePct, fill: '#10b981' },
+                          { name: 'On Time', value: metrics.onTimePct, fill: '#10b981' },
                           { name: 'Late', value: metrics.latePct, fill: '#f59e0b' },
                           { name: 'Absent', value: metrics.absentPct, fill: '#f43f5e' },
                         ]}
@@ -1984,11 +1978,11 @@ function EmployeeDetailView({
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-3xl font-black text-emerald-500">{metrics.onTimePct}%</span>
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase">Vaqtida</span>
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase">On Time</span>
                   </div>
                 </div>
                 <div className="flex gap-4 mt-4 text-xs font-semibold text-slate-600 w-full justify-center">
-                  <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Vaqtida ({metrics.onTimeDays} k)</div>
+                  <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>On Time ({metrics.onTimeDays} k)</div>
                   <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Kech ({metrics.lateDays} k)</div>
                   <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Absent ({metrics.absentDays} k)</div>
                 </div>
@@ -2034,13 +2028,13 @@ function EmployeeDetailView({
                     <div className="flex items-center justify-between p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
                       <span className="text-xs font-semibold text-emerald-800">Performance Incentive (Bonus):</span>
                       <span className="text-sm font-black text-emerald-700">
-                        {records.filter(r => r.bonus && r.bonus !== '-').length * 15000} so'm
+                        {records.filter(r => r.bonus && r.bonus !== '-').length * 15000} $
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-rose-50/60 rounded-xl border border-rose-100">
                       <span className="text-xs font-semibold text-rose-800">Delay Duration jarimalari:</span>
                       <span className="text-sm font-black text-rose-700">
-                        {metrics.lateDays * 15000} so'm
+                        {metrics.lateDays * 15000} $
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -2062,7 +2056,7 @@ function EmployeeDetailView({
               <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
                 <div>
                   <h4 className="font-bold text-slate-800 text-sm">Kechikilgan kunlar ro'yxati (Batafsil)</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">Xodim aynan qaysi kunlari kech qolgan, necha min va qanday sabab bilan</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Employee aynan qaysi kunlari kech qolgan, necha min va qanday sabab bilan</p>
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg">
                   {metrics.lateDays} ta kechikish holati
@@ -2134,12 +2128,12 @@ function EmployeeDetailView({
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-xs font-semibold text-slate-500">O'rtacha kunlik stavka</span>
-                  <p className="text-xl font-bold text-slate-800 mt-1">{(employee.dailyRate || 280000).toLocaleString()} so'm</p>
+                  <p className="text-xl font-bold text-slate-800 mt-1">{(employee.dailyRate || 280000).toLocaleString()} $</p>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                   <span className="text-xs font-semibold text-emerald-700">Sof hisoblangan oylik</span>
                   <p className="text-xl font-black text-emerald-700 mt-1">
-                    {((metrics.onTimeDays + metrics.lateDays) * (employee.dailyRate || 280000)).toLocaleString()} so'm
+                    {((metrics.onTimeDays + metrics.lateDays) * (employee.dailyRate || 280000)).toLocaleString()} $
                   </p>
                 </div>
               </div>
@@ -2184,7 +2178,7 @@ function EmployeeDetailView({
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1 block">Kunlik stavka (so'm)</label>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">Kunlik stavka ($)</label>
                 <input 
                   type="number" 
                   defaultValue={employee.dailyRate || 280000} 
@@ -2645,7 +2639,7 @@ function AddEmployeeModal({
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Bo'lim</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Department</label>
               <input 
                 type="text" 
                 value={department} 
@@ -2667,7 +2661,7 @@ function AddEmployeeModal({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Ish vaqti</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Shift Schedule</label>
               <input 
                 type="text" 
                 value={schedule} 
@@ -2688,7 +2682,7 @@ function AddEmployeeModal({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">Kunlik stavka (so'm)</label>
+              <label className="text-xs font-bold text-slate-700 mb-1 block">Kunlik stavka ($)</label>
               <input 
                 type="number" 
                 value={dailyRate} 
@@ -2796,8 +2790,8 @@ function EditRecordModal({
             >
               <option value="On Time">On Time</option>
               <option value="Late">Late</option>
-              <option value="Ketdi">Ishdan ketgan</option>
-              <option value="Kelmagan">Kelmagan</option>
+              <option value="Check-out">Ishdan ketgan</option>
+              <option value="Absent">Absent</option>
               <option value="Rest Day">Rest Day</option>
               <option value="Ta'tilda">✈️ Ta'tilda (Mehnat ta'tili - Samolyot)</option>
               <option value="Ish yuzasidan safarda">🍃 Ish yuzasidan safarda (Xizmat safari - Barg)</option>
@@ -2981,7 +2975,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
         if (onSettingsSaved) onSettingsSaved();
         onClose();
       } else {
-        showToast(data.message || 'Xatolik yuz berdi');
+        showToast(data.message || 'Error yuz berdi');
       }
     } catch (e: any) {
       showToast('Server bilan bog\'lanishda xatolik');
@@ -3001,7 +2995,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
             </span>
             <div>
               <h3 className="text-base font-black text-slate-800">
-                Jarima va Dam Olish Kunlari Sozlamalari
+                Jarima va Dam Olish Kunlari Settingsi
               </h3>
               <p className="text-xs text-slate-500 font-medium">
                 Delay Durationlar uchun jarima turi, stavkasi va dam olish kunlarini boshqarish
@@ -3015,7 +3009,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
 
         {/* Form Body */}
         {isLoading ? (
-          <div className="p-10 text-center text-xs text-slate-500">Sozlamalar yuklanmoqda...</div>
+          <div className="p-10 text-center text-xs text-slate-500">Settings yuklanmoqda...</div>
         ) : (
           <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto">
             {/* Ish boshlanish vaqti & Ruxsat etilgan kechikish */}
@@ -3108,11 +3102,11 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm font-black text-slate-800 outline-none pr-14"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    so'm
+                    $
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Masalan: agar xodim 25 min kech kelsa va 1 minsiga {(Number(penaltyRate) || 0).toLocaleString()} so'm bo'lsa, jami jarima: <b>{(25 * (Number(penaltyRate) || 0)).toLocaleString()} so'm</b> bo'ladi.
+                  Masalan: agar xodim 25 min kech kelsa va 1 minsiga {(Number(penaltyRate) || 0).toLocaleString()} $ bo'lsa, jami jarima: <b>{(25 * (Number(penaltyRate) || 0)).toLocaleString()} $</b> bo'ladi.
                 </p>
               </div>
             </div>
@@ -3202,7 +3196,7 @@ function PenaltySettingsModal({ onClose, showToast, onSettingsSaved }: PenaltySe
                 disabled={isSaving}
                 className="px-5 py-2 bg-[#00A651] hover:bg-[#008f45] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
               >
-                {isSaving ? "Saqlanmoqda..." : "Sozlamalarni saqlash"}
+                {isSaving ? "Saqlanmoqda..." : "Settingsni saqlash"}
               </button>
             </div>
           </form>
@@ -3281,9 +3275,9 @@ function GpsCheckInModal({
     return {
       delayMinutes: delay,
       isLate,
-      penaltyStr: isLate ? `- ${penaltyAmount.toLocaleString()} so'm` : '-',
-      bonusStr: !isLate ? "15,000 so'm" : '-',
-      netPayStr: `${net.toLocaleString()} so'm`
+      penaltyStr: isLate ? `- ${penaltyAmount.toLocaleString()} $` : '-',
+      bonusStr: !isLate ? "15,000 $" : '-',
+      netPayStr: `${net.toLocaleString()} $`
     };
   }, [scheduleStartTime, checkInTime, selectedEmp]);
 
@@ -3327,7 +3321,7 @@ function GpsCheckInModal({
   const handleConfirmCheckIn = () => {
     if (!selectedEmp) return;
     if (!isInsideRadius) {
-      alert(`Xodim biriktirilgan filial (${branchZone.name}) radiusidan tashqarida! Masofa: ${distanceMeters} metr, ruxsat etilgan radius: ${branchZone.radius} metr. Branch hududiga yaqinlashing yoki 'Sinov: Branch markaziga joylashish' tugmasidan foydalaning.`);
+      alert(`Employee biriktirilgan filial (${branchZone.name}) radiusidan tashqarida! Masofa: ${distanceMeters} metr, ruxsat etilgan radius: ${branchZone.radius} metr. Branch hududiga yaqinlashing yoki 'Sinov: Branch markaziga joylashish' tugmasidan foydalaning.`);
       return;
     }
 
@@ -3347,18 +3341,18 @@ function GpsCheckInModal({
       penalty: delayCalculation.penaltyStr,
       bonus: delayCalculation.bonusStr,
       netPay: delayCalculation.netPayStr,
-      notes: `GPS orqali tasdiqlandi (${branchZone.name}, ${distanceMeters}m masofadan). ${delayCalculation.isLate ? `${formatDelayText(delayCalculation.delayMinutes)} late` : "O'z vaqtida keldi"}`
+      notes: `GPS orqali tasdiqlandi (${branchZone.name}, ${distanceMeters}m masofadan). ${delayCalculation.isLate ? `${formatDelayText(delayCalculation.delayMinutes)} late` : "Punctual check-in"}`
     };
 
     onRecord(newRec);
-    showToast(`${selectedEmp.fullName} filial (${branchZone.name}) radiusi ichida 'Keldim' (${delayCalculation.isLate ? 'Late' : 'On Time'}) deb muvaffaqiyatli qayd etildi!`);
+    showToast(`${selectedEmp.fullName} filial (${branchZone.name}) radiusi ichida 'Check-inm' (${delayCalculation.isLate ? 'Late' : 'On Time'}) deb muvaffaqiyatli qayd etildi!`);
     onClose();
   };
 
   const handleConfirmCheckOut = () => {
     if (!selectedEmp) return;
     if (!isInsideRadius) {
-      alert(`Xodim filial radiusidan tashqarida! Masofa: ${distanceMeters} metr, ruxsat etilgan radius: ${branchZone.radius} metr.`);
+      alert(`Employee filial radiusidan tashqarida! Masofa: ${distanceMeters} metr, ruxsat etilgan radius: ${branchZone.radius} metr.`);
       return;
     }
 
@@ -3376,12 +3370,12 @@ function GpsCheckInModal({
       workedTime: '8 h 35 min',
       penalty: '-',
       bonus: '15,000 so\'m',
-      netPay: `${((selectedEmp.dailyRate || 280000) + 15000).toLocaleString()} so'm`,
+      netPay: `${((selectedEmp.dailyRate || 280000) + 15000).toLocaleString()} $`,
       notes: `GPS orqali ish yakunlandi (${branchZone.name}, chiqish vaqti: ${checkInTime})`
     };
 
     onRecord(newRec);
-    showToast(`${selectedEmp.fullName} uchun 'Ketdim' (Check-out vaqti: ${checkInTime}) muvaffaqiyatli saqlandi!`);
+    showToast(`${selectedEmp.fullName} uchun 'Check-outm' (Check-out vaqti: ${checkInTime}) muvaffaqiyatli saqlandi!`);
     onClose();
   };
 
@@ -3399,7 +3393,7 @@ function GpsCheckInModal({
                 GPS Branch Georadiusi va Davomat
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Xodim biriktirilgan filial radiusi ichida bo'lsa "Kelgan" deb tasdiqlash
+                Employee biriktirilgan filial radiusi ichida bo'lsa "Kelgan" deb tasdiqlash
               </p>
             </div>
           </div>
@@ -3514,7 +3508,7 @@ function GpsCheckInModal({
                         Branch radiusi ichidasiz! ({distanceMeters} metr &le; {branchZone.radius} metr)
                       </span>
                       <span className="text-[11px] text-emerald-700 font-medium">
-                        Xodim o'z branchda turibdi. Davomat qabul qilinadi. {isSimulated ? "(Sinov rejimi)" : ""}
+                        Employee o'z branchda turibdi. Davomat qabul qilinadi. {isSimulated ? "(Sinov rejimi)" : ""}
                       </span>
                     </div>
                   </div>
@@ -3625,7 +3619,7 @@ function GpsCheckInModal({
                 : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
             }`}
           >
-            <span>🚪 "Ketdim" deb yozish</span>
+            <span>🚪 "Check-outm" deb yozish</span>
           </button>
 
           <button
@@ -3639,7 +3633,7 @@ function GpsCheckInModal({
             }`}
           >
             <Check className="w-4 h-4" />
-            <span>✅ "Keldim" deb tasdiqlash</span>
+            <span>✅ "Check-inm" deb tasdiqlash</span>
           </button>
         </div>
       </div>
@@ -3743,7 +3737,7 @@ function FaceIdIntegrationModal({
         showToast(data.message || "Confirmda xatolik yuz berdi");
       }
     } catch (err: any) {
-      showToast(err.message || "Xatolik yuz berdi");
+      showToast(err.message || "Error yuz berdi");
     } finally {
       setProcessingReqId(null);
     }
@@ -3769,10 +3763,10 @@ function FaceIdIntegrationModal({
         setRejectReasonText('');
         await fetchPhotoRequests();
       } else {
-        showToast(data.message || "Rad etishda xatolik yuz berdi");
+        showToast(data.message || "Rejectda xatolik yuz berdi");
       }
     } catch (err: any) {
-      showToast(err.message || "Xatolik yuz berdi");
+      showToast(err.message || "Error yuz berdi");
     } finally {
       setProcessingReqId(null);
     }
@@ -3926,7 +3920,7 @@ function FaceIdIntegrationModal({
         onUpdateEmployeePhoto(targetEmp.id, finalPhoto);
       }
 
-      showToast(`✅ ${targetEmp.fullName} uchun Face ID etalon rasmi muvaffaqiyatli saqlandi! Narigi AI 'Keldim' vaqtida ushbu rasmni oladi.`);
+      showToast(`✅ ${targetEmp.fullName} uchun Face ID etalon rasmi muvaffaqiyatli saqlandi! Narigi AI 'Check-inm' vaqtida ushbu rasmni oladi.`);
       setApiTestResult(data);
     } catch (err) {
       console.error("Save photo error:", err);
@@ -3996,7 +3990,7 @@ function FaceIdIntegrationModal({
         time: scanTime,
         delayMinutes: isLate ? delay : 0,
         isLate,
-        status: scanAction === 'check_out' ? 'Ketdi' : (isLate ? 'Late' : 'On Time')
+        status: scanAction === 'check_out' ? 'Check-out' : (isLate ? 'Late' : 'On Time')
       });
     }, 1300);
   };
@@ -4019,9 +4013,9 @@ function FaceIdIntegrationModal({
       delayMinutes: scanResult.delayMinutes,
       delayReason: scanResult.isLate ? "Face ID & Kamera: Ishga kechikib keldi" : undefined,
       workedTime: scanResult.action === 'check_out' ? '8 h 40 min' : '-',
-      penalty: scanResult.isLate ? `- ${delayAmount.toLocaleString()} so'm` : '-',
-      bonus: !scanResult.isLate && scanResult.action === 'check_in' ? "15,000 so'm" : '-',
-      netPay: scanResult.isLate ? `${(dailyBase - delayAmount).toLocaleString()} so'm` : `${(dailyBase + 15000).toLocaleString()} so'm`,
+      penalty: scanResult.isLate ? `- ${delayAmount.toLocaleString()} $` : '-',
+      bonus: !scanResult.isLate && scanResult.action === 'check_in' ? "15,000 $" : '-',
+      netPay: scanResult.isLate ? `${(dailyBase - delayAmount).toLocaleString()} $` : `${(dailyBase + 15000).toLocaleString()} $`,
       notes: `Face ID & AI terminali orqali tasdiqlandi (Moslik: 98.8%, ${selectedEmp.branch}). ${scanResult.isLate ? `${formatDelayText(scanResult.delayMinutes)} late` : "O'z vaqtida kelgan"}`
     };
 
@@ -4078,7 +4072,7 @@ function FaceIdIntegrationModal({
                 </span>
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Xodimlarning yuz fotosuratini yuklash, jonli kameradan rasmga olish va Narigi AI ga uzatish
+                Employeesning yuz fotosuratini yuklash, jonli kameradan rasmga olish va Narigi AI ga uzatish
               </p>
             </div>
           </div>
@@ -4148,7 +4142,7 @@ function FaceIdIntegrationModal({
             }`}
           >
             <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>⏳ Xodimlar Rasm So'rovlari</span>
+            <span>⏳ Employees Rasm So'rovlari</span>
             {pendingRequestsCount > 0 && (
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
                 {pendingRequestsCount}
@@ -4167,13 +4161,13 @@ function FaceIdIntegrationModal({
                 <Camera className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-purple-950 leading-relaxed">
                   <p className="font-bold mb-1 flex items-center gap-1.5 text-sm text-purple-900">
-                    <span>Xodimlarning Face ID Etalon Rasmini Joylash Joyi</span>
+                    <span>Employeesning Face ID Etalon Rasmini Joylash Joyi</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-200 text-purple-800">
                       POST /api/attendance/employee-photo
                     </span>
                   </p>
                   <p className="text-purple-800 font-medium">
-                    Xodim "Keldim" deb kameraga qaraganda, Narigi AI / skaner moduli serverdan shu rasmni oladi va jonli yuz bilan solishtiradi. 
+                    Employee "Check-inm" deb kameraga qaraganda, Narigi AI / skaner moduli serverdan shu rasmni oladi va jonli yuz bilan solishtiradi. 
                     Quyida xodimni tanlang, <b>jonli kameradan suratga oling</b> yoki kompyuter/telefondan <b>fayl yuklang</b> va saqlang!
                   </p>
                 </div>
@@ -4186,7 +4180,7 @@ function FaceIdIntegrationModal({
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="Xodim ismi, lavozimi, login bo'yicha qidirish..."
+                      placeholder="Employee ismi, lavozimi, login bo'yicha qidirish..."
                       value={photoSearch}
                       onChange={(e) => setPhotoSearch(e.target.value)}
                       className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-purple-500 font-medium"
@@ -4283,7 +4277,7 @@ function FaceIdIntegrationModal({
 
                       {filteredPhotoEmployees.length === 0 && (
                         <div className="py-8 text-center text-xs text-slate-400 font-semibold">
-                          Xodim topilmadi
+                          Employee topilmadi
                         </div>
                       )}
                     </div>
@@ -4393,7 +4387,7 @@ function FaceIdIntegrationModal({
                                   {photoPreview ? "Yangi olingan surat tayyor! Quyidagi 'Save' tugmasini bosing" : "Joriy Face ID etalon surati"}
                                 </span>
                                 <span className="text-[11px] text-slate-400">
-                                  Narigi AI "Keldim" bosilganda yuzni tekshirish uchun ushbu rasmni yuklaydi
+                                  Narigi AI "Check-inm" bosilganda yuzni tekshirish uchun ushbu rasmni yuklaydi
                                 </span>
                               </div>
                             </div>
@@ -4491,7 +4485,7 @@ function FaceIdIntegrationModal({
                               {JSON.stringify(apiTestResult, null, 2)}
                             </div>
                             <p className="text-[11px] text-slate-400">
-                              ✅ Narigi AI "Keldim" bosilganda yuzni tekshirish uchun ushbu <b>photoUrl</b> rasmidan foydalanadi.
+                              ✅ Narigi AI "Check-inm" bosilganda yuzni tekshirish uchun ushbu <b>photoUrl</b> rasmidan foydalanadi.
                             </p>
                           </div>
                         )}
@@ -4652,7 +4646,7 @@ function FaceIdIntegrationModal({
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-center gap-2">
                 <ScanFace className="w-4 h-4 text-indigo-600 shrink-0" />
                 <span>
-                  <b>Integratsiya jarayoni:</b> Xodim login va paroli bilan kirib <b>"Keldim"</b> tugmasini bosganida kamera yuzni skanerlashni boshlaydi. Toyona narigi AI kodiga rasm yuboradi: <i>"Men o'sha xodimning rasmini yuboraman, sen skaner qilasan"</i>. Narigi AI esa xodim kelgan vaqtini qaytaradi!
+                  <b>Integratsiya jarayoni:</b> Employee login va paroli bilan kirib <b>"Check-inm"</b> tugmasini bosganida kamera yuzni skanerlashni boshlaydi. Toyona narigi AI kodiga rasm yuboradi: <i>"Men o'sha xodimning rasmini yuboraman, sen skaner qilasan"</i>. Narigi AI esa xodim kelgan vaqtini qaytaradi!
                 </span>
               </div>
 
@@ -4660,7 +4654,7 @@ function FaceIdIntegrationModal({
               <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-1 block">Xodimni tanlang:</label>
+                    <label className="text-xs font-bold text-slate-700 mb-1 block">Employeeni tanlang:</label>
                     <select
                       value={selectedEmpId}
                       onChange={(e) => {
@@ -4690,7 +4684,7 @@ function FaceIdIntegrationModal({
                         }`}
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>"Keldim" (Check-in)</span>
+                        <span>"Check-inm" (Check-in)</span>
                       </button>
 
                       <button
@@ -4703,7 +4697,7 @@ function FaceIdIntegrationModal({
                         }`}
                       >
                         <Clock className="w-3.5 h-3.5" />
-                        <span>"Ketdim" (Check-out)</span>
+                        <span>"Check-outm" (Check-out)</span>
                       </button>
                     </div>
                   </div>
@@ -4763,12 +4757,12 @@ function FaceIdIntegrationModal({
                   ) : scanResult ? (
                     <span className="text-emerald-400 flex items-center gap-1.5 justify-center">
                       <CheckCircle2 className="w-4 h-4" />
-                      Narigi AI javob qaytardi: Xodim yuzi 98.8% aniqlikda tasdiqlandi!
+                      Narigi AI javob qaytardi: Employee yuzi 98.8% aniqlikda tasdiqlandi!
                     </span>
                   ) : (
                     <div className="space-y-1">
                       <span className="text-slate-200">
-                        Xodim login/parol bilan kirib <b>"{scanAction === 'check_in' ? 'Keldim' : 'Ketdim'}"</b> tugmasini bosadi
+                        Employee login/parol bilan kirib <b>"{scanAction === 'check_in' ? 'Check-inm' : 'Check-outm'}"</b> tugmasini bosadi
                       </span>
                       <p className="text-[11px] text-slate-400">
                         Kamera yuzni skanerlab narigi AI ga rasm uzatadi va kelgan/ketgan vaqti qaytib keladi
@@ -4797,7 +4791,7 @@ function FaceIdIntegrationModal({
                     className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all flex items-center gap-1.5"
                   >
                     <ScanFace className="w-4 h-4" />
-                    <span>{isScanning ? "Skaner qilinmoqda..." : `${scanAction === 'check_in' ? 'Keldim' : 'Ketdim'} & AI ga Rasm Yuborish`}</span>
+                    <span>{isScanning ? "Skaner qilinmoqda..." : `${scanAction === 'check_in' ? 'Check-inm' : 'Check-outm'} & AI ga Rasm Yuborish`}</span>
                   </button>
                 </div>
               </div>
@@ -4859,13 +4853,13 @@ function FaceIdIntegrationModal({
                   </span>
                   <div className="text-xs text-slate-800 leading-relaxed">
                     <p className="font-bold text-sm text-emerald-950 mb-0.5 flex items-center gap-2">
-                      <span>Xodimlar Yuborgan Yangi Face ID Surat So'rovlari</span>
+                      <span>Employees Yuborgan Yangi Face ID Surat So'rovlari</span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-200 text-emerald-900">
                         HR Confirm Markazi
                       </span>
                     </p>
                     <p className="text-slate-600 font-medium">
-                      Xodimlar o'z profilidan yuborgan yangi fotosuratlarni ko'rib chiqing. <b>"Confirm"</b> tugmasi bosilganda xodimning Face ID etalon rasmi yangilanadi va u yangi rasm orqali bemalol davomat qila oladi.
+                      Employees o'z profilidan yuborgan yangi fotosuratlarni ko'rib chiqing. <b>"Confirm"</b> tugmasi bosilganda xodimning Face ID etalon rasmi yangilanadi va u yangi rasm orqali bemalol davomat qila oladi.
                     </p>
                   </div>
                 </div>
@@ -4890,7 +4884,7 @@ function FaceIdIntegrationModal({
                       : photoRequests.filter(r => r.status === st).length;
                     const labels: Record<string, string> = {
                       pending: '⏳ Kutilmoqda',
-                      all: 'Barchasi',
+                      all: 'All',
                       approved: '✓ Tasdiqlangan',
                       rejected: '✕ Rad etilgan'
                     };
@@ -4936,7 +4930,7 @@ function FaceIdIntegrationModal({
                   </div>
                   <h4 className="text-sm font-bold text-slate-700">Hozircha so'rovlar mavjud emas</h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Xodimlar o'z profilidan yangi surat yuklaganida so'rovlar shu yerda paydo bo'ladi.
+                    Employees o'z profilidan yangi surat yuklaganida so'rovlar shu yerda paydo bo'ladi.
                   </p>
                 </div>
               ) : (
@@ -5068,7 +5062,7 @@ function FaceIdIntegrationModal({
                         {/* Status details or review notes */}
                         {isApproved && (
                           <div className="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 flex items-center justify-between">
-                            <span>✓ Ushbu rasm <strong>Face ID etalon bazasiga biriktirildi</strong>. Xodim endi shu rasm orqali taniydi.</span>
+                            <span>✓ Ushbu rasm <strong>Face ID etalon bazasiga biriktirildi</strong>. Employee endi shu rasm orqali taniydi.</span>
                             {req.reviewedBy && (
                               <span className="text-[11px] text-emerald-700 font-bold">
                                 {req.reviewedBy} ({req.reviewedAt ? new Date(req.reviewedAt).toLocaleDateString('uz-UZ') : ''})
@@ -5090,7 +5084,7 @@ function FaceIdIntegrationModal({
                             {isRejecting ? (
                               <div className="bg-rose-50/70 border border-rose-200 p-3 rounded-xl space-y-2">
                                 <label className="text-xs font-bold text-rose-900 block">
-                                  Rad etish sababini kiriting (Xodimga ko'rinadi):
+                                  Reject sababini kiriting (Employeega ko'rinadi):
                                 </label>
                                 <input
                                   type="text"
@@ -5116,7 +5110,7 @@ function FaceIdIntegrationModal({
                                     disabled={isProcessing}
                                     className="px-4 py-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-lg cursor-pointer shadow-xs"
                                   >
-                                    {isProcessing ? "Rad etilmoqda..." : "✕ Rad etishni tasdiqlash"}
+                                    {isProcessing ? "Rad etilmoqda..." : "✕ Rejectni tasdiqlash"}
                                   </button>
                                 </div>
                               </div>
@@ -5132,7 +5126,7 @@ function FaceIdIntegrationModal({
                                   className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                                 >
                                   <X className="w-3.5 h-3.5" />
-                                  <span>Rad etish</span>
+                                  <span>Reject</span>
                                 </button>
 
                                 <button

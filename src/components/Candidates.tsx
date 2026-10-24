@@ -251,7 +251,7 @@ export default function Candidates() {
     setCandidates(prev => prev.filter(c => c.id !== targetId));
     if (selectedCandidate?.id === targetId) setSelectedCandidate(null);
     setCandidateToDelete(null);
-    showToast("Nomzod muvaffaqiyatli o'chirildi");
+    showToast("Candidate muvaffaqiyatli o'chirildi");
 
     try {
       const { deleteFirebaseCandidate } = await import('../firebase');
@@ -262,8 +262,8 @@ export default function Candidates() {
   };
 
   const handleExportCandidates = (type: 'excel' | 'pdf') => {
-    const fileName = `Toyona_Nomzodlar_${new Date().toISOString().slice(0, 10)}`;
-    const headers = ['№', 'F.I.O', 'Lavozim', 'Branch', 'Viloyat', 'Telefon', 'Status', 'Sana'];
+    const fileName = `Toyona_Candidates_${new Date().toISOString().slice(0, 10)}`;
+    const headers = ['№', 'F.I.O', 'Designation', 'Branch', 'Viloyat', 'Telefon', 'Status', 'Sana'];
     const data = filteredCandidates.map((c, i) => [
       i + 1,
       c.fullName,
@@ -279,7 +279,7 @@ export default function Candidates() {
       const excelData = filteredCandidates.map((c, i) => ({
         '№': i + 1,
         'F.I.O': c.fullName,
-        'Lavozim': c.jobPosition || c.position || '-',
+        'Position': c.jobPosition || c.position || '-',
         'Branch': c.targetBranch || '-',
         'Viloyat': c.region || '-',
         'Manzil': c.address || c.exactAddress || '-',
@@ -302,7 +302,7 @@ export default function Candidates() {
       </AnimatePresence>
 
       {/* Module Header with Toyona Savdo Logo */}
-      <ModuleHeaderLogo title="Nomzodlar Boshqaruvi" icon={UserCheck} />
+      <ModuleHeaderLogo title="Candidates Boshqaruvi" icon={UserCheck} />
 
       {/* Top Header Controls & Multi-Filter Bar */}
       <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3 bg-slate-50/70 dark:bg-slate-800/50 mb-4">
@@ -425,8 +425,8 @@ export default function Candidates() {
           <thead>
             <tr className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               <th className="p-3 w-12 text-center">№</th>
-              <th className="p-3">Nomzod F.I.O</th>
-              <th className="p-3">Lavozim</th>
+              <th className="p-3">Candidate F.I.O</th>
+              <th className="p-3">Designation</th>
               <th className="p-3">Tanlangan Branch</th>
               <th className="p-3">Education Level</th>
               <th className="p-3">Viloyat & Manzil</th>
@@ -443,7 +443,7 @@ export default function Candidates() {
                   <div className="flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A651] animate-spin" />
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Nomzodlar arizalari yuklanmoqda...
+                      Candidates arizalari yuklanmoqda...
                     </span>
                   </div>
                 </td>
@@ -547,7 +547,7 @@ export default function Candidates() {
                 <td className="p-3 rounded-r-lg border-y border-r border-slate-100 dark:border-slate-700/60 text-right" onClick={(e) => e.stopPropagation()}>
                   <button 
                     onClick={() => setCandidateToDelete(candidate)}
-                    title="Nomzodni o'chirish"
+                    title="Candidateni o'chirish"
                     className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -561,7 +561,7 @@ export default function Candidates() {
         {!isInitialLoading && filteredCandidates.length === 0 && (
           <div className="p-12 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center gap-2">
             <UserCheck className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Qidiruv bo'yicha nomzodlar topilmadi</span>
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">Search bo'yicha nomzodlar topilmadi</span>
             <span className="text-xs text-slate-400 dark:text-slate-500">Filtr parametrlarini o'zgartirib ko'ring</span>
             {isAnyFilterActive && (
               <button
@@ -631,7 +631,7 @@ export default function Candidates() {
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto space-y-5 text-slate-700 dark:text-slate-300 text-sm">
                 
-                {/* Nomzod fotosurati */}
+                {/* Candidate fotosurati */}
                 {selectedCandidate.photoUrl && (
                   <div 
                     onClick={() => setPreviewImage({ url: selectedCandidate.photoUrl!, title: `${selectedCandidate.fullName} - Fotosurat` })}
@@ -702,7 +702,7 @@ export default function Candidates() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="p-3.5 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 block">Tanlangan Lavozim (21 tadan biri)</span>
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 block">Tanlangan Designation (21 tadan biri)</span>
                       <span className="font-bold text-emerald-900 dark:text-emerald-200 text-base mt-0.5 block">{selectedCandidate.jobPosition}</span>
                     </div>
                     <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/40">
@@ -837,7 +837,7 @@ export default function Candidates() {
                   onClick={() => setCandidateToDelete(null)}
                   className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer"
                 >
-                  Bekor qilish
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -894,7 +894,7 @@ export default function Candidates() {
             >
               <img
                 src={previewImage.url}
-                alt={previewImage.title || "Nomzod rasmi"}
+                alt={previewImage.title || "Candidate rasmi"}
                 className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl border border-white/15"
                 onClick={(e) => e.stopPropagation()}
               />

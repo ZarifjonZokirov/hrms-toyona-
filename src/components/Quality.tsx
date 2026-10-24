@@ -48,7 +48,7 @@ export interface QualityProfile {
   pastExperience: string;
   age: number;
   ageBracket: '<25' | '25-35' | '35-45' | '45+';
-  experienceBracket: '<1 yil' | '1-3 yil' | '3-5 yil' | '5+ yil';
+  experienceBracket: '<1 years' | '1-3 years' | '3-5 years' | '5+ yil';
   languages: string[];
   skills: string[];
   qualificationLevel: 'Boshlang\'ich' | 'Mutaxassis' | 'Katta mutaxassis' | 'Yetakchi';
@@ -91,10 +91,10 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
   else ageBracket = '45+';
 
   // Experience bracket
-  let experienceBracket: '<1 yil' | '1-3 yil' | '3-5 yil' | '5+ yil' = '1-3 yil';
-  if (expYears < 1) experienceBracket = '<1 yil';
-  else if (expYears <= 3) experienceBracket = '1-3 yil';
-  else if (expYears <= 5) experienceBracket = '3-5 yil';
+  let experienceBracket: '<1 years' | '1-3 years' | '3-5 years' | '5+ yil' = '1-3 years';
+  if (expYears < 1) experienceBracket = '<1 years';
+  else if (expYears <= 3) experienceBracket = '1-3 years';
+  else if (expYears <= 5) experienceBracket = '3-5 years';
   else experienceBracket = '5+ yil';
 
   // Education fallback
@@ -135,7 +135,7 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
     } else if (p.includes('menejer') || p.includes('direktor')) {
       skills = ['Liderlik', 'Jamoani boshqarish', 'Analitika', 'KPI monitoring'];
     } else if (p.includes('ombor')) {
-      skills = ['Inventarizatsiya', 'Yuk logistikasi', 'Hisobot yuritish'];
+      skills = ['Inventarizatsiya', 'Yuk logistikasi', 'Report yuritish'];
     } else {
       skills = ['Mas\'uliyatlilik', 'Muloqot madaniyati', 'Jamoaviy ishlash'];
     }
@@ -186,10 +186,10 @@ const QUALIFICATION_BADGES: Record<string, { bg: string; text: string; border: s
 export default function Quality() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedBranch, setSelectedBranch] = useState<string>('Barchasi');
-  const [selectedEducation, setSelectedEducation] = useState<string>('Barchasi');
-  const [selectedAgeBracket, setSelectedAgeBracket] = useState<string>('Barchasi');
-  const [selectedExperienceBracket, setSelectedExperienceBracket] = useState<string>('Barchasi');
+  const [selectedBranch, setSelectedBranch] = useState<string>('All');
+  const [selectedEducation, setSelectedEducation] = useState<string>('All');
+  const [selectedAgeBracket, setSelectedAgeBracket] = useState<string>('All');
+  const [selectedExperienceBracket, setSelectedExperienceBracket] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProfile, setSelectedProfile] = useState<QualityProfile | null>(null);
   const [viewTab, setViewTab] = useState<'table' | 'analytics'>('table');
@@ -236,17 +236,17 @@ export default function Quality() {
   const educationList = useMemo(() => {
     const set = new Set<string>();
     qualityProfiles.forEach(p => set.add(p.education));
-    return ['Barchasi', ...Array.from(set).sort()];
+    return ['All', ...Array.from(set).sort()];
   }, [qualityProfiles]);
 
   // Filtered profiles
   const filteredProfiles = useMemo(() => {
     return qualityProfiles.filter(p => {
       const e = p.employee;
-      const matchesBranch = selectedBranch === 'Barchasi' || (e.branch || '') === selectedBranch;
-      const matchesEdu = selectedEducation === 'Barchasi' || p.education === selectedEducation;
-      const matchesAge = selectedAgeBracket === 'Barchasi' || p.ageBracket === selectedAgeBracket;
-      const matchesExp = selectedExperienceBracket === 'Barchasi' || p.experienceBracket === selectedExperienceBracket;
+      const matchesBranch = selectedBranch === 'All' || (e.branch || '') === selectedBranch;
+      const matchesEdu = selectedEducation === 'All' || p.education === selectedEducation;
+      const matchesAge = selectedAgeBracket === 'All' || p.ageBracket === selectedAgeBracket;
+      const matchesExp = selectedExperienceBracket === 'All' || p.experienceBracket === selectedExperienceBracket;
 
       const q = (searchQuery || '').toLowerCase().trim();
       const matchesSearch = !q ||
@@ -314,7 +314,7 @@ export default function Quality() {
 
   // Experience Distribution Chart Data
   const experienceChartData = useMemo(() => {
-    const counts: Record<string, number> = { '<1 yil': 0, '1-3 yil': 0, '3-5 yil': 0, '5+ yil': 0 };
+    const counts: Record<string, number> = { '<1 years': 0, '1-3 years': 0, '3-5 years': 0, '5+ yil': 0 };
     filteredProfiles.forEach(p => {
       counts[p.experienceBracket] = (counts[p.experienceBracket] || 0) + 1;
     });
@@ -342,12 +342,12 @@ export default function Quality() {
 
   // Export handlers
   const handleExport = (type: 'excel' | 'pdf') => {
-    const title = selectedBranch !== 'Barchasi'
-      ? `Toyona Savdo - ${selectedBranch} Xodimlari Sifat Tarkibi`
-      : `Toyona Savdo - Barcha Branchlar Xodimlari Sifat Tarkibi`;
-    const fileName = `Toyona_Sifat_Tarkibi_${selectedBranch !== 'Barchasi' ? selectedBranch.replace(/\s+/g, '_') : 'Barchasi'}_${new Date().toISOString().slice(0, 10)}`;
+    const title = selectedBranch !== 'All'
+      ? `Toyona Savdo - ${selectedBranch} Employeesi Sifat Tarkibi`
+      : `Toyona Savdo - Barcha Branchlar Employeesi Sifat Tarkibi`;
+    const fileName = `Toyona_Sifat_Tarkibi_${selectedBranch !== 'All' ? selectedBranch.replace(/\s+/g, '_') : 'All'}_${new Date().toISOString().slice(0, 10)}`;
 
-    const headers = ['№', 'Tabel ID', 'Xodim (F.I.Sh)', 'Branch', 'Position', 'Ma\'lumoti', 'Yoshi', 'Staj (yil)', 'Darajasi', 'Oldingi tajribasi'];
+    const headers = ['№', 'Tabel ID', 'Employee (Full Name)', 'Branch', 'Position', 'Ma\'lumoti', 'Yoshi', 'Staj (yil)', 'Darajasi', 'Oldingi tajribasi'];
     const data = filteredProfiles.map((p, i) => [
       i + 1,
       p.employee.staffId || '-',
@@ -365,7 +365,7 @@ export default function Quality() {
       const excelData = filteredProfiles.map((p, i) => ({
         '№': i + 1,
         'Tabel ID': p.employee.staffId || '-',
-        'F.I.Sh': p.employee.fullName,
+        'Full Name': p.employee.fullName,
         'Branch': p.employee.branch,
         'Position': p.employee.position,
         'Ma\'lumoti': p.education,
@@ -400,7 +400,7 @@ export default function Quality() {
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-              Xodimlarning ma'lumoti, yoshi, ish tajribasi (staji) va malaka salohiyati tahlili
+              Employeesning ma'lumoti, yoshi, ish tajribasi (staji) va malaka salohiyati tahlili
             </p>
           </div>
         </div>
@@ -425,7 +425,7 @@ export default function Quality() {
               <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Jami xodimlar</p>
               <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.total} nafar</h3>
               <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                {selectedBranch === 'Barchasi' ? 'All Branches' : selectedBranch}
+                {selectedBranch === 'All' ? 'All Branches' : selectedBranch}
               </p>
             </div>
           </div>
@@ -548,7 +548,7 @@ export default function Quality() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}
-                    formatter={(val: any) => [`${val} nafar`, 'Xodimlar soni']}
+                    formatter={(val: any) => [`${val} nafar`, 'Employees soni']}
                   />
                   <Bar dataKey="xodimlar" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -582,7 +582,7 @@ export default function Quality() {
                       fontSize: '12px',
                       fontWeight: 'bold'
                     }}
-                    formatter={(val: any) => [`${val} nafar`, 'Xodimlar soni']}
+                    formatter={(val: any) => [`${val} nafar`, 'Employees soni']}
                   />
                   <Bar dataKey="xodimlar" fill="#f59e0b" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -624,7 +624,7 @@ export default function Quality() {
               onChange={(e) => setSelectedBranch(e.target.value)}
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
             >
-              <option value="Barchasi">All Branches ({employees.length})</option>
+              <option value="All">All Branches ({employees.length})</option>
               {branches.map(b => (
                 <option key={b} value={b}>{b}</option>
               ))}
@@ -637,7 +637,7 @@ export default function Quality() {
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
             >
               {educationList.map(ed => (
-                <option key={ed} value={ed}>{ed === 'Barchasi' ? 'Barcha ma\'lumotlar' : ed}</option>
+                <option key={ed} value={ed}>{ed === 'All' ? 'Barcha ma\'lumotlar' : ed}</option>
               ))}
             </select>
 
@@ -647,7 +647,7 @@ export default function Quality() {
               onChange={(e) => setSelectedAgeBracket(e.target.value)}
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
             >
-              <option value="Barchasi">Barcha yoshlar</option>
+              <option value="All">Barcha yoshlar</option>
               <option value="<25">&lt; 25 yosh</option>
               <option value="25-35">25 - 35 yosh</option>
               <option value="35-45">35 - 45 yosh</option>
@@ -660,10 +660,10 @@ export default function Quality() {
               onChange={(e) => setSelectedExperienceBracket(e.target.value)}
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
             >
-              <option value="Barchasi">Barcha stajlar</option>
-              <option value="<1 yil">&lt; 1 yil staj</option>
-              <option value="1-3 yil">1 - 3 yil staj</option>
-              <option value="3-5 yil">3 - 5 yil staj</option>
+              <option value="All">Barcha stajlar</option>
+              <option value="<1 years">&lt; 1 years staj</option>
+              <option value="1-3 years">1 - 3 years staj</option>
+              <option value="3-5 years">3 - 5 years staj</option>
               <option value="5+ yil">5+ yil staj</option>
             </select>
           </div>
@@ -673,7 +673,7 @@ export default function Quality() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="F.I.Sh, ma'lumoti, tajriba..."
+              placeholder="Full Name, ma'lumoti, tajriba..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-7 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
@@ -697,7 +697,7 @@ export default function Quality() {
                 <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-extrabold border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
                   <tr>
                     <th className="py-3.5 px-3.5 w-12 text-center text-slate-400">№</th>
-                    <th className="py-3.5 px-3.5">Xodim (F.I.Sh)</th>
+                    <th className="py-3.5 px-3.5">Employee (Full Name)</th>
                     <th className="py-3.5 px-3.5">Tabel ID</th>
                     <th className="py-3.5 px-3.5">Branchi</th>
                     <th className="py-3.5 px-3.5">Positioni</th>
@@ -814,7 +814,7 @@ export default function Quality() {
                   <tr>
                     <th className="py-3 px-4 w-12 text-center text-slate-400">№</th>
                     <th className="py-3 px-4">Branch Nomi</th>
-                    <th className="py-3 px-4">Xodimlar Soni</th>
+                    <th className="py-3 px-4">Employees Soni</th>
                     <th className="py-3 px-4">Oliy Ma'lumot Ulushi</th>
                     <th className="py-3 px-4 text-center">O'rtacha Yosh</th>
                     <th className="py-3 px-4 text-center">O'rtacha Staj</th>
@@ -870,7 +870,7 @@ export default function Quality() {
                           }}
                           className="px-3 py-1.5 bg-[#00A651]/10 hover:bg-[#00A651] text-[#00A651] hover:text-white rounded-lg font-bold text-xs transition-colors cursor-pointer"
                         >
-                          Xodimlarni ko'rish &rarr;
+                          Employeesni ko'rish &rarr;
                         </button>
                       </td>
                     </tr>
@@ -900,7 +900,7 @@ export default function Quality() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-lg leading-tight">
-                      Xodim Sifat va Kompetensiya Kartochkasi
+                      Employee Sifat va Kompetensiya Kartochkasi
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                       Ma'lumot, yosh, ish tajribasi va ko'nikmalar tahlili

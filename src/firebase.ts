@@ -266,7 +266,7 @@ export async function ensureCanonicalSuperAdminInFirebase(): Promise<void> {
 }
 
 /**
- * Foydalanuvchi yoki xodim parolini o'zgartirganida, ushbu o'zgarishni
+ * User yoki xodim parolini o'zgartirganida, ushbu o'zgarishni
  * Firestore'dagi 'users' va 'employees' to'plamlariga bir vaqtda to'liq sinxron yozish
  * hamda bir xil loginli dublikat hujjatlarni tozalash.
  */
@@ -672,7 +672,7 @@ export interface AttendanceRecord {
   checkOut: string; // HH:MM
   checkInTimestamp?: string;
   checkOutTimestamp?: string;
-  status: 'Vaqtida kelgan' | 'Kech qolgan' | 'Kelmagan' | 'Ketdi' | 'Dam olish kuni' | 'Bayram kuni' | 'Ta\'tilda' | 'Ish yuzasidan safarda';
+  status: 'On Time kelgan' | 'Kech qolgan' | 'Absent' | 'Check-out' | 'Dam olish kuni' | 'Bayram kuni' | 'Ta\'tilda' | 'Ish yuzasidan safarda';
   durationDays?: number;
   leaveType?: 'vacation' | 'trip' | string;
   startDate?: string;
@@ -782,7 +782,7 @@ export async function deleteFirebaseAttendance(id: string): Promise<boolean> {
   }
 }
 
-// Check-in ("Keldim") handler with duplicate check and automated delay calculation
+// Check-in ("Check-inm") handler with duplicate check and automated delay calculation
 export async function recordCheckIn(params: {
   employeeId: string;
   employeeName: string;
@@ -809,7 +809,7 @@ export async function recordCheckIn(params: {
       if (data.checkIn && data.checkIn !== '--:--') {
         return {
           success: false,
-          message: `Bugun (${todayStr}) soat ${data.checkIn} da allaqachon 'Keldim' deb belgilangansiz!`
+          message: `Bugun (${todayStr}) soat ${data.checkIn} da allaqachon 'Check-inm' deb belgilangansiz!`
         };
       }
     }
@@ -826,7 +826,7 @@ export async function recordCheckIn(params: {
       delayMin = currentTotalMin - scheduledTotalMin;
     }
 
-    const status = delayMin > 0 ? 'Kech qolgan' : 'Vaqtida kelgan';
+    const status = delayMin > 0 ? 'Kech qolgan' : 'On Time kelgan';
     const penaltyAmount = delayMin > 0 ? delayMin * 1000 : 0;
     const dailyBase = params.dailyRate || 250000;
     const net = dailyBase - penaltyAmount;
@@ -844,9 +844,9 @@ export async function recordCheckIn(params: {
       delayReason: delayMin > 0 ? 'Kechikish qayd etildi' : undefined,
       workedMinutes: 0,
       workedTime: '-',
-      penalty: penaltyAmount > 0 ? `- ${penaltyAmount.toLocaleString()} so'm` : '-',
-      bonus: delayMin === 0 ? "15,000 so'm" : '-',
-      netPay: `${net.toLocaleString()} so'm`,
+      penalty: penaltyAmount > 0 ? `- ${penaltyAmount.toLocaleString()} $` : '-',
+      bonus: delayMin === 0 ? "15,000 $" : '-',
+      netPay: `${net.toLocaleString()} $`,
       notes: delayMin > 0 ? `${delayMin} daqiqa kechikkan` : 'O\'z vaqtida keldi',
       branch: params.branch,
       department: params.department,
@@ -888,7 +888,7 @@ export async function recordCheckIn(params: {
   }
 }
 
-// Check-out ("Ketdim") handler
+// Check-out ("Check-outm") handler
 export async function recordCheckOut(params: {
   employeeId: string;
   employeeName: string;
@@ -908,7 +908,7 @@ export async function recordCheckOut(params: {
     if (!existingSnap.exists() || !existingSnap.data()?.checkIn || existingSnap.data()?.checkIn === '--:--') {
       return {
         success: false,
-        message: "Avval 'Keldim' deb belgilashingiz kerak! Hali bugungi kirish vaqti qayd etilmagan."
+        message: "Avval 'Check-inm' deb belgilashingiz kerak! Hali bugungi kirish vaqti qayd etilmagan."
       };
     }
 
@@ -916,7 +916,7 @@ export async function recordCheckOut(params: {
     if (data.checkOut && data.checkOut !== '--:--') {
       return {
         success: false,
-        message: `Bugun allaqachon soat ${data.checkOut} da 'Ketdim' deb belgilangansiz!`
+        message: `Bugun allaqachon soat ${data.checkOut} da 'Check-outm' deb belgilangansiz!`
       };
     }
 
@@ -941,7 +941,7 @@ export async function recordCheckOut(params: {
       workedMinutes: workedMin,
       workedTime: workedTimeStr,
       isEarlyLeave: isEarly,
-      status: 'Ketdi',
+      status: 'Check-out',
       updatedAt: now.toISOString(),
       notes: isEarly 
         ? `${data.notes || ''} (Erta ketdi: reja ${schedEnd})`.trim()

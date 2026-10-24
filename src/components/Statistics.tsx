@@ -48,7 +48,7 @@ const STATUS_COLORS = [
 ];
 
 const TRANSFER_STATUS_COLORS = {
-  "Lavozim o'zgarishi": "#2563eb", // Ko'k
+  "Designation o'zgarishi": "#2563eb", // Ko'k
   "Branch o'zgarishi": "#ea580c"  // Qizg'ish to'q sariq
 };
 
@@ -82,7 +82,7 @@ export default function Statistics() {
   const [vacancies, setVacancies] = useState<any[]>([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedRolee, setSelectedRolee] = useState('Barchasi');
+  const [selectedRolee, setSelectedRolee] = useState('All');
   const [showStatusDistribution, setShowStatusDistribution] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateItem | null>(null);
@@ -101,7 +101,7 @@ export default function Statistics() {
     lastCalculatedAt: 'Hozir'
   });
 
-  // Nomzodlarni real Firebase va API dan yuklash
+  // Candidatesni real Firebase va API dan yuklash
   const loadCandidatesData = async () => {
     try {
       let rawList: any[] = [];
@@ -144,7 +144,7 @@ export default function Statistics() {
 
       // Normalizatsiya
       const normalized: CandidateItem[] = rawList.map((c, i) => {
-        const fullName = c.fullName || c.fio || c.name || `Nomzod #${i + 1}`;
+        const fullName = c.fullName || c.fio || c.name || `Candidate #${i + 1}`;
         const role = c.jobPosition || c.position || c.lavozim || c.role || 'Sotuvchi maslahatchi';
         const rawDate = c.submittedAt || c.date || c.createdAt || new Date().toISOString();
         let safeDate = rawDate;
@@ -188,7 +188,7 @@ export default function Statistics() {
     }
   };
 
-  // O'tkazmalarni yuklash
+  // Transfersni yuklash
   const loadTransfersData = async () => {
     try {
       let list: any[] = [];
@@ -304,7 +304,7 @@ export default function Statistics() {
     };
   }, []);
 
-  // Dinamik lavozimlar ro'yxati (Nomzodlar, Open Positions va Rasmiy lavozimlar birlashmasi)
+  // Dinamik lavozimlar ro'yxati (Candidates, Open Positions va Rasmiy lavozimlar birlashmasi)
   const availableRolees = useMemo(() => {
     const set = new Set<string>();
     candidates.forEach(c => {
@@ -318,11 +318,11 @@ export default function Statistics() {
     return Array.from(set).filter(Boolean).sort();
   }, [candidates, vacancies]);
 
-  // O'tkazmalar statistikasi - REAL MA'LUMOTLAR BILAN
+  // Transfers statistikasi - REAL MA'LUMOTLAR BILAN
   const dynamicTransferPieData = useMemo(() => {
     const posChangeCount = transfers.filter(t => 
       t.type === 'position' || 
-      (t.qaysiLavozimdan && t.qaysiLavozimga && t.qaysiLavozimdan !== t.qaysiLavozimga)
+      (t.qaysiDesignationdan && t.qaysiDesignationga && t.qaysiDesignationdan !== t.qaysiDesignationga)
     ).length;
 
     const branchChangeCount = transfers.filter(t => 
@@ -333,7 +333,7 @@ export default function Statistics() {
     // Agar o'tkazmalar hali bo'lmasa, 0 qiymat qaytaramiz (demo soxta 8 va 12 yo'q)
     const result = [];
     if (posChangeCount > 0) {
-      result.push({ name: "Lavozim o'zgarishi", value: posChangeCount });
+      result.push({ name: "Designation o'zgarishi", value: posChangeCount });
     }
     if (branchChangeCount > 0) {
       result.push({ name: "Branch o'zgarishi", value: branchChangeCount });
@@ -365,7 +365,7 @@ export default function Statistics() {
       const cDate = String(c.date || '').slice(0, 10);
       if (startDate && cDate && cDate < startDate) valid = false;
       if (endDate && cDate && cDate > endDate) valid = false;
-      if (selectedRolee !== 'Barchasi' && c.role !== selectedRolee) {
+      if (selectedRolee !== 'All' && c.role !== selectedRolee) {
         valid = false;
       }
       return valid;
@@ -567,10 +567,10 @@ export default function Statistics() {
                   className="absolute top-[100%] mt-2 left-0 w-full sm:w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-1.5 z-50 max-h-60 overflow-y-auto"
                 >
                   <button
-                    onClick={() => { setSelectedRolee('Barchasi'); setIsRoleeOpen(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedRolee === 'Barchasi' ? 'bg-green-50 text-[#00A651]' : 'text-slate-600 hover:bg-slate-50'}`}
+                    onClick={() => { setSelectedRolee('All'); setIsRoleeOpen(false); }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedRolee === 'All' ? 'bg-green-50 text-[#00A651]' : 'text-slate-600 hover:bg-slate-50'}`}
                   >
-                    Barchasi ({candidates.length})
+                    All ({candidates.length})
                   </button>
                   {availableRolees.map(r => {
                     const count = candidates.filter(c => c.role === r).length;
@@ -633,9 +633,9 @@ export default function Statistics() {
             </div>
           </div>
 
-          {(startDate || endDate || selectedRolee !== 'Barchasi') && (
+          {(startDate || endDate || selectedRolee !== 'All') && (
              <button 
-               onClick={() => { setStartDate(''); setEndDate(''); setSelectedRolee('Barchasi'); }}
+               onClick={() => { setStartDate(''); setEndDate(''); setSelectedRolee('All'); }}
                className="h-[42px] px-4 flex items-center justify-center text-sm font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
              >
                Reset
@@ -682,7 +682,7 @@ export default function Statistics() {
                       />
                       <Bar 
                         dataKey="count" 
-                        name="Nomzodlar soni"
+                        name="Candidates soni"
                         fill="#00A651"
                         radius={[6, 6, 0, 0]}
                         barSize={selectedMonth ? 30 : 40}
@@ -785,7 +785,7 @@ export default function Statistics() {
                         style={{ top: '40%', left: '50%', transform: 'translate(-50%, -50%)', marginTop: '-5px' }}
                       >
                         <button
-                          onClick={() => setSelectedStatus('Barchasi')}
+                          onClick={() => setSelectedStatus('All')}
                           className="w-[80px] h-[80px] rounded-full pointer-events-auto flex flex-col items-center justify-center text-[#00A651] hover:text-[#008d44] transition-colors gap-1 cursor-pointer"
                         >
                           <span className="text-3xl font-black text-slate-800 leading-none">{monthFilteredData.length}</span>
@@ -877,7 +877,7 @@ export default function Statistics() {
                 <span>Rolee Promotions:</span>
               </div>
               <span className="font-black text-blue-900">
-                {transfers.filter(t => t.type === 'position' || (t.qaysiLavozimdan && t.qaysiLavozimga && t.qaysiLavozimdan !== t.qaysiLavozimga)).length} ta
+                {transfers.filter(t => t.type === 'position' || (t.qaysiDesignationdan && t.qaysiDesignationga && t.qaysiDesignationdan !== t.qaysiDesignationga)).length} ta
               </span>
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-xl bg-orange-50/60 border border-orange-100">
@@ -1051,8 +1051,8 @@ export default function Statistics() {
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
                             <th className="py-2.5 px-3 w-10 text-center">№</th>
-                            <th className="py-2.5 px-3">Nomzod (F.I.O)</th>
-                            <th className="py-2.5 px-3">Lavozim</th>
+                            <th className="py-2.5 px-3">Candidate (F.I.O)</th>
+                            <th className="py-2.5 px-3">Designation</th>
                             <th className="py-2.5 px-3">Telefon</th>
                             <th className="py-2.5 px-3">Holati</th>
                             <th className="py-2.5 px-3 text-right">Amal</th>
@@ -1060,7 +1060,7 @@ export default function Statistics() {
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700">
                           {monthFilteredData
-                            .filter((c) => selectedStatus === 'Barchasi' ? true : c.status === selectedStatus)
+                            .filter((c) => selectedStatus === 'All' ? true : c.status === selectedStatus)
                             .map((candidate, cIdx) => (
                               <tr 
                                 key={`${candidate.id || cIdx}-${cIdx}`}
@@ -1106,7 +1106,7 @@ export default function Statistics() {
                                 </td>
                               </tr>
                             ))}
-                          {monthFilteredData.filter((c) => selectedStatus === 'Barchasi' ? true : c.status === selectedStatus).length === 0 && (
+                          {monthFilteredData.filter((c) => selectedStatus === 'All' ? true : c.status === selectedStatus).length === 0 && (
                             <tr>
                               <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
                                 No candidates found in this stage.

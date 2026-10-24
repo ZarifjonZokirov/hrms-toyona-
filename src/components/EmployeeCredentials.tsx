@@ -70,7 +70,7 @@ interface EmployeeCredentialsProps {
 }
 
 export default function EmployeeCredentials({ currentUser, isSuperAdmin = false }: EmployeeCredentialsProps) {
-  // Branchlar va Xodimlar holati
+  // Branchlar va Employees holati
   const [branches, setBranches] = useState<BranchGeozone[]>(DEFAULT_GEOZONES);
   const [employees, setEmployees] = useState<EmployeeWithCredentials[]>([]);
   const [selectedBranchName, setSelectedBranchName] = useState<string>('all');
@@ -89,7 +89,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Tahrirlash / Yangi hisob formasi
+  // Edit / Yangi hisob formasi
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formIsActive, setFormIsActive] = useState(true);
@@ -107,7 +107,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     phone: '+998 ',
     email: '',
     staffId: '',
-    salary: '4,000,000 UZS',
+    salary: '4,000,000 USD',
     username: '',
     password: ''
   });
@@ -153,7 +153,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
       if (active) setBranches(deduplicateGeozones(DEFAULT_GEOZONES));
     });
 
-    // Xodimlarni real-time eshitish va tezkor kesh/API orqali yuklash
+    // Employeesni real-time eshitish va tezkor kesh/API orqali yuklash
     const unsub = subscribeFirebaseEmployees((cloudEmployees) => {
       if (!active) return;
       if (cloudEmployees && cloudEmployees.length > 0) {
@@ -233,7 +233,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  // Xodimni tanlash va uning ma'lumotlarini modalda ochish
+  // Employeeni tanlash va uning ma'lumotlarini modalda ochish
   const handleOpenDetail = (emp: EmployeeWithCredentials) => {
     setSelectedEmployee(emp);
     setFormUsername(emp.username || generateDefaultUsername(emp.fullName));
@@ -243,7 +243,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     setIsDetailModalOpen(true);
   };
 
-  // Xodimning yangi login/parolini saqlash (Firebase)
+  // Employeening yangi login/parolini saqlash (Firebase)
   const handleSaveCredentials = async () => {
     if (!selectedEmployee) return;
     if (!formUsername.trim()) {
@@ -283,7 +283,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
     }
   };
 
-  // Xodim hisobini (login/parol) yoki xodimni to'g'ridan-to'g'ri o'chirish
+  // Employee hisobini (login/parol) yoki xodimni to'g'ridan-to'g'ri o'chirish
   const handleDeleteCredentials = async (emp: EmployeeWithCredentials | null) => {
     if (!emp) return;
 
@@ -315,7 +315,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
         }
         showNotice(`"${emp.fullName}" xodimining login va paroli o'chirildi!`, 'success');
       } else {
-        // Xodimni o'chirish
+        // Employeeni o'chirish
         await deleteFirebaseEmployee(emp.id);
         setEmployees(prev => prev.filter(e => e.id !== emp.id));
         if (selectedEmployee?.id === emp.id) {
@@ -325,11 +325,11 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
         showNotice(`"${emp.fullName}" xodimi muvaffaqiyatli o'chirildi!`, 'success');
       }
     } catch (err: any) {
-      showNotice(err.message || "O'chirishda xatolik yuz berdi", 'error');
+      showNotice(err.message || "Deleteda xatolik yuz berdi", 'error');
     }
   };
 
-  // Xodimga SMS / Telegram uchun tayyor matn nusxalash
+  // Employeega SMS / Telegram uchun tayyor matn nusxalash
   const handleCopyShareText = () => {
     if (!selectedEmployee) return;
     const branchInfo = branches.find(b => b.name === selectedEmployee.branch);
@@ -341,7 +341,7 @@ Siz uchun "Toyona Savdo" Davomat Tizimi hisobi yaratildi:
 👤 Username: ${formUsername}
 🔑 Password: ${formPassword}
 
-Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiring va o'z filaligingiz hududida "Keldim" tugmasini bosing!`;
+Please, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiring va o'z filaligingiz hududida "Check-inm" tugmasini bosing!`;
 
     navigator.clipboard.writeText(text);
     showNotice('SMS / Telegram uchun xabar matni copied to clipboard!', 'success');
@@ -351,7 +351,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
   const handleAddNewEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmployee.fullName.trim()) {
-      showNotice('Xodim F.I.SH kiritilishi shart!', 'error');
+      showNotice('Employee F.I.SH kiritilishi shart!', 'error');
       return;
     }
 
@@ -411,12 +411,12 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
         phone: '+998 ',
         email: '',
         staffId: '',
-        salary: '4,000,000 UZS',
+        salary: '4,000,000 USD',
         username: '',
         password: ''
       });
     } catch (err: any) {
-      showNotice(err.message || 'Xatolik yuz berdi', 'error');
+      showNotice(err.message || 'Error yuz berdi', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -440,7 +440,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
       // Branch bo'yicha
       const matchesBranch = selectedBranchName === 'all' || (emp.branch || '') === selectedBranchName;
       
-      // Qidiruv bo'yicha (Ism va Familya bo'yicha)
+      // Search bo'yicha (Ism va Familya bo'yicha)
       const query = (searchQuery || '').toLowerCase().trim();
       const matchesSearch = !query || 
         (emp.fullName || '').toLowerCase().includes(query) ||
@@ -542,7 +542,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-800">Xodimlar Davomat Hisoblari (Login & Parol)</h1>
+                <h1 className="text-xl font-bold text-slate-800">Employees Davomat Hisoblari (Login & Parol)</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#00A651]/10 text-[#00A651]">
                   Davomat Moduli
                 </span>
@@ -562,23 +562,23 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
               className="px-3.5 py-2 bg-[#00A651] hover:bg-[#008d44] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Yangi Xodim va Hisob</span>
+              <span>Yangi Employee va Hisob</span>
             </button>
 
             <ExportButtons 
               onExportExcel={() => exportToExcel(currentBranchEmployees.map(e => ({
                 "F.I.SH": e.fullName,
                 "Branch": e.branch,
-                "Bo'lim": e.department,
-                "Lavozim": e.position,
+                "Department": e.department,
+                "Designation": e.position,
                 "Tabel raqami": e.staffId,
                 "Telefon": e.phone,
                 "Username": e.username || '-',
                 "Parol": e.password || '-',
                 "Hisob": e.username ? 'Mavjud' : 'Kiritilmagan'
-              })), `Xodimlar_Login_Parol_${selectedBranchName}`)}
+              })), `Employees_Login_Parol_${selectedBranchName}`)}
               onExportPDF={() => exportToPDF(
-                ['F.I.SH', 'Branch', 'Lavozim', 'Username', 'Parol', 'Hisob'],
+                ['F.I.SH', 'Branch', 'Designation', 'Username', 'Parol', 'Hisob'],
                 currentBranchEmployees.map(e => [
                   e.fullName,
                   e.branch,
@@ -587,8 +587,8 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                   e.password || '-',
                   e.username ? 'Mavjud' : 'Kiritilmagan'
                 ]),
-                `Xodimlar_Login_Parol_${selectedBranchName}`,
-                `Xodimlar Login va Parollari - ${selectedBranchName}`
+                `Employees_Login_Parol_${selectedBranchName}`,
+                `Employees Login va Parollari - ${selectedBranchName}`
               )}
             />
           </div>
@@ -640,7 +640,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
             <div>
               <h2 className="text-base font-bold text-slate-800">
                 {selectedBranchName === 'all' 
-                  ? 'Barcha Branchlar Xodimlari' 
+                  ? 'Barcha Branchlar Employeesi' 
                   : `"${selectedBranchName}" xodimlari ro'yxati`}
               </h2>
               <p className="text-xs text-slate-500">
@@ -649,7 +649,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
             </div>
           </div>
 
-          {/* Filterlar va Qidiruv */}
+          {/* Filterlar va Search */}
           <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
             {/* Ism va familya bo'yicha */}
             <div className="relative min-w-[180px] flex-1 sm:flex-none">
@@ -701,7 +701,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
           </div>
         </div>
 
-        {/* Xodimlar ro'yxati (Jadval yoki Kartochkalar) */}
+        {/* Employees ro'yxati (Jadval yoki Kartochkalar) */}
         {isLoading ? (
           <div className="py-12 text-center text-slate-400 text-xs">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A651]" />
@@ -728,8 +728,8 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-3">Xodim (F.I.SH)</th>
-                  <th className="py-3 px-3">Lavozim & Bo'lim</th>
+                  <th className="py-3 px-3">Employee (F.I.SH)</th>
+                  <th className="py-3 px-3">Designation & Department</th>
                   <th className="py-3 px-3">Branch</th>
                   <th className="py-3 px-3">Davomat Logini</th>
                   <th className="py-3 px-3">
@@ -748,7 +748,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                       </button>
                     </div>
                   </th>
-                  <th className="py-3 px-3 text-right">Amallar</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
@@ -761,7 +761,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                       onClick={() => handleOpenDetail(emp)}
                       className="cursor-pointer transition-colors group"
                     >
-                      {/* Xodim F.I.SH va Avatar */}
+                      {/* Employee F.I.SH va Avatar */}
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-2.5">
                           <img
@@ -783,7 +783,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                         </div>
                       </td>
 
-                      {/* Lavozim & Bo'lim */}
+                      {/* Designation & Department */}
                       <td className="py-3 px-3">
                         <span className="font-semibold text-slate-800 block">{emp.position}</span>
                         <span className="text-[11px] text-slate-500">{emp.department}</span>
@@ -833,7 +833,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                         )}
                       </td>
 
-                      {/* Amallar: Ko'rish va O'chirish */}
+                      {/* Actions: Ko'rish va Delete */}
                       <td className="py-3 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -856,10 +856,10 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                               handleDeleteCredentials(emp);
                             }}
                             className="px-2.5 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs"
-                            title={emp.username ? "Login va parolni o'chirish" : "Xodimni o'chirish"}
+                            title={emp.username ? "Login va parolni o'chirish" : "Employeeni o'chirish"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            <span>O'chirish</span>
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>
@@ -914,7 +914,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
               <div className="p-5 space-y-3 max-h-[75vh] overflow-y-auto text-xs">
                 {/* 1. LAVOZIM */}
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Lavozim</span>
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Designation</span>
                   <span className="font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
                     <Briefcase className="w-4 h-4 text-[#00A651]" />
                     {selectedEmployee.position}
@@ -1060,7 +1060,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                         placeholder="Yoki rasm URL havolasini kiriting..."
                       />
                       <span className="text-[10px] text-slate-400 mt-0.5 block">
-                        Narigi AI xodim "Keldim" deb kameraga qaraganda aynan shu rasmni oladi.
+                        Narigi AI xodim "Check-inm" deb kameraga qaraganda aynan shu rasmni oladi.
                       </span>
                     </div>
                   </div>
@@ -1073,7 +1073,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                   type="button"
                   onClick={() => handleDeleteCredentials(selectedEmployee)}
                   className="px-3.5 py-2 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 hover:border-rose-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Xodimning login va parolini o'chirish"
+                  title="Employeening login va parolini o'chirish"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Hisobni o'chirish</span>
@@ -1133,7 +1133,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                     <Plus className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Yangi Xodim va Davomat Hisobi</h3>
+                    <h3 className="text-base font-bold text-white">Yangi Employee va Davomat Hisobi</h3>
                     <p className="text-xs text-white/80">Branchga yangi xodim qo'shish va unga login/parol belgilash</p>
                   </div>
                 </div>
@@ -1147,7 +1147,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
 
               <form onSubmit={handleAddNewEmployee} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Xodim F.I.SH *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Employee F.I.SH *</label>
                   <input
                     type="text"
                     required
@@ -1167,7 +1167,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Lavozim</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Designation</label>
                     <input
                       type="text"
                       value={newEmployee.position}
@@ -1251,7 +1251,7 @@ Iltimos, ish joyingizga kelganda mobil brauzeringiz orqali davomat tizimiga kiri
                     disabled={isSaving}
                     className="px-5 py-2 bg-[#00A651] hover:bg-[#008d44] text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
                   >
-                    {isSaving ? "Saqlanmoqda..." : "Xodim va Hisobni Yaratish"}
+                    {isSaving ? "Saqlanmoqda..." : "Employee va Hisobni Yaratish"}
                   </button>
                 </div>
               </form>

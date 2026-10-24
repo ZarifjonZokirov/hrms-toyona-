@@ -171,7 +171,7 @@ export default function Attendance({
     checkInTime: l.timeFormatted,
     status: l.success ? 'on_time' : 'late',
     delayMinutes: 0,
-    notes: `GPS "Keldim" (${l.distanceMeters}m masofadan)`
+    notes: `GPS "Check-inm" (${l.distanceMeters}m masofadan)`
   }));
 
   // Map real Firestore attendance records
@@ -189,7 +189,7 @@ export default function Attendance({
             r.status === 'Ish yuzasidan safarda' ? 'trip' : 'on_time',
     delayMinutes: r.delayMinutes || 0,
     durationDays: r.durationDays,
-    notes: r.notes || (r.status === 'Kech qolgan' ? `${formatDelayText(r.delayMinutes)} kech qoldi` : 'Vaqtida kelgan')
+    notes: r.notes || (r.status === 'Kech qolgan' ? `${formatDelayText(r.delayMinutes)} late` : 'On Time kelgan')
   }));
 
   const allRecords = [...mappedFirestore, ...dynamicLogs, ...baseSampleRecords];
@@ -450,7 +450,7 @@ export default function Attendance({
                     <td className="py-3.5 px-4 text-center font-mono">
                       {record.delayMinutes > 0 ? (
                         <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 whitespace-nowrap">
-                          +{formatDelayShort(record.delayMinutes)} kech qoldi
+                          +{formatDelayShort(record.delayMinutes)} late
                         </span>
                       ) : (
                         <span className="text-slate-400">-</span>
@@ -460,12 +460,12 @@ export default function Attendance({
                       {record.status === 'on_time' ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#00A651] border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3" />
-                          Vaqtida
+                          On Time
                         </span>
                       ) : record.status === 'late' ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                           <AlertTriangle className="w-3 h-3" />
-                          Kechikkan
+                          Late
                         </span>
                       ) : record.status === 'leave' || record.status === 'Ta\'tilda' ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
@@ -480,7 +480,7 @@ export default function Attendance({
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                           <UserX className="w-3 h-3" />
-                          Kelmagan
+                          Absent
                         </span>
                       )}
                     </td>

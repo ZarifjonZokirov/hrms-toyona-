@@ -63,8 +63,8 @@ export interface TransferItem {
   filial: string;
   viloyat: string;
   kategoriya: string;
-  qaysiLavozimdan: string;
-  qaysiLavozimga: string;
+  qaysiDesignationdan: string;
+  qaysiDesignationga: string;
   status: 'Completed' | 'Pending Review' | 'Hujjatlashtirish' | 'Rejected' | 'Suhbatga qo\'yilgan';
   sana: string;
   boshlanganSana?: string;
@@ -148,8 +148,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     filial: BRANCHES_LIST[0] || "Downtown Branch",
     viloyat: "Farg'ona viloyati",
     kategoriya: "Savdo bo'limi",
-    qaysiLavozimdan: '',
-    qaysiLavozimga: '',
+    qaysiDesignationdan: '',
+    qaysiDesignationga: '',
     status: 'Pending Review',
     sana: '14.9.2026',
     boshlanganSana: '',
@@ -259,8 +259,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       const matchesSearch = !q ||
         (item.fio || '').toLowerCase().includes(q) ||
         (item.filial || '').toLowerCase().includes(q) ||
-        (item.qaysiLavozimdan || '').toLowerCase().includes(q) ||
-        (item.qaysiLavozimga || '').toLowerCase().includes(q);
+        (item.qaysiDesignationdan || '').toLowerCase().includes(q) ||
+        (item.qaysiDesignationga || '').toLowerCase().includes(q);
 
       const matchesCategory = selectedCategory === 'Barcha kategor...' || item.kategoriya === selectedCategory;
       const matchesViloyat = selectedViloyat === 'Barcha viloyatlar...' || item.viloyat === selectedViloyat;
@@ -369,8 +369,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         );
         if (targetEmp) {
           targetEmp.branch = transferItem.filial;
-          if (transferItem.qaysiLavozimga) {
-            targetEmp.position = transferItem.qaysiLavozimga.replace(/\s*\(.*?\)\s*/g, '').trim() || targetEmp.position;
+          if (transferItem.qaysiDesignationga) {
+            targetEmp.position = transferItem.qaysiDesignationga.replace(/\s*\(.*?\)\s*/g, '').trim() || targetEmp.position;
           }
           await saveFirebaseEmployee(targetEmp);
         }
@@ -429,8 +429,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       filial: "Uchko'prik",
       viloyat: "Farg'ona",
       kategoriya: "Omborxona",
-      qaysiLavozimdan: "Ombor sektori mutaxassisi",
-      qaysiLavozimga: "Tovar teruvchi",
+      qaysiDesignationdan: "Ombor sektori mutaxassisi",
+      qaysiDesignationga: "Tovar teruvchi",
       status: 'Pending Review',
       sana: "14.9.2026",
       boshlanganSana: nowStr,
@@ -444,7 +444,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
   const handleOpenEditModal = (item: TransferItem) => {
     if (!effectiveIsSuperAdmin) {
       setToastMessage({
-        text: "Tahrirlash va statusni o'zgartirish faqat Super Admin (Zarifjon Zokirov)ga ruxsat etilgan!",
+        text: "Edit va statusni o'zgartirish faqat Super Admin (Zarifjon Zokirov)ga ruxsat etilgan!",
         type: 'warning'
       });
       return;
@@ -456,7 +456,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
 
   const handleSaveTransfer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fio || !formData.qaysiLavozimdan || !formData.qaysiLavozimga) return;
+    if (!formData.fio || !formData.qaysiDesignationdan || !formData.qaysiDesignationga) return;
 
     const now = new Date();
     const nowStr = `${now.toLocaleDateString('uz-UZ')}, ${now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
@@ -464,7 +464,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     if (editingTransfer) {
       if (!effectiveIsSuperAdmin) {
         setToastMessage({
-          text: "Tahrirlash huquqi faqat Super Adminga berilgan!",
+          text: "Edit huquqi faqat Super Adminga berilgan!",
           type: 'warning'
         });
         setIsAddEditModalOpen(false);
@@ -494,8 +494,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         filial: formData.filial || "Uchko'prik",
         viloyat: formData.viloyat || "Farg'ona",
         kategoriya: formData.kategoriya || "Omborxona",
-        qaysiLavozimdan: formData.qaysiLavozimdan || '',
-        qaysiLavozimga: formData.qaysiLavozimga || '',
+        qaysiDesignationdan: formData.qaysiDesignationdan || '',
+        qaysiDesignationga: formData.qaysiDesignationga || '',
         status: (formData.status as any) || 'Pending Review',
         sana: formData.sana || '14.9.2026',
         boshlanganSana: formData.boshlanganSana || nowStr,
@@ -515,7 +515,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         type: 'create',
         performedBy: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov",
         role: (currentUser as any)?.role || "Super Admin",
-        details: `Xodim: ${newTransfer.fio} (Branch: ${newTransfer.filial}, Lavozim: ${newTransfer.qaysiLavozimdan} -> ${newTransfer.qaysiLavozimga})`
+        details: `Employee: ${newTransfer.fio} (Branch: ${newTransfer.filial}, Designation: ${newTransfer.qaysiDesignationdan} -> ${newTransfer.qaysiDesignationga})`
       });
     }
 
@@ -526,7 +526,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     if (!deletingTransfer) return;
     if (!effectiveIsSuperAdmin) {
       setToastMessage({
-        text: "O'tkazmani o'chirish faqat Super Adminga ruxsat etilgan!",
+        text: "Transferni o'chirish faqat Super Adminga ruxsat etilgan!",
         type: 'warning'
       });
       setDeletingTransfer(null);
@@ -544,29 +544,29 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     try {
       window.dispatchEvent(new Event('hrms_transfers_updated'));
     } catch {}
-    setToastMessage({ text: `O'tkazma ma'lumoti o'chirildi`, type: 'success' });
+    setToastMessage({ text: `Transfer ma'lumoti o'chirildi`, type: 'success' });
     recordSystemHistory({
       action: "Staff transfer record removed",
       module: 'Rotatsiya',
       type: 'delete',
       performedBy: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov",
       role: (currentUser as any)?.role || "Super Admin",
-      details: `O'tkazma ID: ${removedItem.id}, Xodim: ${removedItem.fio} rotatsiya ma'lumoti o'chirildi`
+      details: `Transfer ID: ${removedItem.id}, Employee: ${removedItem.fio} rotatsiya ma'lumoti o'chirildi`
     });
     setDeletingTransfer(null);
   };
 
   const handleExportTransfers = (type: 'excel' | 'pdf') => {
     const fileName = `Toyona_Otkazmalar_${new Date().toISOString().slice(0, 10)}`;
-    const headers = ['№', 'F.I.O', 'Branch', 'Viloyat', 'Kategoriya', 'Oldingi Lavozim', 'Target Position', 'Status', 'Sana'];
+    const headers = ['№', 'F.I.O', 'Branch', 'Viloyat', 'Kategoriya', 'Oldingi Designation', 'Target Position', 'Status', 'Sana'];
     const data = filteredTransfers.map((t, i) => [
       i + 1,
       t.fio,
       t.filial,
       t.viloyat || '-',
       t.kategoriya || '-',
-      t.qaysiLavozimdan,
-      t.qaysiLavozimga,
+      t.qaysiDesignationdan,
+      t.qaysiDesignationga,
       t.status,
       t.sana
     ]);
@@ -578,8 +578,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         'Branch': t.filial,
         'Viloyat': t.viloyat || '-',
         'Kategoriya': t.kategoriya || '-',
-        'Oldingi Lavozim': t.qaysiLavozimdan,
-        'Target Position': t.qaysiLavozimga,
+        'Oldingi Designation': t.qaysiDesignationdan,
+        'Target Position': t.qaysiDesignationga,
         'Status': t.status,
         'Sana': t.sana,
         'Boshlangan sana': t.boshlanganSana || '-',
@@ -589,7 +589,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       }));
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Xodimlar O'tkazmalari (Rotatsiya)");
+      exportToPDF(headers, data, fileName, "Toyona Savdo - Employees Transfersi (Rotatsiya)");
     }
   };
 
@@ -610,14 +610,14 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       <div className="flex items-center justify-between gap-4 flex-wrap">
         {/* Left Side: Title & Search */}
         <div className="flex items-center gap-6 flex-wrap">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">O'tkazmalar</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Transfers</h1>
 
           {/* Search Bar Pill */}
           <div className="relative w-64 sm:w-72">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Qidiruv"
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-2 bg-white border border-slate-200/90 rounded-full text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20 focus:border-[#70B42C] transition-all shadow-2xs"
@@ -716,7 +716,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                   <div className="flex flex-col items-center justify-center gap-3">
                     <Loader2 className="w-8 h-8 text-[#70B42C] animate-spin" />
                     <span className="text-xs font-semibold text-slate-500">
-                      O'tkazmalar yuklanmoqda...
+                      Transfers yuklanmoqda...
                     </span>
                   </div>
                 </td>
@@ -765,12 +765,12 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
 
                     {/* QAYSI LAVOZIMDAN */}
                     <td className="py-3.5 px-3 text-[#64748B] font-normal text-[12px] sm:text-[13px]">
-                      {item.qaysiLavozimdan}
+                      {item.qaysiDesignationdan}
                     </td>
 
                     {/* QAYSI LAVOZIMGA */}
                     <td className="py-3.5 px-3 text-[#64748B] font-normal text-[12px] sm:text-[13px]">
-                      {item.qaysiLavozimga}
+                      {item.qaysiDesignationga}
                     </td>
 
                     {/* STATUS */}
@@ -812,7 +812,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                               ? 'text-slate-600 hover:text-[#00A651]' 
                               : 'text-slate-300 hover:text-slate-400'
                           }`}
-                          title={effectiveIsSuperAdmin ? "Tahrirlash va statusni o'zgartirish (Super Admin)" : "Faqat Super Admin tahrirlashi mumkin"}
+                          title={effectiveIsSuperAdmin ? "Edit va statusni o'zgartirish (Super Admin)" : "Faqat Super Admin tahrirlashi mumkin"}
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -822,7 +822,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                           onClick={() => {
                             if (!effectiveIsSuperAdmin) {
                               setToastMessage({
-                                text: "O'chirish faqat Super Adminga ruxsat etilgan!",
+                                text: "Delete faqat Super Adminga ruxsat etilgan!",
                                 type: 'warning'
                               });
                               return;
@@ -834,7 +834,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                               ? 'text-slate-500 hover:text-rose-600' 
                               : 'text-slate-300 hover:text-slate-400'
                           }`}
-                          title={effectiveIsSuperAdmin ? "O'chirish" : "Faqat Super Admin o'chira oladi"}
+                          title={effectiveIsSuperAdmin ? "Delete" : "Faqat Super Admin o'chira oladi"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -935,7 +935,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
               </div>
 
               <form onSubmit={handleSaveTransfer} className="space-y-3.5 text-xs font-semibold">
-                {/* Turini tanlash: Internal Staff Transfer YOKI Nomzoddan ishga qabul qilish */}
+                {/* Turini tanlash: Internal Staff Transfer YOKI Candidatedan ishga qabul qilish */}
                 {!editingTransfer && (
                   <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
                     <button
@@ -945,8 +945,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                         setFormData({
                           ...formData,
                           fio: '',
-                          qaysiLavozimdan: '',
-                          qaysiLavozimga: '',
+                          qaysiDesignationdan: '',
+                          qaysiDesignationga: '',
                           sababi: 'Ichki rotatsiya va tajriba oshirish'
                         });
                       }}
@@ -966,8 +966,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                         setFormData({
                           ...formData,
                           fio: '',
-                          qaysiLavozimdan: 'Nomzod / Vakansiya',
-                          qaysiLavozimga: '',
+                          qaysiDesignationdan: 'Candidate / Vakansiya',
+                          qaysiDesignationga: '',
                           sababi: "New Hire from Vacancy Pipeline"
                         });
                       }}
@@ -978,12 +978,12 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                       }`}
                     >
                       <Briefcase className="w-3.5 h-3.5 text-blue-600" />
-                      Nomzoddan qabul qilish
+                      Candidatedan qabul qilish
                     </button>
                   </div>
                 )}
 
-                {/* Xodim yoki Nomzod tanlash */}
+                {/* Employee yoki Candidate tanlash */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-slate-700">
@@ -1006,8 +1006,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                           setFormData({
                             ...formData,
                             fio: cand.name || cand.fio || val,
-                            qaysiLavozimdan: "Nomzod / Vakansiya",
-                            qaysiLavozimga: cand.jobPosition || cand.position || formData.qaysiLavozimga || '',
+                            qaysiDesignationdan: "Candidate / Vakansiya",
+                            qaysiDesignationga: cand.jobPosition || cand.position || formData.qaysiDesignationga || '',
                             filial: cand.targetBranch || cand.branch || formData.filial,
                             viloyat: cand.region || formData.viloyat || "Farg'ona",
                             kategoriya: cand.department || formData.kategoriya || "Savdo bo'limi",
@@ -1019,10 +1019,10 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                       }}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20 cursor-pointer"
                     >
-                      <option value="">-- Nomzodni tanlang ({allCandidates.length} ta) --</option>
+                      <option value="">-- Candidateni tanlang ({allCandidates.length} ta) --</option>
                       {allCandidates.map((cand, idx) => (
                         <option key={cand.id || idx} value={cand.name || cand.fio}>
-                          {cand.name || cand.fio} — {cand.jobPosition || cand.position || 'Lavozim kiritilmagan'} ({cand.targetBranch || cand.branch || 'Headquarters'})
+                          {cand.name || cand.fio} — {cand.jobPosition || cand.position || 'Designation kiritilmagan'} ({cand.targetBranch || cand.branch || 'Headquarters'})
                         </option>
                       ))}
                     </select>
@@ -1041,7 +1041,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                             setFormData({
                               ...formData,
                               fio: matched.fullName,
-                              qaysiLavozimdan: matched.position || formData.qaysiLavozimdan,
+                              qaysiDesignationdan: matched.position || formData.qaysiDesignationdan,
                               filial: matched.branch || formData.filial,
                               kategoriya: matched.department || formData.kategoriya
                             });
@@ -1098,9 +1098,9 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                     <input
                       type="text"
                       required
-                      placeholder="Masalan: Sotuvchi yoki Nomzod"
-                      value={formData.qaysiLavozimdan}
-                      onChange={(e) => setFormData({ ...formData, qaysiLavozimdan: e.target.value })}
+                      placeholder="Masalan: Sotuvchi yoki Candidate"
+                      value={formData.qaysiDesignationdan}
+                      onChange={(e) => setFormData({ ...formData, qaysiDesignationdan: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20"
                     />
                   </div>
@@ -1112,8 +1112,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                       required
                       list="positions-list"
                       placeholder="Yangi lavozimni tanlang yoki yozing"
-                      value={formData.qaysiLavozimga}
-                      onChange={(e) => setFormData({ ...formData, qaysiLavozimga: e.target.value })}
+                      value={formData.qaysiDesignationga}
+                      onChange={(e) => setFormData({ ...formData, qaysiDesignationga: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20"
                     />
                     <datalist id="positions-list">
@@ -1195,7 +1195,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm sm:text-base">
-                      O'tkazma to'liq ma'lumotlari
+                      Transfer to'liq ma'lumotlari
                     </h3>
                     <div className="text-xs text-slate-500">
                       ID: #{selectedDetailTransfer.num || 1} • {selectedDetailTransfer.filial}
@@ -1231,12 +1231,12 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                   <div className="flex items-center gap-2 text-xs font-semibold">
                     <div className="flex-1 bg-white p-2.5 rounded-lg border border-blue-200/60 text-slate-700">
                       <span className="text-[10px] text-slate-400 block font-normal">Avvalgi lavozim</span>
-                      <span className="font-bold text-slate-800">{selectedDetailTransfer.qaysiLavozimdan}</span>
+                      <span className="font-bold text-slate-800">{selectedDetailTransfer.qaysiDesignationdan}</span>
                     </div>
                     <ArrowRight className="w-4 h-4 text-blue-500 shrink-0" />
                     <div className="flex-1 bg-white p-2.5 rounded-lg border border-blue-200/60 text-slate-700">
                       <span className="text-[10px] text-slate-400 block font-normal">Yangi lavozim</span>
-                      <span className="font-bold text-emerald-700">{selectedDetailTransfer.qaysiLavozimga}</span>
+                      <span className="font-bold text-emerald-700">{selectedDetailTransfer.qaysiDesignationga}</span>
                     </div>
                   </div>
                 </div>
@@ -1289,7 +1289,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                 {/* Additional Info: Sababi & Tasdiqlovchi */}
                 <div className="space-y-2 text-xs">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[11px] font-semibold text-slate-400 block mb-1">O'tkazma sababi</span>
+                    <span className="text-[11px] font-semibold text-slate-400 block mb-1">Transfer sababi</span>
                     <p className="text-slate-700 font-medium leading-relaxed">
                       {selectedDetailTransfer.sababi || "Internal department transfer request"}
                     </p>

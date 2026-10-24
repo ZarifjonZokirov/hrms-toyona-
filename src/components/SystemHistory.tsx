@@ -12,7 +12,7 @@ export interface HistoryLogItem {
   id: string;
   timestamp: string; // YYYY-MM-DD HH:mm:ss
   action: string;
-  module: 'Xodimlar' | 'Candidates' | 'Davomat' | 'Rotatsiya' | 'Vakansiyalar' | 'Userlar' | 'Branchlar' | 'Xavfsizlik';
+  module: 'Employees' | 'Candidates' | 'Davomat' | 'Rotatsiya' | 'Vakansiyalar' | 'Userlar' | 'Branchlar' | 'Xavfsizlik';
   type: 'create' | 'update' | 'delete' | 'status_change' | 'login' | 'export';
   performedBy: string;
   role: string;
@@ -130,7 +130,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
   // New log modal
   const [showAddLogModal, setShowAddLogModal] = useState(false);
   const [newAction, setNewAction] = useState('');
-  const [newModulee, setNewModulee] = useState<HistoryLogItem['module']>('Xodimlar');
+  const [newModulee, setNewModulee] = useState<HistoryLogItem['module']>('Employees');
   const [newType, setNewType] = useState<HistoryLogItem['type']>('update');
   const [newDetails, setNewDetails] = useState('');
 
@@ -417,7 +417,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
 
   const getModuleeBadge = (mod: string) => {
     switch (mod) {
-      case 'Xodimlar': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+      case 'Employees': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       case 'Candidates': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
       case 'Davomat': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'Rotatsiya': return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
@@ -644,7 +644,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
             <div className="bg-slate-800/50 border border-slate-700/70 rounded-2xl p-12 text-center text-slate-400">
               <Globe className="w-12 h-12 mx-auto text-slate-600 mb-3 opacity-60" />
               <p className="text-base font-bold text-slate-300">Hech qanday IP manzili topilmadi</p>
-              <p className="text-xs text-slate-500 mt-1">Qidiruv parametrlarini tozalab ko'ring</p>
+              <p className="text-xs text-slate-500 mt-1">Search parametrlarini tozalab ko'ring</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -729,7 +729,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                       </div>
 
                       <div className="flex items-center gap-1 text-cyan-400 text-xs font-bold group-hover:translate-x-1 transition-transform shrink-0">
-                        <span>Amallar</span>
+                        <span>Actions</span>
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
@@ -753,7 +753,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white flex items-center gap-2">
-                    <span>Kadrlar Bo'limi (HR) Faoliyat Tahlili</span>
+                    <span>Kadrlar Departmenti (HR) Faoliyat Tahlili</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                       stats.isHrActiveToday ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                     }`}>
@@ -909,8 +909,8 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                   className="bg-transparent outline-none cursor-pointer font-bold text-slate-200"
                 >
                   <option value="all" className="bg-slate-800">All Modulees</option>
-                  <option value="Xodimlar" className="bg-slate-800">Xodimlar</option>
-                  <option value="Nomzodlar" className="bg-slate-800">Nomzodlar</option>
+                  <option value="Employees" className="bg-slate-800">Employees</option>
+                  <option value="Candidates" className="bg-slate-800">Candidates</option>
                   <option value="Davomat" className="bg-slate-800">Davomat</option>
                   <option value="Rotatsiya" className="bg-slate-800">Rotatsiya</option>
                   <option value="Vakansiyalar" className="bg-slate-800">Vakansiyalar</option>
@@ -1235,8 +1235,8 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                     onChange={(e) => setNewModulee(e.target.value as any)}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500"
                   >
-                    <option value="Xodimlar">Xodimlar</option>
-                    <option value="Nomzodlar">Nomzodlar</option>
+                    <option value="Employees">Employees</option>
+                    <option value="Candidates">Candidates</option>
                     <option value="Davomat">Davomat</option>
                     <option value="Rotatsiya">Rotatsiya</option>
                     <option value="Vakansiyalar">Vakansiyalar</option>
@@ -1280,13 +1280,13 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                   onClick={() => setShowAddLogModal(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-700/50 hover:bg-slate-700 cursor-pointer"
                 >
-                  Bekor qilish
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 cursor-pointer shadow-lg"
                 >
-                  Saqlash
+                  Save
                 </button>
               </div>
             </form>

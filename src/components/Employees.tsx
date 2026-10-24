@@ -150,11 +150,11 @@ export default function Employees() {
   const [dismissSearchQuery, setDismissSearchQuery] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDept, setSelectedDept] = useState<string>('Barchasi');
-  const [selectedBranch, setSelectedBranch] = useState<string>('Barchasi');
-  const [selectedPosition, setSelectedPosition] = useState<string>('Barchasi');
-  const [selectedStatus, setSelectedStatus] = useState<string>('Barchasi');
-  const [selectedGender, setSelectedGender] = useState<string>('Barchasi');
+  const [selectedDept, setSelectedDept] = useState<string>('All');
+  const [selectedBranch, setSelectedBranch] = useState<string>('All');
+  const [selectedPosition, setSelectedPosition] = useState<string>('All');
+  const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedGender, setSelectedGender] = useState<string>('All');
   const [sortField, setSortField] = useState<'staffId' | 'fullName' | 'position' | 'department' | 'branch' | 'phone' | 'hireDate' | 'salary' | 'status'>('staffId');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -325,25 +325,25 @@ export default function Employees() {
     return () => { active = false; };
   }, []);
 
-  const departmentsList = useMemo(() => ['Barchasi', ...Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort()], [employees]);
-  const branchesList = useMemo(() => ['Barchasi', ...Array.from(new Set([...employees.map(e => e.branch).filter(Boolean), ...availableBranches])).sort()], [employees, availableBranches]);
-  const positionsList = useMemo(() => ['Barchasi', ...Array.from(new Set(employees.map(e => e.position).filter(Boolean))).sort()], [employees]);
+  const departmentsList = useMemo(() => ['All', ...Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort()], [employees]);
+  const branchesList = useMemo(() => ['All', ...Array.from(new Set([...employees.map(e => e.branch).filter(Boolean), ...availableBranches])).sort()], [employees, availableBranches]);
+  const positionsList = useMemo(() => ['All', ...Array.from(new Set(employees.map(e => e.position).filter(Boolean))).sort()], [employees]);
 
   const isAnyFilterActive = 
     searchQuery.trim() !== '' ||
-    selectedDept !== 'Barchasi' ||
-    selectedBranch !== 'Barchasi' ||
-    selectedPosition !== 'Barchasi' ||
-    selectedStatus !== 'Barchasi' ||
-    selectedGender !== 'Barchasi';
+    selectedDept !== 'All' ||
+    selectedBranch !== 'All' ||
+    selectedPosition !== 'All' ||
+    selectedStatus !== 'All' ||
+    selectedGender !== 'All';
 
   const resetAllFilters = () => {
     setSearchQuery('');
-    setSelectedDept('Barchasi');
-    setSelectedBranch('Barchasi');
-    setSelectedPosition('Barchasi');
-    setSelectedStatus('Barchasi');
-    setSelectedGender('Barchasi');
+    setSelectedDept('All');
+    setSelectedBranch('All');
+    setSelectedPosition('All');
+    setSelectedStatus('All');
+    setSelectedGender('All');
   };
 
   // Comprehensive Filtering Logic
@@ -360,11 +360,11 @@ export default function Employees() {
         (emp.department && emp.department.toLowerCase().includes(q)) ||
         (emp.branch && emp.branch.toLowerCase().includes(q));
 
-      const matchesDept = selectedDept === 'Barchasi' || emp.department === selectedDept;
-      const matchesBranch = selectedBranch === 'Barchasi' || emp.branch === selectedBranch;
-      const matchesPosition = selectedPosition === 'Barchasi' || emp.position === selectedPosition;
-      const matchesStatus = selectedStatus === 'Barchasi' || emp.status === selectedStatus;
-      const matchesGender = selectedGender === 'Barchasi' || emp.gender === selectedGender;
+      const matchesDept = selectedDept === 'All' || emp.department === selectedDept;
+      const matchesBranch = selectedBranch === 'All' || emp.branch === selectedBranch;
+      const matchesPosition = selectedPosition === 'All' || emp.position === selectedPosition;
+      const matchesStatus = selectedStatus === 'All' || emp.status === selectedStatus;
+      const matchesGender = selectedGender === 'All' || emp.gender === selectedGender;
 
       return matchesSearch && matchesDept && matchesBranch && matchesPosition && matchesStatus && matchesGender;
     });
@@ -441,14 +441,14 @@ export default function Employees() {
         }
         await saveFirebaseEmployee(updated);
         recordSystemHistory({
-          action: "Xodim ma'lumotlari tahrirlandi",
-          module: 'Xodimlar',
+          action: "Employee ma'lumotlari tahrirlandi",
+          module: 'Employees',
           type: 'update',
           performedBy: 'Zarifjon Zokirov',
           role: 'Super Admin',
-          details: `Xodim ma'lumotlari tahrirlandi: ${formData.fullName} (${formData.position}, ${formData.branch})`
+          details: `Employee ma'lumotlari tahrirlandi: ${formData.fullName} (${formData.position}, ${formData.branch})`
         });
-        setToastMessage(`Xodim "${formData.fullName}" ma'lumotlari yangilandi!`);
+        setToastMessage(`Employee "${formData.fullName}" ma'lumotlari yangilandi!`);
         setEditingEmployee(null);
       } else {
         // Add New - Sequential Staff ID (e.g. TS-0016)
@@ -470,7 +470,7 @@ export default function Employees() {
           status: formData.status as any || 'active',
           avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 100000)}?w=150&auto=format&fit=crop&q=80`,
           staffId: nextStaffId,
-          salary: formData.salary || '7,000,000 UZS',
+          salary: formData.salary || '7,000,000 USD',
           address: formData.address || 'Toshkent sh.',
           birthDate: formData.birthDate || '1995-01-01',
           gender: formData.gender as any || 'Male',
@@ -494,18 +494,18 @@ export default function Employees() {
           setDismissedEmployees(prev => prev.filter(d => d.id !== rehiringDismissedId));
           setRehiringDismissedId(null);
           recordSystemHistory({
-            action: "Xodim qayta ishga olindi",
-            module: 'Xodimlar',
+            action: "Employee qayta ishga olindi",
+            module: 'Employees',
             type: 'create',
             performedBy: 'Zarifjon Zokirov',
             role: 'Super Admin',
-            details: `Xodim "${newEmp.fullName}" qayta ishga olindi: ${newEmp.position} (${newEmp.branch})`
+            details: `Employee "${newEmp.fullName}" qayta ishga olindi: ${newEmp.position} (${newEmp.branch})`
           });
-          setToastMessage(`Xodim "${newEmp.fullName}" muvaffaqiyatli qayta ishga olindi!`);
+          setToastMessage(`Employee "${newEmp.fullName}" muvaffaqiyatli qayta ishga olindi!`);
         } else {
           recordSystemHistory({
             action: "Yangi xodim qo'shildi",
-            module: 'Xodimlar',
+            module: 'Employees',
             type: 'create',
             performedBy: 'Zarifjon Zokirov',
             role: 'Super Admin',
@@ -564,17 +564,17 @@ export default function Employees() {
       setDismissedEmployees(prev => [dismissedObj, ...prev]);
 
       recordSystemHistory({
-        action: "Xodim ishdan bo'shatildi",
-        module: 'Xodimlar',
+        action: "Employee ishdan bo'shatildi",
+        module: 'Employees',
         type: 'delete',
         performedBy: 'Zarifjon Zokirov',
         role: 'Super Admin',
-        details: `Xodim "${dismissingEmployee.fullName}" ishdan bo'shatildi. Toifa: ${dismissCategory}. Sabab: ${dismissReason}`
+        details: `Employee "${dismissingEmployee.fullName}" ishdan bo'shatildi. Toifa: ${dismissCategory}. Sabab: ${dismissReason}`
       });
 
       setToastMessage(`"${dismissingEmployee.fullName}" ishdan bo'shatildi va arxivlandi!`);
     } else {
-      setToastMessage("Xatolik yuz berdi. Qayta urinib ko'ring.");
+      setToastMessage("Error yuz berdi. Qayta urinib ko'ring.");
     }
 
     setIsDismissModalOpen(false);
@@ -589,15 +589,15 @@ export default function Employees() {
     await deleteFirebaseEmployee(id);
     if (target) {
       recordSystemHistory({
-        action: "Xodim tizimdan o'chirildi",
-        module: 'Xodimlar',
+        action: "Employee tizimdan o'chirildi",
+        module: 'Employees',
         type: 'delete',
         performedBy: 'Zarifjon Zokirov',
         role: 'Super Admin',
-        details: `Xodim "${target.fullName}" (${target.position}, ${target.branch}) bazadan o'chirildi`
+        details: `Employee "${target.fullName}" (${target.position}, ${target.branch}) bazadan o'chirildi`
       });
     }
-    setToastMessage(`Xodim "${target?.fullName || ''}" tizimdan o'chirildi`);
+    setToastMessage(`Employee "${target?.fullName || ''}" tizimdan o'chirildi`);
   };
 
   const handleDeleteDismissed = async (id: string) => {
@@ -608,14 +608,14 @@ export default function Employees() {
     if (target) {
       recordSystemHistory({
         action: "Terminated xodim arxivi o'chirildi",
-        module: 'Xodimlar',
+        module: 'Employees',
         type: 'delete',
         performedBy: 'Zarifjon Zokirov',
         role: 'Super Admin',
         details: `Ishdan bo'shatilgan xodim "${target.fullName}" arxivi butunlay o'chirildi`
       });
     }
-    setToastMessage("Xodim arxivi butunlay o'chirildi!");
+    setToastMessage("Employee arxivi butunlay o'chirildi!");
   };
 
   const handleRehireEmployee = (dismissed: DismissedEmployee) => {
@@ -672,8 +672,8 @@ export default function Employees() {
       filial: targetBranch,
       viloyat: "Farg'ona",
       kategoriya: transferringEmployee.department,
-      qaysiLavozimdan: `${transferringEmployee.position} (${oldBranch})`,
-      qaysiLavozimga: `${newPos} (${targetBranch})`,
+      qaysiDesignationdan: `${transferringEmployee.position} (${oldBranch})`,
+      qaysiDesignationga: `${newPos} (${targetBranch})`,
       status: 'Yakunlangan' as const,
       sana: `${now.getDate()}.${now.getMonth() + 1}.${now.getFullYear()}`,
       boshlanganSana: nowStr,
@@ -691,12 +691,12 @@ export default function Employees() {
     } catch (err) {}
 
     recordSystemHistory({
-      action: "Xodim boshqa filialga o'tkazildi",
+      action: "Employee boshqa filialga o'tkazildi",
       module: 'Rotatsiya',
       type: 'update',
       performedBy: 'Zarifjon Zokirov',
       role: 'Super Admin',
-      details: `Xodim "${transferringEmployee.fullName}" "${oldBranch}" branchdan "${targetBranch}" branchga muvaffaqiyatli o'tkazildi`
+      details: `Employee "${transferringEmployee.fullName}" "${oldBranch}" branchdan "${targetBranch}" branchga muvaffaqiyatli o'tkazildi`
     });
 
     setToastMessage(`"${transferringEmployee.fullName}" muvaffaqiyatli ${targetBranch} branchga o'tkazildi!`);
@@ -747,7 +747,7 @@ export default function Employees() {
       e.status === 'active' ? 'Doimiy ishda' : e.status === 'leave' ? 'Ta\'tilda' : e.status === 'probation' ? 'Sinovda' : e.status === 'intern' ? 'Stajyor' : 'Qora ro\'yxatda',
       e.hireDate
     ]);
-    const fileName = `Toyona_Xodimlar_Jadvali_${new Date().toISOString().split('T')[0]}`;
+    const fileName = `Toyona_Employees_Jadvali_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       const excelData = filteredEmployees.map((e, idx) => ({
         '№': idx + 1,
@@ -765,7 +765,7 @@ export default function Employees() {
       }));
       exportToExcel(excelData, fileName);
     } else {
-      exportToPDF(headers, data, fileName, "Toyona Savdo - Xodimlar Jadvali (HRMS)");
+      exportToPDF(headers, data, fileName, "Toyona Savdo - Employees Jadvali (HRMS)");
     }
   };
 
@@ -783,7 +783,7 @@ export default function Employees() {
       e.dismissCategory,
       e.dismissReason
     ]);
-    const fileName = `Toyona_Terminated_Xodimlar_${new Date().toISOString().split('T')[0]}`;
+    const fileName = `Toyona_Terminated_Employees_${new Date().toISOString().split('T')[0]}`;
     if (format === 'excel') {
       const excelData = filteredDismissed.map((e, idx) => ({
         '№': idx + 1,
@@ -857,7 +857,7 @@ export default function Employees() {
 
       {/* Module Header */}
       <ModuleHeaderLogo 
-        title="Xodimlar Ro'yxati va Tashkiliy Tuzilma"
+        title="Employees Ro'yxati va Tashkiliy Tuzilma"
         icon={UserCheck} 
       />
 
@@ -872,7 +872,7 @@ export default function Employees() {
           }`}
         >
           <UserCheck className="w-4 h-4" />
-          <span>Xodimlar Ro'yxati</span>
+          <span>Employees Ro'yxati</span>
           <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-extrabold">
             {employees.length}
           </span>
@@ -901,15 +901,15 @@ export default function Employees() {
         {/* Quick Status Filter Pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
-            onClick={() => setSelectedStatus('Barchasi')}
+            onClick={() => setSelectedStatus('All')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedStatus === 'Barchasi'
+              selectedStatus === 'All'
                 ? 'bg-[#00A651] text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            <span>Barchasi</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${selectedStatus === 'Barchasi' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'}`}>
+            <span>All</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${selectedStatus === 'All' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'}`}>
               {employees.length}
             </span>
           </button>
@@ -985,7 +985,7 @@ export default function Employees() {
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-[#00A651]" />
             <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-              Xodimlar Filtrlash Paneli
+              Employees Filtrlash Paneli
             </span>
           </div>
           {isAnyFilterActive && (
@@ -1028,8 +1028,8 @@ export default function Employees() {
               onChange={(e) => setSelectedBranch(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer appearance-none truncate pr-7"
             >
-              <option value="Barchasi">All Branches</option>
-              {branchesList.filter(b => b !== 'Barchasi').map(br => (
+              <option value="All">All Branches</option>
+              {branchesList.filter(b => b !== 'All').map(br => (
                 <option key={br} value={br}>{br}</option>
               ))}
             </select>
@@ -1043,8 +1043,8 @@ export default function Employees() {
               onChange={(e) => setSelectedPosition(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer appearance-none truncate pr-7"
             >
-              <option value="Barchasi">All Positions</option>
-              {positionsList.filter(p => p !== 'Barchasi').map(pos => (
+              <option value="All">All Positions</option>
+              {positionsList.filter(p => p !== 'All').map(pos => (
                 <option key={pos} value={pos}>{pos}</option>
               ))}
             </select>
@@ -1058,7 +1058,7 @@ export default function Employees() {
               onChange={(e) => setSelectedGender(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer appearance-none truncate pr-7"
             >
-              <option value="Barchasi">Barcha jinslar</option>
+              <option value="All">Barcha jinslar</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
@@ -1083,22 +1083,22 @@ export default function Employees() {
           {/* Active Filter Chips */}
           {isAnyFilterActive && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              {selectedBranch !== 'Barchasi' && (
+              {selectedBranch !== 'All' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-semibold">
                   Branch: {selectedBranch}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedBranch('Barchasi')} />
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedBranch('All')} />
                 </span>
               )}
-              {selectedPosition !== 'Barchasi' && (
+              {selectedPosition !== 'All' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-[#00A651] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold">
                   Job Designation: {selectedPosition}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedPosition('Barchasi')} />
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedPosition('All')} />
                 </span>
               )}
-              {selectedGender !== 'Barchasi' && (
+              {selectedGender !== 'All' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-semibold">
                   Gender: {selectedGender}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedGender('Barchasi')} />
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedGender('All')} />
                 </span>
               )}
             </div>
@@ -1114,7 +1114,7 @@ export default function Employees() {
           </div>
           <h3 className="font-bold text-slate-700 dark:text-slate-200 text-base">Hech qanday xodim topilmadi</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
-            Qidiruv so'rovi yoki filtrlash shartlariga mos keladigan xodimlar ro'yxatda mavjud emas.
+            Search so'rovi yoki filtrlash shartlariga mos keladigan xodimlar ro'yxatda mavjud emas.
           </p>
           <button
             onClick={resetAllFilters}
@@ -1136,7 +1136,7 @@ export default function Employees() {
                       onClick={() => handleSort('fullName')}
                       className="flex items-center gap-1 font-extrabold hover:text-[#00A651] transition-colors cursor-pointer text-slate-700 dark:text-slate-200"
                     >
-                      <span>Xodim (F.I.O)</span>
+                      <span>Employee (F.I.O)</span>
                       {sortField === 'fullName' ? (
                         sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-[#00A651]" /> : <ArrowDown className="w-3 h-3 text-[#00A651]" />
                       ) : (
@@ -1245,7 +1245,7 @@ export default function Employees() {
                     </button>
                   </th>
 
-                  <th className="py-2 px-2 text-right w-24">Amallar</th>
+                  <th className="py-2 px-2 text-right w-24">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -1255,7 +1255,7 @@ export default function Employees() {
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Loader2 className="w-8 h-8 text-[#00A651] animate-spin" />
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                          Xodimlar ro'yxati Firebase bazasidan yuklanmoqda...
+                          Employees ro'yxati Firebase bazasidan yuklanmoqda...
                         </span>
                       </div>
                     </td>
@@ -1265,8 +1265,8 @@ export default function Employees() {
                     <td colSpan={9} className="py-14 text-center">
                       <div className="flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
                         <UserX className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-                        <p className="font-semibold text-slate-600 dark:text-slate-400 text-xs">Xodimlar topilmadi</p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500">Qidiruv yoki filtr parametrlarini o'zgartirib ko'ring</p>
+                        <p className="font-semibold text-slate-600 dark:text-slate-400 text-xs">Employees topilmadi</p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500">Search yoki filtr parametrlarini o'zgartirib ko'ring</p>
                       </div>
                     </td>
                   </tr>
@@ -1281,7 +1281,7 @@ export default function Employees() {
                       #{index + 1}
                     </td>
 
-                    {/* Xodim (Avatar + Ism + Email) */}
+                    {/* Employee (Avatar + Ism + Email) */}
                     <td className="py-2 px-2">
                       <div className="flex items-center gap-2">
                         <div className="relative shrink-0">
@@ -1368,7 +1368,7 @@ export default function Employees() {
                       {getStatusBadge(emp.status)}
                     </td>
 
-                    {/* Amallar */}
+                    {/* Actions */}
                     <td className="py-2 px-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-0.5">
                         <button
@@ -1421,7 +1421,7 @@ export default function Employees() {
                 <>
                   <span>•</span>
                   <span className="text-slate-800 dark:text-slate-200 font-bold">
-                    Monthly Salary fondi: <strong className="text-[#00A651]">{totalFilteredPayroll.toLocaleString()} UZS</strong>
+                    Monthly Salary fondi: <strong className="text-[#00A651]">{totalFilteredPayroll.toLocaleString()} USD</strong>
                   </span>
                 </>
               )}
@@ -1496,7 +1496,7 @@ export default function Employees() {
                   <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-extrabold border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10 select-none">
                     <tr>
                       <th className="py-2.5 px-2 w-8 text-center text-slate-400 dark:text-slate-500">№</th>
-                      <th className="py-2.5 px-2">Xodim (F.I.O)</th>
+                      <th className="py-2.5 px-2">Employee (F.I.O)</th>
                       <th className="py-2.5 px-2 w-16">ID</th>
                       <th className="py-2.5 px-2 w-28">Branch</th>
                       <th className="py-2.5 px-2 w-28">Job Designation</th>
@@ -1504,7 +1504,7 @@ export default function Employees() {
                       <th className="py-2.5 px-2 w-20">Ketgan</th>
                       <th className="py-2.5 px-2 w-24">Toifasi</th>
                       <th className="py-2.5 px-2 min-w-[120px] max-w-[180px]">Sababi</th>
-                      <th className="py-2.5 px-2 text-right w-36">Amallar</th>
+                      <th className="py-2.5 px-2 text-right w-36">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -1618,7 +1618,7 @@ export default function Employees() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">
-                      {editingEmployee ? "Xodim Ma'lumotlarini Edit" : "Add New Employee"}
+                      {editingEmployee ? "Employee Ma'lumotlarini Edit" : "Add New Employee"}
                     </h3>
                   </div>
                 </div>
@@ -1631,13 +1631,13 @@ export default function Employees() {
               </div>
 
               <form onSubmit={handleSaveEmployee} className="space-y-3.5 text-xs font-bold">
-                {/* Nomzodlardan tanlash (faqat yangi xodim qo'shilayotganda) */}
+                {/* Candidatesdan tanlash (faqat yangi xodim qo'shilayotganda) */}
                 {!editingEmployee && (
                   <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 rounded-2xl space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-extrabold text-[#00A651] dark:text-emerald-400 flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Nomzodlardan to'ldirish (ixtiyoriy)</span>
+                        <span>Candidatesdan to'ldirish (ixtiyoriy)</span>
                       </label>
                       {selectedCandidateId && (
                         <button
@@ -1657,10 +1657,10 @@ export default function Employees() {
                       onChange={(e) => handleSelectCandidate(e.target.value)}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 cursor-pointer"
                     >
-                      <option value="">-- Nomzodni tanlang (yoki qo'lda kiriting) --</option>
+                      <option value="">-- Candidateni tanlang (yoki qo'lda kiriting) --</option>
                       {candidatesList.map(cand => (
                         <option key={cand.id} value={cand.id}>
-                          {cand.fullName} — {cand.jobPosition || cand.position || 'Nomzod'} ({cand.targetBranch || cand.region || 'Branch'})
+                          {cand.fullName} — {cand.jobPosition || cand.position || 'Candidate'} ({cand.targetBranch || cand.region || 'Branch'})
                         </option>
                       ))}
                     </select>
@@ -1744,7 +1744,7 @@ export default function Employees() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Xodimlari Employment Status</label>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Employeesi Employment Status</label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -1764,7 +1764,7 @@ export default function Employees() {
                     <label className="block text-slate-700 dark:text-slate-300 mb-1">Belgilangan Maoshi</label>
                     <input
                       type="text"
-                      placeholder="Masalan: 8,000,000 UZS"
+                      placeholder="Masalan: 8,000,000 USD"
                       value={formData.salary}
                       onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
@@ -1873,7 +1873,7 @@ export default function Employees() {
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="Masalan: Korzinka supermarketida 2 yil katta kassir, Texnomartda 1 yil maslahatchi..."
+                      placeholder="Masalan: Korzinka supermarketida 2 years katta kassir, Texnomartda 1 years maslahatchi..."
                       value={formData.pastExperience || ''}
                       onChange={(e) => setFormData({ ...formData, pastExperience: e.target.value })}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 resize-none"
@@ -1938,7 +1938,7 @@ export default function Employees() {
                         <span>Saqlanmoqda...</span>
                       </>
                     ) : (
-                      editingEmployee ? "O'zgarishlarni Save Changes" : "Xodimni Save Changes"
+                      editingEmployee ? "O'zgarishlarni Save Changes" : "Employeeni Save Changes"
                     )}
                   </button>
                 </div>
@@ -2009,7 +2009,7 @@ export default function Employees() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">Branchga O'tkazish (Rotatsiya)</h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Xodimni boshqa filial yoki yangi lavozimga biriktirish</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Employeeni boshqa filial yoki yangi lavozimga biriktirish</p>
                   </div>
                 </div>
                 <button 
@@ -2090,7 +2090,7 @@ export default function Employees() {
                     className="px-5 py-2.5 bg-[#00A651] hover:bg-[#008d44] text-white rounded-xl text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <ArrowRightLeft className="w-4 h-4" />
-                    <span>O'tkazishni Tasdiqlash</span>
+                    <span>O'tkazishni Approve</span>
                   </button>
                 </div>
               </form>
@@ -2118,7 +2118,7 @@ export default function Employees() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base">Ishdan Bo'shatish (Arxivlash)</h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Xodim bilan tuzilgan mehnat shartnomasini bekor qilish</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Employee bilan tuzilgan mehnat shartnomasini bekor qilish</p>
                   </div>
                 </div>
                 <button 
@@ -2147,7 +2147,7 @@ export default function Employees() {
 
               <form onSubmit={handleExecuteDismiss} className="space-y-3.5 text-xs font-bold">
                 <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-extrabold">Ishdan Bo'shash Vaqtidagi Toifasi *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-extrabold">Ishdan Bo'shash On Timegi Toifasi *</label>
                   <select
                     required
                     value={dismissCategory}
@@ -2160,7 +2160,7 @@ export default function Employees() {
                     <option value="On Leave">On Leave</option>
                     <option value="Qora ro'yxatda">Qora ro'yxatda</option>
                   </select>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">Xodimning so'nggi toifasi yoki qora ro'yxatga kiritish asosi</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">Employeening so'nggi toifasi yoki qora ro'yxatga kiritish asosi</span>
                 </div>
 
                 <div>
@@ -2191,7 +2191,7 @@ export default function Employees() {
                     className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <UserX className="w-4 h-4" />
-                    <span>Tasdiqlash va Arxivlash</span>
+                    <span>Approve va Arxivlash</span>
                   </button>
                 </div>
               </form>

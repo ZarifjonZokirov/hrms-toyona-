@@ -11,7 +11,7 @@ interface CacheRecord<T> {
 
 const inMemoryStore = new Map<string, CacheRecord<any>>();
 
-// Standart kesh muddati: 15 daqiqa (yoki sahifada yangilash tugmasi bosilguncha)
+// Standart kesh muddati: 15 minutes (yoki sahifada yangilash tugmasi bosilguncha)
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
 
 export function getCachedData<T>(key: string, ttlMs: number = DEFAULT_TTL_MS): T | null {

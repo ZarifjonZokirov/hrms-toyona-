@@ -801,104 +801,6 @@ export default function App() {
     );
   }
 
-  // Login screen temporarily disabled for direct seamless access
-  if (false && !isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen w-full bg-slate-100 dark:bg-slate-950 font-sans p-4 relative transition-colors">
-        {/* Quick Theme Switcher on Login Screen */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-          <ThemeToggle />
-        </div>
-
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-8 shadow-lg transition-colors">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center mb-2.5">
-              <ToyonaSvg className="w-12 h-12 text-[#00A651]" />
-            </div>
-            <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-wider uppercase text-center">TOYONA SAVDO</h2>
-            <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Firebase Cloud Baza: Ulangan</span>
-            </div>
-          </div>
-
-          {loginError && (
-            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold rounded-lg flex items-start gap-2 leading-relaxed">
-              <ShieldAlert className="w-4.5 h-4.5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-              <span>{loginError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wide text-left">
-                Login (Username) *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Loginingizni kiriting"
-                value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide text-left">
-                  Maxfiy Password *
-                </label>
-                <button
-                  type="button"
-                  onClick={(e) => { 
-                    e.preventDefault(); 
-                    e.stopPropagation(); 
-                    setShowPassword(!showPassword); 
-                    setTimeout(() => {
-                      passwordInputRef.current?.focus();
-                    }, 0);
-                  }}
-                  className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-[#00A651] dark:hover:text-[#00A651] flex items-center gap-1 font-medium cursor-pointer transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  {showPassword ? "Yashirish" : "Ko'rsatish"}
-                </button>
-              </div>
-              <div className="relative">
-                <input
-                  ref={passwordInputRef}
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="Passwordingizni kiriting"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 pr-9 transition-colors"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full py-2.5 mt-2 bg-[#00A651] hover:bg-[#008d44] text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
-            >
-              {isLoggingIn ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Tekshirilmoqda...</span>
-                </>
-              ) : (
-                <span>Portal Sign In</span>
-              )}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   if (showSecretHistory) {
     return (
       <SystemHistory 
@@ -1145,7 +1047,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={handleLogout}
-                  title="Tizimdan chiqish"
+                  title="Sign Out"
                   className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-500 rounded-lg transition-colors cursor-pointer shrink-0"
                 >
                   <LogOut className="w-4 h-4" />
@@ -1155,7 +1057,7 @@ export default function App() {
           ) : (
             <button 
               onClick={handleLogout}
-              title="Tizimdan chiqish"
+              title="Sign Out"
               className="w-10 h-10 bg-gradient-to-tr from-[#00A651] to-emerald-400 text-white font-extrabold rounded-xl flex items-center justify-center text-sm shadow-xs cursor-pointer hover:bg-rose-500 transition-all"
             >
               <LogOut className="w-5 h-5 text-white" />
@@ -1317,7 +1219,7 @@ export default function App() {
                 )}
                 {visitedTabs.has('attendance_photo_requests') && (
                   <div className={normalizedActiveTab === 'attendance_photo_requests' ? 'block' : 'hidden'} key="tab-attendance-photo-requests">
-                    <ModuleErrorBoundary moduleName="Surat so'rovlari & Rasmlar keldi-ketdisi">
+                    <ModuleErrorBoundary moduleName="Biometric Face ID Photo Approvals">
                       <PhotoRequestsManager 
                         onNavigateToJournal={() => {
                           setActiveItem('attendance_journal');
