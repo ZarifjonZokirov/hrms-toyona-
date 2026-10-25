@@ -71,6 +71,8 @@ export interface TransferItem {
   yakunlanganSana?: string;
   sababi?: string;
   tasdiqlovchi?: string;
+  employeeId?: string;
+  staffId?: string;
 }
 
 const INITIAL_TRANSFERS: TransferItem[] = [];
@@ -365,6 +367,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       const emps = await getFirebaseEmployees();
       if (emps && emps.length > 0) {
         const targetEmp = emps.find((e: any) => 
+          (transferItem.employeeId && (e.id === transferItem.employeeId || e.staffId === transferItem.employeeId)) ||
+          (transferItem.staffId && e.staffId === transferItem.staffId) ||
           e.fullName.trim().toLowerCase() === transferItem.fio.trim().toLowerCase()
         );
         if (targetEmp) {
@@ -436,7 +440,9 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       boshlanganSana: nowStr,
       yakunlanganSana: '',
       sababi: "Ichki rotatsiya va tajriba oshirish",
-      tasdiqlovchi: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov"
+      tasdiqlovchi: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov",
+        employeeId: formData.employeeId || "",
+        staffId: formData.staffId || ""
     });
     setIsAddEditModalOpen(true);
   };
@@ -1041,6 +1047,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                             setFormData({
                               ...formData,
                               fio: matched.fullName,
+                              employeeId: matched.id || "",
+                              staffId: matched.staffId || "",
                               qaysiLavozimdan: matched.position || formData.qaysiLavozimdan,
                               filial: matched.branch || formData.filial,
                               kategoriya: matched.department || formData.kategoriya

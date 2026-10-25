@@ -89,6 +89,17 @@ export interface Employee {
   experienceYears?: number;
   languages?: string[];
   skills?: string[];
+  // Davlat hisoboti va qonuniy ma'lumotlar (YAMMT / Soliq / Mehnat Kodeksi)
+  jshshir?: string; // 14 xonali PINFL
+  passportSeriesNumber?: string; // Pasport / ID seriya va raqami
+  contractNumber?: string; // Mehnat shartnomasi raqami
+  contractDate?: string; // Mehnat shartnomasi sanasi
+  decreeNumber?: string; // Ishga qabul qilish buyrug'i raqami
+  decreeDate?: string; // Buyruq sanasi
+  bankAccount?: string; // 20 xonali hisob raqam (IBAN)
+  emergencyContactName?: string; // Favqulodda bog'lanish shaxsi
+  emergencyContactPhone?: string; // Favqulodda telefon
+  militaryStatus?: string; // Harbiy hisob holati
 }
 
 export const INITIAL_EMPLOYEES: Employee[] = [
@@ -109,7 +120,17 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     birthDate: '1990-05-12',
     gender: 'Erkak',
     username: '',
-    password: ''
+    password: '',
+    jshshir: '31205901230045',
+    passportSeriesNumber: 'AD 1234567',
+    contractNumber: 'MS-2020/01',
+    contractDate: '2020-03-15',
+    decreeNumber: 'B-01',
+    decreeDate: '2020-03-15',
+    bankAccount: '20208000900123456789',
+    emergencyContactName: 'Zokirov Sardor (Akasi)',
+    emergencyContactPhone: '+998 90 987 65 43',
+    militaryStatus: 'Harbiy hisobda turadi'
   }
 ];
 
@@ -132,8 +153,12 @@ const Toast = ({ message, onClose }: { message: string; onClose: () => void }) =
   );
 };
 
-export default function Employees() {
+interface EmployeesProps { currentUser?: any; }
+
+export default function Employees({ currentUser }: EmployeesProps = {}) {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const actorName = currentUser?.name || currentUser?.fullName || 'Zarifjon Zokirov';
+  const actorRole = currentUser?.role || 'Super Admin';
   const [isLoading, setIsLoading] = useState(true);
 
   // Tabs
@@ -444,8 +469,8 @@ export default function Employees() {
           action: "Xodim ma'lumotlari tahrirlandi",
           module: 'Xodimlar',
           type: 'update',
-          performedBy: 'Zarifjon Zokirov',
-          role: 'Super Admin',
+          performedBy: actorName,
+          role: actorRole,
           details: `Xodim ma'lumotlari tahrirlandi: ${formData.fullName} (${formData.position}, ${formData.branch})`
         });
         setToastMessage(`Xodim "${formData.fullName}" ma'lumotlari yangilandi!`);
@@ -468,7 +493,7 @@ export default function Employees() {
           email: formData.email || `${formData.fullName?.toLowerCase().replace(/\s+/g, '.')}@toyona.uz`,
           hireDate: formData.hireDate || new Date().toISOString().split('T')[0],
           status: formData.status as any || 'active',
-          avatarUrl: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 100000)}?w=150&auto=format&fit=crop&q=80`,
+          avatarUrl: formData.avatarUrl || '',
           staffId: nextStaffId,
           salary: formData.salary || '7,000,000 UZS',
           address: formData.address || 'Toshkent sh.',
@@ -477,7 +502,17 @@ export default function Employees() {
           educationLevel: formData.educationLevel || 'Oliy',
           graduationYear: formData.graduationYear,
           pastExperience: formData.pastExperience || 'Mavjud emas',
-          experienceYears: formData.experienceYears || (formData.pastExperience ? 2 : 1)
+          experienceYears: formData.experienceYears || (formData.pastExperience ? 2 : 1),
+          jshshir: formData.jshshir || '',
+          passportSeriesNumber: formData.passportSeriesNumber || '',
+          contractNumber: formData.contractNumber || '',
+          contractDate: formData.contractDate || '',
+          decreeNumber: formData.decreeNumber || '',
+          decreeDate: formData.decreeDate || '',
+          bankAccount: formData.bankAccount || '',
+          emergencyContactName: formData.emergencyContactName || '',
+          emergencyContactPhone: formData.emergencyContactPhone || '',
+          militaryStatus: formData.militaryStatus || 'Harbiy xizmatga majbur'
         };
         setEmployees(prev => [newEmp, ...prev]);
         await saveFirebaseEmployee(newEmp);
@@ -497,8 +532,8 @@ export default function Employees() {
             action: "Xodim qayta ishga olindi",
             module: 'Xodimlar',
             type: 'create',
-            performedBy: 'Zarifjon Zokirov',
-            role: 'Super Admin',
+            performedBy: actorName,
+            role: actorRole,
             details: `Xodim "${newEmp.fullName}" qayta ishga olindi: ${newEmp.position} (${newEmp.branch})`
           });
           setToastMessage(`Xodim "${newEmp.fullName}" muvaffaqiyatli qayta ishga olindi!`);
@@ -507,8 +542,8 @@ export default function Employees() {
             action: "Yangi xodim qo'shildi",
             module: 'Xodimlar',
             type: 'create',
-            performedBy: 'Zarifjon Zokirov',
-            role: 'Super Admin',
+            performedBy: actorName,
+            role: actorRole,
             details: `Yangi xodim ro'yxatga olindi: ${newEmp.fullName} (${newEmp.position}, ${newEmp.branch})`
           });
           setToastMessage(`Yangi xodim "${newEmp.fullName}" muvaffaqiyatli qo'shildi!`);
@@ -567,8 +602,8 @@ export default function Employees() {
         action: "Xodim ishdan bo'shatildi",
         module: 'Xodimlar',
         type: 'delete',
-        performedBy: 'Zarifjon Zokirov',
-        role: 'Super Admin',
+        performedBy: actorName,
+        role: actorRole,
         details: `Xodim "${dismissingEmployee.fullName}" ishdan bo'shatildi. Toifa: ${dismissCategory}. Sabab: ${dismissReason}`
       });
 
@@ -592,8 +627,8 @@ export default function Employees() {
         action: "Xodim tizimdan o'chirildi",
         module: 'Xodimlar',
         type: 'delete',
-        performedBy: 'Zarifjon Zokirov',
-        role: 'Super Admin',
+        performedBy: actorName,
+        role: actorRole,
         details: `Xodim "${target.fullName}" (${target.position}, ${target.branch}) bazadan o'chirildi`
       });
     }
@@ -610,8 +645,8 @@ export default function Employees() {
         action: "Bo'shatilgan xodim arxivi o'chirildi",
         module: 'Xodimlar',
         type: 'delete',
-        performedBy: 'Zarifjon Zokirov',
-        role: 'Super Admin',
+        performedBy: actorName,
+        role: actorRole,
         details: `Ishdan bo'shatilgan xodim "${target.fullName}" arxivi butunlay o'chirildi`
       });
     }
@@ -694,8 +729,8 @@ export default function Employees() {
       action: "Xodim boshqa filialga o'tkazildi",
       module: 'Rotatsiya',
       type: 'update',
-      performedBy: 'Zarifjon Zokirov',
-      role: 'Super Admin',
+      performedBy: actorName,
+      role: actorRole,
       details: `Xodim "${transferringEmployee.fullName}" "${oldBranch}" filialidan "${targetBranch}" filialiga muvaffaqiyatli o'tkazildi`
     });
 
@@ -727,7 +762,17 @@ export default function Employees() {
       graduationYear: '',
       pastExperience: '',
       experienceYears: undefined,
-      languages: ['O\'zbek tili']
+      languages: ['O\'zbek tili'],
+      jshshir: '',
+      passportSeriesNumber: '',
+      contractNumber: '',
+      contractDate: '',
+      decreeNumber: '',
+      decreeDate: '',
+      bankAccount: '',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
+      militaryStatus: 'Harbiy xizmatga majbur'
     });
     setSelectedCandidateId('');
     setEditingEmployee(null);
@@ -1914,6 +1959,147 @@ export default function Employees() {
                           </button>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* ========================================================= */}
+                  {/* 4. DAVLAT HISOBOTLARI VA QONUNIY HUJJATLAR (YAMMT / PINFL) */}
+                  {/* ========================================================= */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-[#00A651]" />
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                        Davlat hisoboti va qonuniy ma'lumotlar (YAMMT / Soliq / MK)
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          JSHSHIR (PINFL - 14 raqamli)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={14}
+                          placeholder="Masalan: 31205901230045"
+                          value={formData.jshshir || ''}
+                          onChange={(e) => setFormData({ ...formData, jshshir: e.target.value.replace(/\D/g, '') })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Pasport / ID karta seriya & raqami
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Masalan: AD 1234567"
+                          value={formData.passportSeriesNumber || ''}
+                          onChange={(e) => setFormData({ ...formData, passportSeriesNumber: e.target.value.toUpperCase() })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 uppercase"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Mehnat shartnomasi raqami & sanasi
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Shartnoma №"
+                            value={formData.contractNumber || ''}
+                            onChange={(e) => setFormData({ ...formData, contractNumber: e.target.value })}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                          />
+                          <input
+                            type="date"
+                            value={formData.contractDate || ''}
+                            onChange={(e) => setFormData({ ...formData, contractDate: e.target.value })}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Ishga qabul qilish buyrug'i № & sanasi
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Buyruq №"
+                            value={formData.decreeNumber || ''}
+                            onChange={(e) => setFormData({ ...formData, decreeNumber: e.target.value })}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                          />
+                          <input
+                            type="date"
+                            value={formData.decreeDate || ''}
+                            onChange={(e) => setFormData({ ...formData, decreeDate: e.target.value })}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Bank hisob raqami (20 xonali IBAN)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={20}
+                          placeholder="20208000..."
+                          value={formData.bankAccount || ''}
+                          onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value.replace(/\D/g, '') })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Harbiy hisob holati
+                        </label>
+                        <select
+                          value={formData.militaryStatus || 'Harbiy xizmatga majbur'}
+                          onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                        >
+                          <option value="Harbiy xizmatga majbur">Harbiy xizmatga majbur</option>
+                          <option value="Harbiy hisobda turadi">Harbiy hisobda turadi (Zaxirada)</option>
+                          <option value="Harbiy xizmatga yaroqsiz">Harbiy xizmatga yaroqsiz</option>
+                          <option value="Harbiy hisobdan chiqarilgan">Harbiy hisobdan chiqarilgan</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Favqulodda bog'lanish (Yaqin qarindoshi F.I.O)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Masalan: Karimov Alisher (Otasi)"
+                          value={formData.emergencyContactName || ''}
+                          onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">
+                          Favqulodda telefon raqami
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="+998 90 123 45 67"
+                          value={formData.emergencyContactPhone || ''}
+                          onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00A651]/20"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

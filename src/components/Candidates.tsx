@@ -119,6 +119,7 @@ export default function Candidates() {
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isHiring, setIsHiring] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -202,6 +203,56 @@ export default function Candidates() {
   }, []);
   
   const showToast = (msg: string) => setToastMessage(msg);
+  const handleDirectHireCandidate = async (candidate: Candidate) => {
+    setIsHiring(true);
+    try {
+      const { getFirebaseEmployees, saveFirebaseEmployee, saveFirebaseCandidate } = await import('../firebase');
+      const existingEmps = await getFirebaseEmployees();
+      const numericIds = existingEmps
+        .map((e: any) => parseInt((e.staffId || '').replace(/\D/g, ''), 10))
+        .filter((n: number) => !isNaN(n));
+      const maxId = numericIds.length > 0 ? Math.max(...numericIds) : existingEmps.length;
+      const nextStaffId = `TS-${String(maxId + 1).padStart(4, '0')}`;
+
+      const newEmp: any = {
+        id: `emp-${Date.now()}`,
+        fullName: candidate.fullName || 'Yangi Xodim',
+        position: candidate.jobPosition || candidate.position || 'Mutaxassis',
+        department: 'Savdo va Chakana',
+        branch: candidate.targetBranch || candidate.region || 'Bosh ofis',
+        phone: candidate.phone1 || candidate.phone2 || '+998 90 000 00 00',
+        email: `${(candidate.fullName || 'xodim').toLowerCase().replace(/\s+/g, '.')}@toyona.uz`,
+        hireDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        avatarUrl: candidate.photoUrl || '',
+        staffId: nextStaffId,
+        salary: '5,000,000 UZS',
+        address: candidate.address || candidate.exactAddress || candidate.region || 'O\'zbekiston',
+        birthDate: candidate.dob || '',
+        gender: candidate.gender === 'Ayol' ? 'Ayol' : 'Erkak',
+        educationLevel: candidate.educationLevel || 'Oliy',
+        graduationYear: candidate.graduationYear || '',
+        pastExperience: candidate.pastExperience || 'Nomzod arizasi orqali qabul qilingan',
+        experienceYears: 1
+      };
+
+      await saveFirebaseEmployee(newEmp);
+
+      const updatedCandidate = { ...candidate, status: 'Qabul qilingan' };
+      await saveFirebaseCandidate(updatedCandidate);
+
+      setCandidates(prev => prev.map(c => c.id === candidate.id ? updatedCandidate : c));
+      setSelectedCandidate(null);
+      showToast(`"${candidate.fullName}" muvaffaqiyatli ishga qabul qilindi va Xodimlar safiga qo'shildi (${nextStaffId})!`);
+      window.dispatchEvent(new CustomEvent('hrms_employees_updated'));
+    } catch (err: any) {
+      console.error("Direct hire error:", err);
+      showToast("Ishga qabul qilishda xatolik yuz berdi: " + (err.message || ''));
+    } finally {
+      setIsHiring(false);
+    }
+  };
+
 
   const filteredCandidates = candidates.filter(c => {
     const q = (searchQuery || '').toLowerCase().trim();
@@ -781,12 +832,25 @@ export default function Candidates() {
                 <span className="text-xs text-slate-400 dark:text-slate-500">
                   ID: <span className="font-mono">{selectedCandidate.id}</span>
                 </span>
-                <button
-                  onClick={() => setSelectedCandidate(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                >
-                  Yopish
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedCandidate.status !== 'Qabul qilingan' && (
+                    <button
+                      type="button"
+                      onClick={() => handleDirectHireCandidate(selectedCandidate)}
+                      disabled={isHiring}
+                      className="px-4 py-2 bg-[#00A651] hover:bg-[#008d44] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#00A651]/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {isHiring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                      <span>Ishga qabul qilish (Xodimlarga qo'shish)</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedCandidate(null)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Yopish
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

@@ -1281,7 +1281,7 @@ export default function App() {
                 )}
                 {visitedTabs.has('employees') && (
                   <div className={normalizedActiveTab === 'employees' ? 'block' : 'hidden'} key="tab-employees">
-                    <Employees />
+                    <Employees currentUser={currentUser} />
                   </div>
                 )}
                 {visitedTabs.has('quality') && (

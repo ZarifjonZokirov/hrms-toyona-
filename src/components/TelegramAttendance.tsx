@@ -219,12 +219,28 @@ export default function TelegramAttendance() {
         }
 
         if (!matched || !matched.lat || !matched.lon) {
-          // If no specific branch geozone, check closest geozone or allow with warning
-          setMatchedGeozone(null);
-          setDistanceToBranch(0);
-          setIsVerifyingGeo(false);
-          startCameraStep();
-          return;
+          // Eng yaqin rasmiy geozonani tekshiramiz
+          let closestZone: BranchGeozone | null = null;
+          let minDistance = Infinity;
+
+          for (const gz of gzList) {
+            if (gz.lat && gz.lon) {
+              const d = calculateDistanceMeters(uLat, uLng, gz.lat, gz.lon);
+              if (d < minDistance) {
+                minDistance = d;
+                closestZone = gz;
+              }
+            }
+          }
+
+          if (closestZone && minDistance <= (closestZone.radius || 150)) {
+            matched = closestZone;
+          } else {
+            setIsVerifyingGeo(false);
+            const distMsg = Number.isFinite(minDistance) ? ` (Eng yaqin filialgacha: ${Math.round(minDistance)} metr)` : '';
+            setErrorMessage(`Xavfsizlik talabi: Siz belgilangan filial hududidan tashqaridasiz${distMsg}. Davomat faqat rasmiy filial hududi ichida olinadi.`);
+            return;
+          }
         }
 
         const dist = calculateDistanceMeters(uLat, uLng, matched.lat, matched.lon);
@@ -338,10 +354,11 @@ export default function TelegramAttendance() {
               return;
             }
           } else {
-            // If employee does not have reference avatar in Firebase, accept detected face with warning
+            // Agar xodimning bazada rasmiy Face ID namunasi bo'lmasa, soxta davomatni oldini olish uchun rad etiladi
             clearInterval(interval);
             stopCamera();
-            completeAttendance(selectedEmp, 100);
+            setErrorMessage("Xavfsizlik ogohlantirishi: Tizimda sizning rasmiy Face ID namunaviy suratingiz mavjud emas. Iltimos, kadrlar bo'limiga murojaat qilib profilingizga rasm biriktiring.");
+            setStep('error');
             return;
           }
         }

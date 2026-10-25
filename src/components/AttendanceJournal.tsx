@@ -1590,6 +1590,37 @@ function EmployeeDetailView({
       { name: 'Boshqa', value: Math.max(1, Math.round((reasonCounts['Boshqa'] / totalLate) * 100)), fill: '#64748b' }
     ];
 
+    // Real hisoblangan jarimalar (barcha yozuvlardan olingan yoki kechikish vaqtiga asoslangan)
+    const totalPenalties = records.reduce((acc, r) => {
+      if (r.penalty && r.penalty !== '-') {
+        const num = parseInt(r.penalty.replace(/[^0-9]/g, ''), 10);
+        if (!isNaN(num) && num > 0) return acc + num;
+      }
+      if (r.status === 'Kech qolgan' && (r.delayMinutes || 0) > 0) {
+        return acc + (r.delayMinutes * 1000);
+      }
+      return acc;
+    }, 0);
+
+    // Rag'batlantirish (Bonuslar) yig'indisi
+    const totalBonuses = records.reduce((acc, r) => {
+      if (r.bonus && r.bonus !== '-') {
+        const num = parseInt(r.bonus.replace(/[^0-9]/g, ''), 10);
+        if (!isNaN(num) && num > 0) return acc + num;
+      }
+      return acc;
+    }, 0);
+
+    // O'zbekiston Yangi Mehnat Kodeksi 300-moddasi talablariga muvofiq oylikdan ushlanmalar
+    // oylik summasining 30% dan oshmasligi kafolatlanadi (Mehnat huquqi himoyasi)
+    const baseDaily = employee.dailyRate || 280000;
+    const workedDays = onTimeDays + lateDays;
+    const grossSalary = workedDays * baseDaily;
+    const maxLegalDeduction = Math.round(grossSalary * 0.30);
+    const appliedPenalty = Math.min(totalPenalties, maxLegalDeduction);
+    const isCappedByLaborCode = totalPenalties > maxLegalDeduction;
+    const netSalary = Math.max(0, grossSalary - appliedPenalty + totalBonuses);
+
     return {
       totalDays,
       workDays,
@@ -1603,7 +1634,14 @@ function EmployeeDetailView({
       totalDelayMinutes,
       delayHours,
       delayMins,
-      reasonData
+      reasonData,
+      totalPenalties,
+      appliedPenalty,
+      isCappedByLaborCode,
+      totalBonuses,
+      grossSalary,
+      netSalary,
+      workedDays
     };
   }, [records]);
 
@@ -2030,13 +2068,18 @@ function EmployeeDetailView({
                     <div className="flex items-center justify-between p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
                       <span className="text-xs font-semibold text-emerald-800">Rag'batlantirish (Bonus):</span>
                       <span className="text-sm font-black text-emerald-700">
-                        {records.filter(r => r.bonus && r.bonus !== '-').length * 15000} so'm
+                        {metrics.totalBonuses.toLocaleString()} so'm
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-rose-50/60 rounded-xl border border-rose-100">
-                      <span className="text-xs font-semibold text-rose-800">Kechikish jarimalari:</span>
+                      <div>
+                        <span className="text-xs font-semibold text-rose-800 block">Kechikish jarimalari:</span>
+                        {metrics.isCappedByLaborCode && (
+                          <span className="text-[10px] text-rose-600 font-bold block">MK 300-m: 30% cheklov</span>
+                        )}
+                      </div>
                       <span className="text-sm font-black text-rose-700">
-                        {metrics.lateDays * 15000} so'm
+                        -{metrics.appliedPenalty.toLocaleString()} so'm
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -2129,13 +2172,20 @@ function EmployeeDetailView({
                   <p className="text-2xl font-black text-emerald-600 mt-1">{metrics.onTimeDays + metrics.lateDays} kun</p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-xs font-semibold text-slate-500">O'rtacha kunlik stavka</span>
-                  <p className="text-xl font-bold text-slate-800 mt-1">{(employee.dailyRate || 280000).toLocaleString()} so'm</p>
+                  <span className="text-xs font-semibold text-slate-500">Hisoblangan jami ish haqi (Gross)</span>
+                  <p className="text-xl font-bold text-slate-800 mt-1">{metrics.grossSalary.toLocaleString()} so'm</p>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                  <span className="text-xs font-semibold text-emerald-700">Sof hisoblangan oylik</span>
-                  <p className="text-xl font-black text-emerald-700 mt-1">
-                    {((metrics.onTimeDays + metrics.lateDays) * (employee.dailyRate || 280000)).toLocaleString()} so'm
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-700">Sof hisoblangan oylik (Net Pay)</span>
+                    {metrics.appliedPenalty > 0 && (
+                      <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full">
+                        -{metrics.appliedPenalty.toLocaleString()} so'm jarima
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-2xl font-black text-emerald-700 mt-1">
+                    {metrics.netSalary.toLocaleString()} so'm
                   </p>
                 </div>
               </div>

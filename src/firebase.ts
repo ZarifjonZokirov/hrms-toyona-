@@ -690,7 +690,7 @@ export async function getFirebaseAttendance(date?: string, employeeId?: string):
 
     const snap = await getDocs(qRef);
     if (snap.empty) return [];
-    let records = snap.docs.map(d => ({ ...d.data(), id: d.id, firestoreId: d.id } as unknown as AttendanceRecord));
+    let records = snap.docs.map(d => ({ ...(d.data() as Record<string, any>), id: d.id, firestoreId: d.id } as unknown as AttendanceRecord));
     
     if (date) {
       records = records.filter(r => r.date === date);
@@ -1313,7 +1313,7 @@ export async function getFirebaseNotifications(targetUserId?: string): Promise<H
     }
     const snap = await getDocs(qRef);
     if (snap.empty) return [];
-    let list = snap.docs.map(d => ({ ...d.data(), id: d.id }) as HRNotification);
+    let list = snap.docs.map(d => ({ ...(d.data() as Record<string, any>), id: d.id }) as HRNotification);
     if (targetUserId) {
       list = list.filter(n => !n.targetUserId || n.targetUserId === targetUserId);
     }
@@ -1865,7 +1865,7 @@ export async function getFirebaseAttendanceLogs(date?: string): Promise<any[]> {
     }
     const snap = await getDocs(qRef);
     if (snap.empty) return [];
-    return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+    return snap.docs.map(d => ({ ...(d.data() as Record<string, any>), firestoreId: d.id }));
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'attendance_logs');
     return [];

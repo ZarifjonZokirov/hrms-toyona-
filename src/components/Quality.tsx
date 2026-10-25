@@ -46,25 +46,25 @@ export interface QualityProfile {
   education: string;
   experienceYears: number;
   pastExperience: string;
-  age: number;
-  ageBracket: '<25' | '25-35' | '35-45' | '45+';
+  age: number | null;
+  ageBracket: '<25' | '25-35' | '35-45' | '45+' | 'Ko\'rsatilmagan';
   experienceBracket: '<1 yil' | '1-3 yil' | '3-5 yil' | '5+ yil';
   languages: string[];
   skills: string[];
   qualificationLevel: 'Boshlang\'ich' | 'Mutaxassis' | 'Katta mutaxassis' | 'Yetakchi';
 }
 
-function calculateAge(birthDate?: string): number {
-  if (!birthDate) return 28;
+function calculateAge(birthDate?: string): number | null {
+  if (!birthDate) return null;
   const birth = new Date(birthDate);
-  if (isNaN(birth.getTime())) return 28;
+  if (isNaN(birth.getTime())) return null;
   const now = new Date();
   let age = now.getFullYear() - birth.getFullYear();
   const m = now.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
     age--;
   }
-  return age > 16 && age < 80 ? age : 28;
+  return age > 14 && age < 90 ? age : null;
 }
 
 function calculateExperienceYears(hireDate?: string, explicitYears?: number): number {
@@ -78,17 +78,19 @@ function calculateExperienceYears(hireDate?: string, explicitYears?: number): nu
   return years > 0 ? years : 0.5;
 }
 
-// Generate complete quality profile
+// Generate complete quality profile without fabricating fake credentials
 function enrichEmployeeQuality(emp: Employee): QualityProfile {
   const age = calculateAge(emp.birthDate);
   const expYears = calculateExperienceYears(emp.hireDate, emp.experienceYears);
 
   // Age bracket
-  let ageBracket: '<25' | '25-35' | '35-45' | '45+' = '25-35';
-  if (age < 25) ageBracket = '<25';
-  else if (age <= 35) ageBracket = '25-35';
-  else if (age <= 45) ageBracket = '35-45';
-  else ageBracket = '45+';
+  let ageBracket: '<25' | '25-35' | '35-45' | '45+' | 'Ko\'rsatilmagan' = 'Ko\'rsatilmagan';
+  if (age !== null) {
+    if (age < 25) ageBracket = '<25';
+    else if (age <= 35) ageBracket = '25-35';
+    else if (age <= 45) ageBracket = '35-45';
+    else ageBracket = '45+';
+  }
 
   // Experience bracket
   let experienceBracket: '<1 yil' | '1-3 yil' | '3-5 yil' | '5+ yil' = '1-3 yil';
@@ -97,37 +99,17 @@ function enrichEmployeeQuality(emp: Employee): QualityProfile {
   else if (expYears <= 5) experienceBracket = '3-5 yil';
   else experienceBracket = '5+ yil';
 
-  // Education fallback
-  let education = emp.educationLevel?.trim() || '';
-  if (!education) {
-    const pos = (emp.position || '').toLowerCase();
-    if (pos.includes('direktor') || pos.includes('rahbar') || pos.includes('boshqaruvchi') || pos.includes('menejer')) {
-      education = 'Oliy';
-    } else if (pos.includes('mutaxassis') || pos.includes('operator') || pos.includes('kassir')) {
-      education = 'O\'rta-maxsus';
-    } else {
-      education = 'O\'rta-maxsus';
-    }
-  }
+  // Education: Halol va aniq kadrlar ma'lumoti - soxtalashtirishsiz
+  let education = emp.educationLevel?.trim() || 'Ko\'rsatilmagan';
 
-  // Work experience fallback
-  let pastExp = emp.pastExperience?.trim() || '';
-  if (!pastExp) {
-    if (expYears > 3) {
-      pastExp = `${emp.position} sohasida ${Math.floor(expYears)} yillik muvaffaqiyatli tajriba`;
-    } else {
-      pastExp = 'Savdo va xizmat ko\'rsatish yo\'nalishida tajribaga ega';
-    }
-  }
+  // Work experience: Haqiqiy kiritilgan tajriba
+  let pastExp = emp.pastExperience?.trim() || 'Ma\'lumot kiritilmagan';
 
-  // Languages
+  // Languages: Xodim kartochkasidagi haqiqiy tillar
   let languages = emp.languages && emp.languages.length > 0 ? emp.languages : ['O\'zbek tili'];
-  if (emp.position?.toLowerCase().includes('menejer') || emp.position?.toLowerCase().includes('direktor')) {
-    languages = ['O\'zbek tili', 'Rus tili'];
-  }
 
   // Skills
-  let skills = emp.skills && emp.skills.length > 0 ? emp.skills : [];
+  let skills = emp.skills && emp.skills.length > 0 ? emp.skills : ['Kadrlar hisobida'];
   if (skills.length === 0) {
     const p = (emp.position || '').toLowerCase();
     if (p.includes('sotuvchi') || p.includes('kassir')) {
@@ -271,8 +253,9 @@ export default function Quality() {
     ).length;
     const higherEduPct = Math.round((higherEduCount / total) * 100);
 
-    const sumAge = filteredProfiles.reduce((acc, p) => acc + p.age, 0);
-    const avgAge = +(sumAge / total).toFixed(1);
+    const profilesWithAge = filteredProfiles.filter(p => p.age !== null && (p.age as number) > 0);
+    const sumAge = profilesWithAge.reduce((acc, p) => acc + (p.age || 0), 0);
+    const avgAge = profilesWithAge.length > 0 ? +(sumAge / profilesWithAge.length).toFixed(1) : 0;
 
     const sumExp = filteredProfiles.reduce((acc, p) => acc + p.experienceYears, 0);
     const avgExp = +(sumExp / total).toFixed(1);
@@ -299,12 +282,13 @@ export default function Quality() {
 
   // Age Distribution Chart Data
   const ageChartData = useMemo(() => {
-    const counts: Record<string, number> = { '<25 yosh': 0, '25-35 yosh': 0, '35-45 yosh': 0, '45+ yosh': 0 };
+    const counts: Record<string, number> = { '<25 yosh': 0, '25-35 yosh': 0, '35-45 yosh': 0, '45+ yosh': 0, 'Noma\'lum': 0 };
     filteredProfiles.forEach(p => {
       if (p.ageBracket === '<25') counts['<25 yosh']++;
       else if (p.ageBracket === '25-35') counts['25-35 yosh']++;
       else if (p.ageBracket === '35-45') counts['35-45 yosh']++;
-      else counts['45+ yosh']++;
+      else if (p.ageBracket === '45+') counts['45+ yosh']++;
+      else counts['Noma\'lum']++;
     });
     return Object.keys(counts).map(name => ({
       name,
@@ -652,6 +636,7 @@ export default function Quality() {
               <option value="25-35">25 - 35 yosh</option>
               <option value="35-45">35 - 45 yosh</option>
               <option value="45+">45+ yosh</option>
+              <option value="Ko'rsatilmagan">Yosh ko'rsatilmagan</option>
             </select>
 
             {/* Experience Filter */}
@@ -756,7 +741,7 @@ export default function Quality() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3.5 text-center font-bold text-slate-800 dark:text-slate-200">
-                          {profile.age} yosh
+                          {profile.age !== null ? `${profile.age} yosh` : 'Noma\'lum'}
                         </td>
                         <td className="py-3.5 px-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
                           <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px]">
