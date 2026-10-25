@@ -1156,6 +1156,113 @@ async function configureRoutes(appInstance = app) {
     }
     next();
   });
+  const TELEGRAM_SECURITY_BOT_TOKEN = "8975567213:AAGDNAyKPKGNoIrBsipqAgASO88KEY6ThS4";
+  const ADMIN_CHATS_FILE = import_path.default.join(process.cwd(), "telegram_admin_chats.json");
+  function getSavedAdminChatIds() {
+    try {
+      if (import_fs.default.existsSync(ADMIN_CHATS_FILE)) {
+        return JSON.parse(import_fs.default.readFileSync(ADMIN_CHATS_FILE, "utf8"));
+      }
+    } catch {
+    }
+    return [];
+  }
+  function saveAdminChatId(chatId) {
+    try {
+      const chats = new Set(getSavedAdminChatIds());
+      chats.add(String(chatId));
+      import_fs.default.writeFileSync(ADMIN_CHATS_FILE, JSON.stringify(Array.from(chats)), "utf8");
+    } catch {
+    }
+  }
+  async function getBotChatIds() {
+    const saved = new Set(getSavedAdminChatIds());
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_SECURITY_BOT_TOKEN}/getUpdates`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.result)) {
+          data.result.forEach((u) => {
+            const chatId = (u.message || u.channel_post || u.callback_query?.message)?.chat?.id;
+            if (chatId) {
+              saved.add(String(chatId));
+              saveAdminChatId(chatId);
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Telegram getUpdates notice:", err);
+    }
+    return Array.from(saved);
+  }
+  async function sendTelegramAlert(text) {
+    const chatIds = await getBotChatIds();
+    if (chatIds.length === 0) {
+      console.log("No telegram chat_id registered yet. User needs to send /start to @FaolMaktab_uzbot");
+      return false;
+    }
+    let success = false;
+    for (const chatId of chatIds) {
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_SECURITY_BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text,
+            parse_mode: "HTML"
+          })
+        });
+        if (res.ok) success = true;
+      } catch (err) {
+        console.warn(`Failed to send to chatId ${chatId}:`, err);
+      }
+    }
+    return success;
+  }
+  app.post("/api/security/notify-device", async (req, res) => {
+    try {
+      const { deviceId, userName, userRole, device, screenResolution, time } = req.body || {};
+      const forwarded = req.headers["x-forwarded-for"];
+      let clientIp = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.socket.remoteAddress || req.ip || "127.0.0.1";
+      if (clientIp.startsWith("::ffff:")) clientIp = clientIp.substring(7);
+      if (clientIp === "::1") clientIp = "127.0.0.1";
+      const message = `\u{1F6A8} <b>DIQQAT: HRMS TIZIMIGA YANGI QURILMA KIRDI!</b>
+
+\u{1F464} <b>Foydalanuvchi:</b> ${userName || "Foydalanuvchi"} (${userRole || "Admin"})
+\u{1F4BB} <b>Qurilma / Brauzer:</b> ${device || "Noma'lum"}
+\u{1F310} <b>IP Manzil:</b> <code>${clientIp}</code>
+\u{1F5A5}\uFE0F <b>Ekran o'lchami:</b> ${screenResolution || "Noma'lum"}
+\u{1F552} <b>Vaqt:</b> ${time || (/* @__PURE__ */ new Date()).toLocaleString("uz-UZ")}
+\u{1F511} <b>Device ID:</b> <code>${deviceId || "yangi"}</code>
+
+\u26A0\uFE0F <i>Agar ushbu qurilmadan siz kirmagan bo'lsangiz, zudlik bilan parolingizni o'zgartiring va tizim tarixini tekshiring!</i>`;
+      const sent = await sendTelegramAlert(message);
+      res.json({ success: true, sent, clientIp });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+  app.get("/api/security/telegram-status", async (req, res) => {
+    const chatIds = await getBotChatIds();
+    res.json({
+      success: true,
+      bot: "@FaolMaktab_uzbot",
+      registeredChatIds: chatIds,
+      ready: chatIds.length > 0
+    });
+  });
+  app.post("/api/security/register-chat", async (req, res) => {
+    const { chatId } = req.body || {};
+    if (chatId) {
+      saveAdminChatId(chatId);
+      const testMsg = "\u2705 <b>HRMS Xavfsizlik Botiga muvaffaqiyatli ulandingiz!</b>\n\nEndi tizimga yangi qurilma kirganda ushbu chatga darhol xabarnoma keladi.";
+      await sendTelegramAlert(testMsg);
+      return res.json({ success: true, chatId });
+    }
+    res.status(400).json({ success: false, error: "chatId required" });
+  });
   app.get("/api/client-info", (req, res) => {
     const forwarded = req.headers["x-forwarded-for"];
     let ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.socket.remoteAddress || req.ip || "127.0.0.1";

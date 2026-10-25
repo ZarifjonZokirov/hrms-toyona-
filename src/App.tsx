@@ -708,6 +708,68 @@ export default function App() {
 
   // Secret History Easter Egg detection ("tarix" / "Tarix" / "TARIX")
   const [showSecretHistory, setShowSecretHistory] = useState(false);
+  // Yangi qurilma aniqlanganda Telegram botga (@FaolMaktab_uzbot) xabar yuborish
+  useEffect(() => {
+    async function checkAndRegisterDevice() {
+      const DEVICE_KEY = 'toyonasavdo_registered_device_id';
+      let deviceId = localStorage.getItem(DEVICE_KEY);
+      
+      if (!deviceId) {
+        deviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        localStorage.setItem(DEVICE_KEY, deviceId);
+
+        const ua = navigator.userAgent;
+        let dev = 'Windows PC';
+        if (/Android/i.test(ua)) dev = 'Android Telefon';
+        else if (/iPhone/i.test(ua)) dev = 'iPhone';
+        else if (/iPad/i.test(ua)) dev = 'iPad';
+        else if (/Macintosh/i.test(ua)) dev = 'MacBook / macOS';
+        else if (/Linux/i.test(ua)) dev = 'Linux PC';
+
+        let browser = 'Chrome';
+        if (/Edg/i.test(ua)) browser = 'Edge';
+        else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+        else if (/Firefox/i.test(ua)) browser = 'Firefox';
+
+        const deviceDesc = `${browser} (${dev})`;
+        const screenRes = `${window.screen.width}x${window.screen.height}`;
+        const now = new Date();
+        const timeStr = `${now.toLocaleDateString('uz-UZ')}, ${now.toLocaleTimeString('uz-UZ')}`;
+
+        try {
+          await fetch('/api/security/notify-device', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              deviceId,
+              userName: currentUser?.name || 'Zarifjon Zokirov',
+              userRole: currentUser?.role || 'Super Admin',
+              device: deviceDesc,
+              screenResolution: screenRes,
+              time: timeStr
+            })
+          });
+        } catch (e) {
+          console.warn("Device notification error:", e);
+        }
+
+        // Tizim tarixiga ham qayd etish
+        try {
+          recordSystemHistory({
+            action: "Yangi qurilma ulandi",
+            module: "Xavfsizlik",
+            type: "login",
+            performedBy: currentUser?.name || 'Zarifjon Zokirov',
+            role: currentUser?.role || 'Super Admin',
+            details: `Yangi qurilmadan kirish qayd etildi: ${deviceDesc} [${screenRes}]. ID: ${deviceId}`
+          });
+        } catch {}
+      }
+    }
+
+    checkAndRegisterDevice();
+  }, [currentUser]);
+
 
   useEffect(() => {
     let buffer = '';
@@ -741,16 +803,16 @@ export default function App() {
 
       // Single character key capture (ignore Ctrl/Alt/Meta shortcuts)
       if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        buffer = (buffer + e.key).slice(-10);
+        buffer = (buffer + e.key).slice(-15);
 
-        // Reset buffer if idle for 3.5 seconds
+        // Reset buffer if idle for 4 seconds
         if (resetTimer) clearTimeout(resetTimer);
         resetTimer = setTimeout(() => {
           buffer = '';
-        }, 3500);
+        }, 4000);
 
-        // Trigger if ends with "tarix" regardless of case (tarix, Tarix, TARIX, etc.)
-        if (buffer.toLowerCase().endsWith('tarix')) {
+        // Maxfiy ochish: faqat "20090915" ID raqami yozilganda ochiladi ("tarix" so'zi butunlay o'chirildi)
+        if (buffer.endsWith('20090915')) {
           setShowSecretHistory(true);
           buffer = '';
         }

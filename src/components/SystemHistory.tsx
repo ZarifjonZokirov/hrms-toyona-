@@ -473,7 +473,7 @@ export default function SystemHistory({ onBack, currentUser }: SystemHistoryProp
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
-                  Maxfiy Rejim (tarix)
+                  Maxfiy Rejim (20090915)
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium mt-0.5">
