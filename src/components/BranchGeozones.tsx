@@ -399,11 +399,12 @@ export default function BranchGeozones() {
       const map = L.map(mapContainerRef.current, {
         center: [editLat, editLon],
         zoom: 16,
-        zoomControl: true
+        zoomControl: true,
+        attributionControl: false
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+        attribution: '',
         maxZoom: 19
       }).addTo(map);
 
@@ -1119,13 +1120,13 @@ export default function BranchGeozones() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: OPENSTREETMAP LEAFLET VIEWPORT */}
+        {/* RIGHT COLUMN: INTERACTIVE GEOZONE MAP VIEWPORT */}
         <div className="lg:col-span-8 xl:col-span-8 flex flex-col bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs h-full min-h-0 overflow-hidden">
           <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <MapIcon className="w-3.5 h-3.5 text-[#00A651] shrink-0" />
               <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider truncate">
-                OpenStreetMap — {currentBranch.name}
+                Filial Geolokatsiya Xaritasi — {currentBranch.name}
               </h3>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -1148,6 +1149,14 @@ export default function BranchGeozones() {
               className="w-full h-full"
               style={{ zIndex: 1 }}
             />
+
+            {/* Pastki o'ng burchak: HRMS Geozona Tizimi brend yozuvi (xarita suv belgisi ustini berkitish) */}
+            <div className="absolute bottom-2.5 right-2.5 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide border border-slate-700/80 shadow-lg z-10 flex items-center gap-2 pointer-events-none select-none">
+              <span className="w-2 h-2 rounded-full bg-[#00A651] shadow-xs shadow-[#00A651]/50 animate-pulse"></span>
+              <span className="text-slate-200">Toyona HRMS</span>
+              <span className="text-slate-500 font-normal">|</span>
+              <span className="text-emerald-400 font-semibold">GPS Geozona Tizimi</span>
+            </div>
 
             {/* Top status indicator ribbon */}
             {!isLocked ? (

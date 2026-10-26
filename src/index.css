@@ -209,3 +209,11 @@ body, aside, header, main {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* Leaflet Xarita Suv Belgisi va Attributionni butunlay berkitish */
+.leaflet-control-attribution {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
