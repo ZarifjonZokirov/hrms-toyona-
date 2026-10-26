@@ -301,6 +301,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedVacancyForCandidates, setSelectedVacancyForCandidates] = useState<Vacancy | null>(null);
   const [vacancyToDelete, setVacancyToDelete] = useState<Vacancy | null>(null);
+  const [editingVacancy, setEditingVacancy] = useState<Vacancy | null>(null);
   const [selectedCandidateDetail, setSelectedCandidateDetail] = useState<Candidate | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -433,30 +434,97 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
     });
   }, [vacancies, searchQuery, selectedBranch, selectedDepartment, selectedStatus, onlyWithCandidates, candidates]);
 
-  // Handle Add Vacancy
-  const handleCreateVacancy = (e: React.FormEvent) => {
+  // Modal open/close handlers
+  const handleOpenCreate = () => {
+    setEditingVacancy(null);
+    setFormData({
+      title: POSITIONS_LIST[0] || '',
+      branch: BRANCHES_LIST[0] || '',
+      department: 'Savdo bo\'limi',
+      headcount: 1,
+      salaryRange: '4,000,000 - 6,000,000 UZS',
+      requirements: '',
+      status: 'Faol'
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEdit = (vac: Vacancy) => {
+    setEditingVacancy(vac);
+    setFormData({
+      title: vac.title,
+      branch: vac.branch,
+      department: vac.department,
+      headcount: vac.headcount || 1,
+      salaryRange: vac.salaryRange || 'Kelishilgan',
+      requirements: vac.requirements || '',
+      status: vac.status
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsAddModalOpen(false);
+    setEditingVacancy(null);
+    setFormData({
+      title: POSITIONS_LIST[0] || '',
+      branch: BRANCHES_LIST[0] || '',
+      department: 'Savdo bo\'limi',
+      headcount: 1,
+      salaryRange: '4,000,000 - 6,000,000 UZS',
+      requirements: '',
+      status: 'Faol'
+    });
+  };
+
+  // Handle Save (Create or Edit) Vacancy
+  const handleSaveVacancy = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       showToast("Iltimos, lavozim nomini kiriting!");
       return;
     }
 
-    const newVacancy: Vacancy = {
-      id: `vac-${Date.now()}`,
-      title: formData.title.trim(),
-      branch: formData.branch,
-      department: formData.department,
-      headcount: Number(formData.headcount) || 1,
-      salaryRange: formData.salaryRange.trim() || "Kelishilgan",
-      requirements: formData.requirements.trim() || "Talablar suhbat jarayonida tushuntiriladi",
-      status: formData.status,
-      createdAt: new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.')
-    };
+    if (editingVacancy) {
+      // Tahrirlash (Update)
+      const updatedVacancy: Vacancy = {
+        ...editingVacancy,
+        title: formData.title.trim(),
+        branch: formData.branch,
+        department: formData.department,
+        headcount: Number(formData.headcount) || 1,
+        salaryRange: formData.salaryRange.trim() || "Kelishilgan",
+        requirements: formData.requirements.trim() || "Talablar suhbat jarayonida tushuntiriladi",
+        status: formData.status
+      };
 
-    setVacancies(prev => [newVacancy, ...prev]);
-    saveFirebaseVacancy(newVacancy);
-    setIsAddModalOpen(false);
-    showToast(`"${newVacancy.title}" bo'sh ish o'rni yaratildi!`);
+      setVacancies(prev => prev.map(v => v.id === editingVacancy.id ? updatedVacancy : v));
+      await saveFirebaseVacancy(updatedVacancy);
+      if (selectedVacancyForCandidates?.id === editingVacancy.id) {
+        setSelectedVacancyForCandidates(updatedVacancy);
+      }
+      setIsAddModalOpen(false);
+      setEditingVacancy(null);
+      showToast(`"${updatedVacancy.title}" muvaffaqiyatli tahrirlandi!`);
+    } else {
+      // Yangi yaratish (Create)
+      const newVacancy: Vacancy = {
+        id: `vac-${Date.now()}`,
+        title: formData.title.trim(),
+        branch: formData.branch,
+        department: formData.department,
+        headcount: Number(formData.headcount) || 1,
+        salaryRange: formData.salaryRange.trim() || "Kelishilgan",
+        requirements: formData.requirements.trim() || "Talablar suhbat jarayonida tushuntiriladi",
+        status: formData.status,
+        createdAt: new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.')
+      };
+
+      setVacancies(prev => [newVacancy, ...prev]);
+      await saveFirebaseVacancy(newVacancy);
+      setIsAddModalOpen(false);
+      showToast(`"${newVacancy.title}" bo'sh ish o'rni yaratildi!`);
+    }
 
     // Reset form
     setFormData({
@@ -572,7 +640,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
 
           <button
             type="button"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenCreate}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#00A651] hover:bg-[#008d44] text-white text-xs font-bold rounded-xl shadow-md shadow-[#00A651]/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -866,6 +934,14 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleOpenEdit(vacancy)}
+                          title="Tahrirlash"
+                          className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setVacancyToDelete(vacancy)}
                           title="O'chirish"
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer"
@@ -926,13 +1002,28 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedVacancyForCandidates(null)}
-                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const v = selectedVacancyForCandidates;
+                      handleOpenEdit(v);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold transition-all border border-amber-200 dark:border-amber-800 cursor-pointer"
+                    title="Ushbu ish o'rnini tahrirlash"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Tahrirlash</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVacancyForCandidates(null)}
+                    className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body: Matched Candidates List */}
@@ -1132,21 +1223,23 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
             >
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80">
                 <div className="flex items-center gap-2">
-                  <span className="p-2 bg-[#00A651]/10 text-[#00A651] rounded-xl">
-                    <Plus className="w-4 h-4" />
+                  <span className={`p-2 rounded-xl ${editingVacancy ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-[#00A651]/10 text-[#00A651]'}`}>
+                    {editingVacancy ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                   </span>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">Yangi Bo'sh Ish O'rni Yaratish</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base">
+                    {editingVacancy ? "Bo'sh Ish O'rnini Tahrirlash" : "Yangi Bo'sh Ish O'rni Yaratish"}
+                  </h3>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleCreateVacancy} className="p-6 space-y-4">
+              <form onSubmit={handleSaveVacancy} className="p-6 space-y-4">
                 {/* 1. Job title */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -1267,7 +1360,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
                   <button
                     type="button"
-                    onClick={() => setIsAddModalOpen(false)}
+                    onClick={handleCloseModal}
                     className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer"
                   >
                     Bekor qilish
@@ -1277,7 +1370,7 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
                     className="px-5 py-2.5 bg-[#00A651] hover:bg-[#008d44] text-white text-xs font-bold rounded-xl shadow-md shadow-[#00A651]/20 transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     <Check className="w-4 h-4" />
-                    <span>Ish O'rnini Saqlash</span>
+                    <span>{editingVacancy ? "O'zgarishlarni Saqlash" : "Ish O'rnini Saqlash"}</span>
                   </button>
                 </div>
               </form>
