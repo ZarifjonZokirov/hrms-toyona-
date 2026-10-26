@@ -217,3 +217,14 @@ body, aside, header, main {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* Leaflet DivIcon va Marker Pins: Butunlay shaffof, oq qirralarsiz tiniq ko'rinish */
+.leaflet-div-icon,
+.hrms-clean-pin,
+.hrms-clean-pin-wrapper {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}

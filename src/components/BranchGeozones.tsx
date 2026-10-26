@@ -37,36 +37,55 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Custom SVG Icons for active vs inactive branches with exact tip anchor
+// Custom SVG Icons for active vs inactive branches with exact tip anchor and transparent crisp styling
 const activeBranchIcon = L.divIcon({
-  className: '',
+  className: 'hrms-clean-pin',
   html: `
-    <div style="position: relative; width: 32px; height: 42px; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));">
-      <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16C0 27.5 16 42 16 42C16 42 32 27.5 32 16C32 7.163 24.837 0 16 0Z" fill="#ED1C24" stroke="#FFFFFF" stroke-width="2"/>
-        <circle cx="16" cy="15" r="5.5" fill="#FFFFFF"/>
+    <div class="hrms-clean-pin-wrapper" style="position: relative; width: 34px; height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent !important; border: none !important;">
+      <svg width="34" height="46" viewBox="0 0 34 46" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; filter: drop-shadow(0 5px 8px rgba(0,0,0,0.38)); shape-rendering: geometricPrecision;">
+        <defs>
+          <linearGradient id="activePinGrad" x1="17" y1="2" x2="17" y2="43" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FF3850"/>
+            <stop offset="100%" stop-color="#D90429"/>
+          </linearGradient>
+        </defs>
+        <!-- Asosiy lokatsiya nishoni: silliq, chetlarida hech qanday oq dog'siz toza kontur -->
+        <path d="M17 2C9.82 2 4 7.82 4 15C4 24.5 17 43 17 43C17 43 30 24.5 30 15C30 7.82 24.18 2 17 2Z" fill="url(#activePinGrad)" stroke="#A30018" stroke-width="0.7"/>
+        <!-- Markaziy tiniq nishon doirasi -->
+        <circle cx="17" cy="15" r="5" fill="#FFFFFF"/>
+        <circle cx="17" cy="15" r="2.3" fill="#D90429"/>
+        <!-- Yerga tushgan tabiiy soyasi -->
+        <ellipse cx="17" cy="44.5" rx="5.5" ry="1.5" fill="rgba(0,0,0,0.3)"/>
       </svg>
-      <div style="position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); width: 8px; height: 3px; background: rgba(0,0,0,0.3); border-radius: 50%; filter: blur(1px);"></div>
     </div>
   `,
-  iconSize: [32, 42],
-  iconAnchor: [16, 42],
-  popupAnchor: [0, -42]
+  iconSize: [34, 46],
+  iconAnchor: [17, 44],
+  popupAnchor: [0, -44]
 });
 
 const defaultBranchIcon = L.divIcon({
-  className: '',
+  className: 'hrms-clean-pin',
   html: `
-    <div style="position: relative; width: 26px; height: 35px; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.25));">
-      <svg width="26" height="35" viewBox="0 0 26 35" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M13 0C5.82 0 0 5.82 0 13C0 22.5 13 35 13 35C13 35 26 22.5 26 13C26 5.82 20.18 0 13 0Z" fill="#00A651" stroke="#FFFFFF" stroke-width="2"/>
-        <circle cx="13" cy="12" r="4.5" fill="#FFFFFF"/>
+    <div class="hrms-clean-pin-wrapper" style="position: relative; width: 28px; height: 38px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent !important; border: none !important;">
+      <svg width="28" height="38" viewBox="0 0 28 38" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.28)); shape-rendering: geometricPrecision;">
+        <defs>
+          <linearGradient id="defaultPinGrad" x1="14" y1="2" x2="14" y2="35" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00C853"/>
+            <stop offset="100%" stop-color="#008A38"/>
+          </linearGradient>
+        </defs>
+        <!-- Boshqa filiallar lokatsiya nishoni: silliq yashil kontur -->
+        <path d="M14 2C8.477 2 4 6.477 4 12C4 19.5 14 35 14 35C14 35 24 19.5 24 12C24 6.477 19.523 2 14 2Z" fill="url(#defaultPinGrad)" stroke="#005A24" stroke-width="0.7"/>
+        <circle cx="14" cy="12" r="4" fill="#FFFFFF"/>
+        <circle cx="14" cy="12" r="1.8" fill="#008A38"/>
+        <ellipse cx="14" cy="36.5" rx="4.5" ry="1.2" fill="rgba(0,0,0,0.22)"/>
       </svg>
     </div>
   `,
-  iconSize: [26, 35],
-  iconAnchor: [13, 35],
-  popupAnchor: [0, -35]
+  iconSize: [28, 38],
+  iconAnchor: [14, 36],
+  popupAnchor: [0, -36]
 });
 
 declare global {
