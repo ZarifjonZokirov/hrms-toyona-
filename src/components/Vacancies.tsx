@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, Plus, Briefcase, Building2, MapPin, Users, UserCheck, 
   Trash2, Edit2, CheckCircle2, Clock, DollarSign, X, Phone, 
-  ChevronRight, ArrowUpDown, UserX, AlertCircle, FileText, Check, Eye, Loader2
+  ChevronRight, ArrowUpDown, UserX, AlertCircle, Check, Eye, Loader2
 } from 'lucide-react';
 import { POSITIONS_LIST, BRANCHES_LIST, Candidate } from './Candidates';
 import { exportToExcel, exportToPDF } from '../lib/export';
@@ -942,27 +942,16 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
 
                   if (matched.length === 0) {
                     return (
-                      <div className="p-10 text-center flex flex-col items-center justify-center space-y-3 bg-slate-50/60 dark:bg-slate-800/60 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
-                        <div className="w-14 h-14 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500">
-                          <UserX className="w-7 h-7" />
+                      <div className="py-12 px-6 text-center flex flex-col items-center justify-center space-y-2 bg-slate-50/60 dark:bg-slate-800/60 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700/70 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500">
+                          <UserX className="w-6 h-6" />
                         </div>
                         <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
-                          Ushbu filialdagi "{selectedVacancyForCandidates.title}" uchun hali nomzod kelmagan
+                          Nomzod yo'q
                         </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-                          Ayni paytda <b className="text-slate-700 dark:text-slate-300">{selectedVacancyForCandidates.branch}</b> filialiga ushbu lavozim bo'yicha ariza tushmagan. Nomzodlar anketani to'ldirishi bilan bu yerda bir zumda ko'rinadi.
+                        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+                          Ayni paytda <b className="text-slate-700 dark:text-slate-300">{selectedVacancyForCandidates.branch}</b> filiali bo'yicha ushbu lavozimga arizalar kelib tushmagan.
                         </p>
-                        <div className="pt-2 flex items-center gap-2">
-                          <a
-                            href="/anketa.html"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-4 py-2 bg-[#00A651] hover:bg-[#008d44] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Anketa Shaklini Ko'rish / Test Qilish</span>
-                          </a>
-                        </div>
                       </div>
                     );
                   }
