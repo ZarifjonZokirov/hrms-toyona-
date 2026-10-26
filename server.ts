@@ -76,9 +76,9 @@ async function getFirestoreCandidates(): Promise<any[]> {
           status: f.status?.stringValue || 'Yangi nomzod',
           submittedAt: f.submittedAt?.stringValue || f.date?.stringValue || new Date().toISOString(),
           date: f.date?.stringValue || new Date().toLocaleDateString('uz-UZ'),
-          photoUrl: f.photoUrl?.stringValue || '',
-          passportFrontUrl: f.passportFrontUrl?.stringValue || '',
-          passportBackUrl: f.passportBackUrl?.stringValue || ''
+          photoUrl: f.photoUrl?.stringValue || f.photo_url?.stringValue || f.avatarUrl?.stringValue || f.photo?.stringValue || '',
+          passportFrontUrl: f.passportFrontUrl?.stringValue || f.passport_front_url?.stringValue || f.passport_front?.stringValue || f.passportFront?.stringValue || f.passFront?.stringValue || f.passportImage?.stringValue || f.passport_image?.stringValue || f.passportPhoto?.stringValue || f.passport1?.stringValue || '',
+          passportBackUrl: f.passportBackUrl?.stringValue || f.passport_back_url?.stringValue || f.passport_back?.stringValue || f.passportBack?.stringValue || f.passBack?.stringValue || f.passport2?.stringValue || ''
         };
       });
   } catch (err: any) {
@@ -1502,9 +1502,9 @@ export async function configureRoutes(appInstance: express.Express = app) {
         dob: body.dob || body.birthYear || body.tugilganYili || '',
         pastExperience: body.pastExperience || body.candidateMessage || body.tajriba || '',
         candidateMessage: body.pastExperience || body.candidateMessage || body.tajriba || '',
-        photoUrl: body.photoUrl || '',
-        passportFrontUrl: body.passportFrontUrl || '',
-        passportBackUrl: body.passportBackUrl || ''
+        photoUrl: body.photoUrl || body.photo_url || body.avatarUrl || body.photo || '',
+        passportFrontUrl: body.passportFrontUrl || body.passport_front_url || body.passport_front || body.passportFront || body.passFront || body.passportImage || body.passport_image || body.passportPhoto || body.passport1 || '',
+        passportBackUrl: body.passportBackUrl || body.passport_back_url || body.passport_back || body.passportBack || body.passBack || body.passport2 || ''
       };
 
       // 1. Instant local persistence to guarantee 0-failure response

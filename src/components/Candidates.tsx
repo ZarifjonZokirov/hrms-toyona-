@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, ChevronDown, Trash2, CheckCircle2, X, Phone, MapPin, 
   User, Calendar, Briefcase, UserCheck, GraduationCap, Building2, 
-  Heart, Filter, RefreshCw, Loader2, Camera, Upload
+  Heart, Filter, RefreshCw, Loader2, Camera, Upload,
+  FileText, Eye, Download, Image as ImageIcon, AlertCircle
 } from 'lucide-react';
 import { ToyonaBrand, ModuleHeaderLogo } from './Logo';
 import { db, handleFirestoreError } from '../firebase';
@@ -162,13 +163,45 @@ export default function Candidates() {
         }
       }
       
-      const normalized = list.map(c => ({
-        ...c,
-        id: c.id || (c as any).firestoreId || `cand_${Math.random()}`,
-        fullName: c.fullName || (c as any).fio || 'Noma\'lum',
-        jobPosition: c.jobPosition || (c as any).position || (c as any).lavozim || 'Noma\'lum',
-        photoUrl: c.photoUrl || (c as any).photo_url || (c as any).avatarUrl || (c as any).photo || '',
-      }));
+      const normalized = list.map(c => {
+        const passFront = 
+          c.passportFrontUrl || 
+          (c as any).passport_front_url || 
+          (c as any).passport_front || 
+          (c as any).passportFront || 
+          (c as any).passFront || 
+          (c as any).passportImage || 
+          (c as any).passport_image || 
+          (c as any).passportPhoto || 
+          (c as any).passport1 || 
+          '';
+
+        const passBack = 
+          c.passportBackUrl || 
+          (c as any).passport_back_url || 
+          (c as any).passport_back || 
+          (c as any).passportBack || 
+          (c as any).passBack || 
+          (c as any).passport2 || 
+          '';
+
+        const photo = 
+          c.photoUrl || 
+          (c as any).photo_url || 
+          (c as any).avatarUrl || 
+          (c as any).photo || 
+          '';
+
+        return {
+          ...c,
+          id: c.id || (c as any).firestoreId || `cand_${Math.random()}`,
+          fullName: c.fullName || (c as any).fio || (c as any).full_name || 'Noma\'lum',
+          jobPosition: c.jobPosition || (c as any).position || (c as any).lavozim || (c as any).job_position || 'Noma\'lum',
+          photoUrl: photo,
+          passportFrontUrl: passFront,
+          passportBackUrl: passBack,
+        };
+      });
 
       const combined = (normalized as Candidate[]).sort((a, b) => {
         const tA = new Date(a.submittedAt).getTime() || 0;
@@ -203,6 +236,76 @@ export default function Candidates() {
   }, []);
   
   const showToast = (msg: string) => setToastMessage(msg);
+
+  const [isUploadingDoc, setIsUploadingDoc] = useState<string | null>(null);
+
+  const handleDownloadImage = (url: string, filename: string) => {
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleAttachDoc = async (field: 'photoUrl' | 'passportFrontUrl' | 'passportBackUrl', file: File) => {
+    if (!selectedCandidate || !file) return;
+    setIsUploadingDoc(field);
+    try {
+      const reader = new FileReader();
+      const base64: string = await new Promise((resolve, reject) => {
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.85));
+            } else {
+              resolve(e.target?.result as string);
+            }
+          };
+          img.onerror = reject;
+          img.src = e.target?.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const updated: Candidate = { ...selectedCandidate, [field]: base64 };
+      setSelectedCandidate(updated);
+      setCandidates(prev => prev.map(c => c.id === updated.id ? updated : c));
+
+      // Persist to Firebase Firestore
+      const { saveFirebaseCandidate } = await import('../firebase');
+      await saveFirebaseCandidate(updated);
+      showToast("Rasm muvaffaqiyatli biriktirildi va saqlandi!");
+    } catch (err) {
+      console.error("Doc upload error:", err);
+      showToast("Rasm yuklashda xatolik yuz berdi!");
+    } finally {
+      setIsUploadingDoc(null);
+    }
+  };
   const handleDirectHireCandidate = async (candidate: Candidate) => {
     setIsHiring(true);
     try {
@@ -530,9 +633,17 @@ export default function Candidates() {
                     )}
                     <div>
                       <div className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-[#00A651] transition-colors">{candidate.fullName}</div>
-                      {candidate.fatherName && (
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">otasi: {candidate.fatherName}</div>
-                      )}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        {candidate.fatherName && (
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">otasi: {candidate.fatherName}</span>
+                        )}
+                        {Boolean(candidate.passportFrontUrl || candidate.passportBackUrl) && (
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200/80 dark:border-cyan-800/80 flex items-center gap-0.5" title="Pasport nusxasi biriktirilgan">
+                            <FileText className="w-2.5 h-2.5" />
+                            Pasport
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -682,29 +793,250 @@ export default function Candidates() {
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto space-y-5 text-slate-700 dark:text-slate-300 text-sm">
                 
-                {/* Nomzod fotosurati */}
-                {selectedCandidate.photoUrl && (
-                  <div 
-                    onClick={() => setPreviewImage({ url: selectedCandidate.photoUrl!, title: `${selectedCandidate.fullName} - Fotosurat` })}
-                    className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl flex items-center gap-4 cursor-pointer group hover:bg-emerald-100/50 dark:hover:bg-emerald-950/40 transition-colors shadow-2xs"
-                    title="Kattalashtirib ko'rish uchun bosing"
-                  >
-                    <img 
-                      src={selectedCandidate.photoUrl} 
-                      alt={selectedCandidate.fullName} 
-                      className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-xl border border-emerald-500/50 shadow-md shrink-0 group-hover:scale-105 transition-transform"
-                    />
-                    <div className="space-y-1">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Biriktirilgan 3x4 fotosurat
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Rasmni kattalashtirib ko'rish uchun ustiga bosing
-                      </p>
+                {/* ========================================================= */}
+                {/* HUJJATLAR VA RASMLAR (3x4 FOTOSURAT VA PASPORT NUSXALARI) */}
+                {/* ========================================================= */}
+                <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-[#00A651]" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                        Hujjatlar va Rasmlar (Pasport va Fotosurat)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] font-bold">
+                      {selectedCandidate.passportFrontUrl || selectedCandidate.passportBackUrl ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-[#00A651] dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Pasport nusxalari mavjud
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          Pasport biriktirilmagan
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                    {/* 1. 3x4 FOTOSURAT */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 flex flex-col justify-between space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5 text-blue-500" />
+                          3x4 Fotosurat
+                        </span>
+                        {selectedCandidate.photoUrl ? (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Mavjud" />
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-semibold">Yo'q</span>
+                        )}
+                      </div>
+
+                      {selectedCandidate.photoUrl ? (
+                        <div className="space-y-2">
+                          <div 
+                            onClick={() => setPreviewImage({ url: selectedCandidate.photoUrl!, title: `${selectedCandidate.fullName} - 3x4 Fotosurat` })}
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 h-36 bg-slate-100 dark:bg-slate-800 flex items-center justify-center"
+                          >
+                            <img 
+                              src={selectedCandidate.photoUrl} 
+                              alt="Fotosurat" 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <span className="px-2 py-1 bg-white/90 text-slate-800 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm">
+                                <Eye className="w-3 h-3 text-[#00A651]" />
+                                Ko'rish
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({ url: selectedCandidate.photoUrl!, title: `${selectedCandidate.fullName} - 3x4 Fotosurat` })}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3 text-[#00A651]" />
+                              Ko'rish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadImage(selectedCandidate.photoUrl!, `${selectedCandidate.fullName}_foto.jpg`)}
+                              className="p-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                              title="Yuklab olish"
+                            >
+                              <Download className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-36 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-3 text-center space-y-2">
+                          <Camera className="w-6 h-6 text-slate-400" />
+                          <span className="text-[11px] text-slate-400 font-semibold">3x4 rasm yo'q</span>
+                          <label className="cursor-pointer px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 text-[11px] font-bold rounded-lg border border-blue-200 dark:border-blue-800 transition-colors inline-flex items-center gap-1">
+                            {isUploadingDoc === 'photoUrl' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                            <span>Yuklash</span>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleAttachDoc('photoUrl', f);
+                              }} 
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. PASPORT OLDI TOMONI */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 flex flex-col justify-between space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-cyan-500" />
+                          Pasport (Oldi tomoni)
+                        </span>
+                        {selectedCandidate.passportFrontUrl ? (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Mavjud" />
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-semibold">Yo'q</span>
+                        )}
+                      </div>
+
+                      {selectedCandidate.passportFrontUrl ? (
+                        <div className="space-y-2">
+                          <div 
+                            onClick={() => setPreviewImage({ url: selectedCandidate.passportFrontUrl!, title: `${selectedCandidate.fullName} - Pasport (Oldi tomoni - Asosiy sahifa)` })}
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 h-36 bg-slate-100 dark:bg-slate-800 flex items-center justify-center"
+                          >
+                            <img 
+                              src={selectedCandidate.passportFrontUrl} 
+                              alt="Pasport oldi" 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <span className="px-2 py-1 bg-white/90 text-slate-800 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm">
+                                <Eye className="w-3 h-3 text-cyan-600" />
+                                Ko'rish
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({ url: selectedCandidate.passportFrontUrl!, title: `${selectedCandidate.fullName} - Pasport (Oldi tomoni - Asosiy sahifa)` })}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3 text-cyan-600" />
+                              Ko'rish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadImage(selectedCandidate.passportFrontUrl!, `${selectedCandidate.fullName}_pasport_oldi.jpg`)}
+                              className="p-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                              title="Yuklab olish"
+                            >
+                              <Download className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-36 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-3 text-center space-y-2">
+                          <FileText className="w-6 h-6 text-slate-400" />
+                          <span className="text-[11px] text-slate-400 font-semibold">Pasport oldi yo'q</span>
+                          <label className="cursor-pointer px-2.5 py-1 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 text-[11px] font-bold rounded-lg border border-cyan-200 dark:border-cyan-800 transition-colors inline-flex items-center gap-1">
+                            {isUploadingDoc === 'passportFrontUrl' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                            <span>Yuklash</span>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleAttachDoc('passportFrontUrl', f);
+                              }} 
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. PASPORT ORQA TOMONI / PROPISKA */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl p-3 flex flex-col justify-between space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                          Pasport (Orqa/Propiska)
+                        </span>
+                        {selectedCandidate.passportBackUrl ? (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Mavjud" />
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-semibold">Yo'q</span>
+                        )}
+                      </div>
+
+                      {selectedCandidate.passportBackUrl ? (
+                        <div className="space-y-2">
+                          <div 
+                            onClick={() => setPreviewImage({ url: selectedCandidate.passportBackUrl!, title: `${selectedCandidate.fullName} - Pasport (Orqa tomoni / Propiska)` })}
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 h-36 bg-slate-100 dark:bg-slate-800 flex items-center justify-center"
+                          >
+                            <img 
+                              src={selectedCandidate.passportBackUrl} 
+                              alt="Pasport orqasi" 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <span className="px-2 py-1 bg-white/90 text-slate-800 rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm">
+                                <Eye className="w-3 h-3 text-indigo-600" />
+                                Ko'rish
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({ url: selectedCandidate.passportBackUrl!, title: `${selectedCandidate.fullName} - Pasport (Orqa tomoni / Propiska)` })}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3 text-indigo-600" />
+                              Ko'rish
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadImage(selectedCandidate.passportBackUrl!, `${selectedCandidate.fullName}_pasport_orqa.jpg`)}
+                              className="p-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                              title="Yuklab olish"
+                            >
+                              <Download className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-36 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-3 text-center space-y-2">
+                          <FileText className="w-6 h-6 text-slate-400" />
+                          <span className="text-[11px] text-slate-400 font-semibold">Pasport orqasi yo'q</span>
+                          <label className="cursor-pointer px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 text-[11px] font-bold rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors inline-flex items-center gap-1">
+                            {isUploadingDoc === 'passportBackUrl' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                            <span>Yuklash</span>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleAttachDoc('passportBackUrl', f);
+                              }} 
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 {/* 1. Shaxsiy ma'lumotlar */}
                 <div className="space-y-2">
