@@ -58,7 +58,7 @@ export const ALL_MODULE_DEFS = [
 ];
 
 export const ALL_BRANCHES = [
-  'Bosh Idora',
+  'Bosh ofis',
   'Turkiston filiali',
   'Navoiy filiali',
   'Istiqlol (Gorod) filiali',
@@ -81,7 +81,7 @@ export const INITIAL_USERS_DATA: UserItem[] = [
     password: '', 
     email: 'zarifjon@toyonasavdo.uz', 
     role: 'Super Admin', 
-    branch: 'Bosh Idora', 
+    branch: 'Bosh ofis', 
     lastActive: 'Hozir',
     allowedModules: ALL_MODULE_DEFS.map(m => m.id)
   }
@@ -146,7 +146,7 @@ export default function UsersManagement({
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState('HR Menejer');
-  const [newUserBranch, setNewUserBranch] = useState('Bosh Idora');
+  const [newUserBranch, setNewUserBranch] = useState('Bosh ofis');
   const [newUserUsername, setNewUserUsername] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

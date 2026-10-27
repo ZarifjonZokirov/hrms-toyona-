@@ -332,6 +332,22 @@ export async function deleteFirebaseUser(userId: string | number): Promise<boole
   }
 }
 
+export const CANONICAL_BRANCHES = [
+  'Bosh ofis',
+  'Turkiston filiali',
+  'Navoiy filiali',
+  'Istiqlol (Gorod) filiali',
+  'Mingtut filiali',
+  'Yakkatut filiali',
+  'Pop filiali',
+  'Furqat filiali',
+  'Buvayda filiali',
+  'Yangiqo\'rg\'on filiali',
+  'Yaypan filiali',
+  'Marg\'ilon filiali',
+  'Toshkent Chilonzor filiali'
+] as const;
+
 export const CANONICAL_SUPER_ADMIN = {
   id: 1,
   firestoreId: 'user-1',
@@ -340,7 +356,7 @@ export const CANONICAL_SUPER_ADMIN = {
   password: '',
   email: 'zarifjon@toyonasavdo.uz',
   role: 'Super Admin',
-  branch: 'Bosh Idora',
+  branch: 'Bosh ofis',
   status: 'Faol',
   isOnline: true,
   lastActive: 'Hozir',

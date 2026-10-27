@@ -191,7 +191,7 @@ export const DEFAULT_GEOZONES: BranchGeozone[] = [
   },
   {
     id: 'branch-10',
-    name: 'Yangiqo\'rg\'on (Buvayda) filiali',
+    name: 'Yangiqo\'rg\'on filiali',
     description: 'Yangiqo\'rg\'on markazidagi savdo shoxobchasi',
     lat: 40.5900,
     lon: 71.0700,

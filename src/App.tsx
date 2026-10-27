@@ -703,7 +703,23 @@ export default function App() {
     : (currentUser?.role || 'Foydalanuvchi');
 
   // Filtered sidebar items based on current logged in user's permissions and custom order
-  const visibleNavItems = orderedNavItems.filter(item => allowedModules.includes(item.id));
+  const isPrivilegedAdminOrHR = isSuperAdmin || currentUser?.role === 'HR Menejer';
+  const visibleNavItems = useMemo(() => {
+    return orderedNavItems
+      .filter(item => allowedModules.includes(item.id))
+      .map(item => {
+        if (item.id === 'attendance' && item.subItems) {
+          if (!isPrivilegedAdminOrHR) {
+            // Filial mudiri va oddiy foydalanuvchilar parollar va sozlamalarni ko'rmaydi
+            return {
+              ...item,
+              subItems: item.subItems.filter(s => s.id === 'attendance_journal' || s.id === 'attendance_photo_requests')
+            };
+          }
+        }
+        return item;
+      });
+  }, [orderedNavItems, allowedModules, isPrivilegedAdminOrHR]);
 
   // Check if current view is permitted
   const isTabPermitted = (tabId: string) => {
@@ -712,6 +728,9 @@ export default function App() {
     }
     if (tabId.startsWith('transfers_') || tabId === 'transfers') {
       return allowedModules.includes('transfers');
+    }
+    if (tabId === 'attendance_credentials' || tabId === 'attendance_branches' || tabId === 'attendance_settings') {
+      return isPrivilegedAdminOrHR;
     }
     if (tabId.startsWith('attendance_') || tabId === 'attendance') {
       return allowedModules.includes('attendance');
@@ -1192,7 +1211,7 @@ export default function App() {
             <div className="flex items-center gap-2 overflow-hidden">
               <span className={`w-2 h-2 rounded-full shrink-0 ${displayRole === 'Super Admin' ? 'bg-[#ED1C24]' : 'bg-[#00A651]'}`} />
               <div className="flex flex-col truncate">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{currentUser.name}</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{currentUser?.name || "Foydalanuvchi"}</span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{displayRole}</span>
               </div>
             </div>
@@ -1374,7 +1393,7 @@ export default function App() {
               <div className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 transition-colors">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <div className="w-9 h-9 shrink-0 bg-gradient-to-tr from-[#00A651] to-emerald-400 text-white font-extrabold rounded-full flex items-center justify-center text-xs shadow-xs">
-                    {currentUser.name.charAt(0)}
+                    {(currentUser?.name || 'A').charAt(0)}
                   </div>
                   <div className="flex flex-col items-start overflow-hidden whitespace-nowrap">
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate text-left">
@@ -1462,7 +1481,7 @@ export default function App() {
               <Shield className="w-4 h-4 text-[#00A651] shrink-0" />
               <div className="flex flex-col text-left">
                 <span className="text-[10px] font-extrabold text-[#00A651] uppercase tracking-wider">{displayRole}:</span>
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{currentUser.name}</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{currentUser?.name || "Foydalanuvchi"}</span>
               </div>
             </div>
  
@@ -1484,7 +1503,7 @@ export default function App() {
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Ushbu Modulni Ko'rish Huquqi Yo'q</h3>
                 <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md leading-relaxed">
-                  Hurmatli <b>{currentUser.name}</b> ({currentUser.role}), ushbu bo'limni ko'rish sizning vakolat doirangizga kiritilmagan.
+                  Hurmatli <b>{currentUser?.name || "Foydalanuvchi"}</b> ({currentUser.role}), ushbu bo'limni ko'rish sizning vakolat doirangizga kiritilmagan.
                   Modul ruxsatini Super Admin orqali olishingiz mumkin.
                 </p>
                 <button

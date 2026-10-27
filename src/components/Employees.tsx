@@ -60,7 +60,8 @@ import {
   saveFirebaseDismissedEmployee,
   deleteFirebaseDismissedEmployee,
   getFirebaseCandidates,
-  deleteFirebaseCandidate
+  deleteFirebaseCandidate,
+  saveFirebaseCandidate
 } from '../firebase';
 import { Candidate } from './Candidates';
 import { recordSystemHistory } from './SystemHistory';
@@ -446,7 +447,7 @@ export default function Employees({ currentUser }: EmployeesProps = {}) {
   const totalFilteredPayroll = useMemo(() => {
     return filteredEmployees.reduce((sum, emp) => {
       if (!emp.salary) return sum;
-      const num = parseInt(emp.salary.replace(/[^0-9]/g, ''), 10);
+      const num = parseInt(String(emp.salary || '').replace(/[^0-9]/g, ''), 10);
       return sum + (isNaN(num) ? 0 : num);
     }, 0);
   }, [filteredEmployees]);
@@ -518,8 +519,11 @@ export default function Employees({ currentUser }: EmployeesProps = {}) {
         await saveFirebaseEmployee(newEmp);
 
         if (selectedCandidateId) {
-          await deleteFirebaseCandidate(selectedCandidateId);
-          setCandidatesList(prev => prev.filter(c => c.id !== selectedCandidateId));
+          const matchedCand = candidatesList.find(c => String(c.id) === String(selectedCandidateId));
+          if (matchedCand) {
+            await saveFirebaseCandidate({ ...matchedCand, status: 'Qabul qilingan' });
+          }
+          setCandidatesList(prev => prev.map(c => String(c.id) === String(selectedCandidateId) ? { ...c, status: 'Qabul qilingan' } : c));
           setSelectedCandidateId('');
         }
 

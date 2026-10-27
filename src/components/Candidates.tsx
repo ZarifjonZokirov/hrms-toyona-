@@ -317,14 +317,23 @@ export default function Candidates() {
       const maxId = numericIds.length > 0 ? Math.max(...numericIds) : existingEmps.length;
       const nextStaffId = `TS-${String(maxId + 1).padStart(4, '0')}`;
 
+      const baseUser = (candidate.fullName || 'xodim').toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').slice(0, 15) || `emp_${Date.now()}`;
+      const defaultPass = 'Toyona#2026!';
+      const targetBranch = (candidate.targetBranch && !candidate.targetBranch.toLowerCase().includes('viloyat'))
+        ? candidate.targetBranch
+        : 'Bosh ofis';
+
       const newEmp: any = {
         id: `emp-${Date.now()}`,
         fullName: candidate.fullName || 'Yangi Xodim',
         position: candidate.jobPosition || candidate.position || 'Mutaxassis',
         department: 'Savdo va Chakana',
-        branch: candidate.targetBranch || candidate.region || 'Bosh ofis',
+        branch: targetBranch,
         phone: candidate.phone1 || candidate.phone2 || '+998 90 000 00 00',
-        email: `${(candidate.fullName || 'xodim').toLowerCase().replace(/\s+/g, '.')}@toyona.uz`,
+        email: `${baseUser}@toyona.uz`,
+        username: baseUser,
+        password: defaultPass,
+        isAccountActive: true,
         hireDate: new Date().toISOString().split('T')[0],
         status: 'active',
         avatarUrl: candidate.photoUrl || '',
@@ -340,6 +349,8 @@ export default function Candidates() {
       };
 
       await saveFirebaseEmployee(newEmp);
+      const { syncUserPasswordInBothCollections } = await import('../firebase');
+      await syncUserPasswordInBothCollections(baseUser, defaultPass, newEmp.id).catch(() => {});
 
       const updatedCandidate = { ...candidate, status: 'Qabul qilingan' };
       await saveFirebaseCandidate(updatedCandidate);

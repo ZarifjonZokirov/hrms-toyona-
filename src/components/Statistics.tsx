@@ -75,6 +75,29 @@ export interface CandidateItem {
   skills: string[];
 }
 
+// Xavfsiz sana konvertori (nuqtali va ISO sanalarni to'g'ri o'qish)
+const safeParseDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  const s = String(dateStr).trim();
+  if (s.includes('.')) {
+    const parts = s.split('.');
+    if (parts.length === 3) {
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = parts[2];
+      const iso = `${year}-${month}-${day}`;
+      const d = new Date(iso);
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+  try {
+    const isoDate = parseISO(s);
+    if (!isNaN(isoDate.getTime())) return isoDate;
+  } catch {}
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export default function Statistics() {
   // --- REAL STATE O'ZGARUVCHILARI ---
   const [candidates, setCandidates] = useState<CandidateItem[]>([]);
@@ -377,7 +400,8 @@ export default function Statistics() {
     if (!selectedMonth) return filteredData;
     return filteredData.filter(c => {
       try {
-        return format(parseISO(c.date), 'MMM, yyyy') === selectedMonth;
+        const d = safeParseDate(c.date);
+        return d ? format(d, 'MMM, yyyy') === selectedMonth : false;
       } catch {
         return false;
       }
@@ -406,9 +430,11 @@ export default function Statistics() {
 
     sorted.forEach(c => {
       try {
+        const d = safeParseDate(c.date);
+        if (!d) return;
         const keyStr = selectedMonth 
-          ? format(parseISO(c.date), 'dd MMM') 
-          : format(parseISO(c.date), 'MMM, yyyy'); 
+          ? format(d, 'dd MMM') 
+          : format(d, 'MMM, yyyy'); 
         map.set(keyStr, (map.get(keyStr) || 0) + 1);
       } catch {}
     });

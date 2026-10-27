@@ -32,7 +32,8 @@ import {
   getFirebaseEmployees,
   getFirebaseBranches,
   getFirebaseGeozones,
-  getFirebaseCandidates
+  getFirebaseCandidates,
+  saveFirebaseCandidate
 } from '../firebase';
 import { DEFAULT_GEOZONES } from './BranchGeozones';
 import { BRANCHES_LIST, POSITIONS_LIST } from './Candidates';
@@ -365,21 +366,56 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     if (transferItem.status !== 'Yakunlangan') return;
     try {
       const emps = await getFirebaseEmployees();
-      if (emps && emps.length > 0) {
-        const targetEmp = emps.find((e: any) => 
-          (transferItem.employeeId && (e.id === transferItem.employeeId || e.staffId === transferItem.employeeId)) ||
-          (transferItem.staffId && e.staffId === transferItem.staffId) ||
-          e.fullName.trim().toLowerCase() === transferItem.fio.trim().toLowerCase()
+      let targetEmp = emps?.find((e: any) => 
+        (transferItem.employeeId && (String(e.id) === String(transferItem.employeeId) || e.staffId === transferItem.employeeId)) ||
+        (transferItem.staffId && e.staffId === transferItem.staffId) ||
+        e.fullName?.trim().toLowerCase() === transferItem.fio?.trim().toLowerCase()
+      );
+
+      if (targetEmp) {
+        targetEmp.branch = transferItem.filial;
+        if (transferItem.qaysiLavozimga) {
+          targetEmp.position = transferItem.qaysiLavozimga.replace(/\s*\(.*?\)\s*/g, '').trim() || targetEmp.position;
+        }
+        await saveFirebaseEmployee(targetEmp);
+      } else if (transferItem.fio) {
+        const allCandidates = await getFirebaseCandidates();
+        const matchedCandidate = allCandidates?.find((c: any) => 
+          (transferItem.employeeId && String(c.id) === String(transferItem.employeeId)) ||
+          c.name?.trim().toLowerCase() === transferItem.fio?.trim().toLowerCase()
         );
-        if (targetEmp) {
-          targetEmp.branch = transferItem.filial;
-          if (transferItem.qaysiLavozimga) {
-            targetEmp.position = transferItem.qaysiLavozimga.replace(/\s*\(.*?\)\s*/g, '').trim() || targetEmp.position;
-          }
-          await saveFirebaseEmployee(targetEmp);
+
+        const newEmpId = Date.now();
+        const baseUsername = transferItem.fio.toLowerCase().trim().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').slice(0, 15) || `emp_${newEmpId}`;
+        const newEmp = {
+          id: newEmpId,
+          staffId: `TY-${Math.floor(1000 + Math.random() * 9000)}`,
+          fullName: transferItem.fio,
+          branch: transferItem.filial || 'Bosh ofis',
+          position: transferItem.qaysiLavozimga || 'Hodim',
+          department: transferItem.kategoriya || 'Savdo bo\'limi',
+          phone: matchedCandidate?.phone || '+998 90 000 00 00',
+          email: matchedCandidate?.email || `${baseUsername}@toyonasavdo.uz`,
+          status: 'Faol',
+          username: baseUsername,
+          password: 'Toyona#2026!',
+          isAccountActive: true,
+          hireDate: new Date().toISOString().slice(0, 10),
+          avatarBg: 'bg-emerald-500'
+        };
+
+        await saveFirebaseEmployee(newEmp);
+
+        if (matchedCandidate) {
+          await saveFirebaseCandidate({
+            ...matchedCandidate,
+            status: 'Qabul qilingan'
+          });
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('syncEmployeeBranchIfCompleted error:', e);
+    }
   };
 
   const handleQuickStatusChange = async (id: string, newStatus: TransferItem['status']) => {
@@ -430,7 +466,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     const nowStr = `${now.toLocaleDateString('uz-UZ')}, ${now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
     setFormData({
       fio: '',
-      filial: "Uchko'prik",
+      filial: (allBranches && allBranches[0]) || 'Turkiston filiali',
       viloyat: "Farg'ona",
       kategoriya: "Omborxona",
       qaysiLavozimdan: "Ombor sektori mutaxassisi",
@@ -497,7 +533,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         id: `tr-${Date.now()}`,
         num: maxNum + 1,
         fio: formData.fio || '',
-        filial: formData.filial || "Uchko'prik",
+        filial: formData.filial || ((allBranches && allBranches[0]) || 'Turkiston filiali'),
         viloyat: formData.viloyat || "Farg'ona",
         kategoriya: formData.kategoriya || "Omborxona",
         qaysiLavozimdan: formData.qaysiLavozimdan || '',
