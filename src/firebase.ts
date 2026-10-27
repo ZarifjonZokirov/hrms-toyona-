@@ -345,9 +345,8 @@ export const CANONICAL_SUPER_ADMIN = {
   isOnline: true,
   lastActive: 'Hozir',
   allowedModules: [
-    'branches', 'candidates', 'vacancies', 'employees',
-    'quality', 'attendance', 'transfers', 'users', 'users_management',
-    'geozones', 'credentials', 'reports', 'settings', 'logs'
+    'users_management', 'branches', 'statistics', 'candidates',
+    'transfers', 'vacancies', 'employees', 'quality', 'attendance'
   ],
   updatedAt: new Date().toISOString()
 };

@@ -54,8 +54,7 @@ export const ALL_MODULE_DEFS = [
   { id: 'vacancies', label: 'Bo\'sh ish o\'rinlari', desc: 'Filiallardagi vakansiyalar va talablar', cat: 'Rekruting' },
   { id: 'employees', label: 'Xodimlar', desc: 'Mavjud xodimlar bazasi va ma\'lumotlari', cat: 'Kadrlar' },
   { id: 'quality', label: 'Sifat tarkibi', desc: 'Kadrlar tarkibi sifati va baholash ko\'rsatkichlari', cat: 'Analitika' },
-  { id: 'attendance', label: 'Davomat va kechikishlar', desc: 'Xodimlar kunlik davomati, kelib-ketish vaqtlari va kechikishlar hisoboti', cat: 'Kadrlar' },
-  { id: 'attendance_settings', label: 'Ish vaqti, jarima & dam kunlari', desc: 'Ish vaqti, daqiqa/soatlik kechikish jarimasi va dam olish kunlarini boshqarish', cat: 'Kadrlar' },
+  { id: 'attendance', label: 'Davomat va kechikishlar', desc: 'Xodimlar kunlik davomati, kelib-ketish vaqtlari va kechikishlar hisoboti', cat: 'Kadrlar' }
 ];
 
 export const ALL_BRANCHES = [

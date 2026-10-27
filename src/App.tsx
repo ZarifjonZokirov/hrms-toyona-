@@ -1197,7 +1197,7 @@ export default function App() {
               </div>
             </div>
             <span className="text-[10px] font-bold bg-[#00A651]/10 dark:bg-[#00A651]/20 text-[#00A651] px-2 py-0.5 rounded-md border border-[#00A651]/20 dark:border-[#00A651]/30">
-              {allowedModules.length} modul
+              {visibleNavItems.length} modul
             </span>
           </div>
         )}
