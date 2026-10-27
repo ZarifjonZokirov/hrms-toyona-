@@ -219,8 +219,9 @@ export async function deleteFirebaseUser(userId: string | number): Promise<boole
 
 export const CANONICAL_SUPER_ADMIN = {
   id: 1,
+  firestoreId: 'user-1',
   name: 'Zarifjon Zokirov',
-  username: '',
+  username: '20090915',
   password: '',
   email: 'zarifjon@toyonasavdo.uz',
   role: 'Super Admin',
@@ -230,7 +231,7 @@ export const CANONICAL_SUPER_ADMIN = {
   lastActive: 'Hozir',
   allowedModules: [
     'branches', 'candidates', 'vacancies', 'employees',
-    'quality', 'attendance', 'transfers', 'users',
+    'quality', 'attendance', 'transfers', 'users', 'users_management',
     'geozones', 'credentials', 'reports', 'settings', 'logs'
   ],
   updatedAt: new Date().toISOString()

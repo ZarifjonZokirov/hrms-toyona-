@@ -209,7 +209,8 @@ export default function App() {
         for (const [k, existing] of map.entries()) {
           const existingId = String(existing.id || (existing as any).firestoreId || '').trim();
           const existingUsername = (existing.username || '').toLowerCase().trim();
-          if ((idKey && existingId === idKey) || (usernameKey && existingUsername === usernameKey)) {
+          const isSameSuper = (idKey === '1' || idKey === 'user-1') && (existingId === '1' || existingId === 'user-1');
+          if ((idKey && existingId === idKey) || isSameSuper || (usernameKey && existingUsername === usernameKey)) {
             existingKey = k;
             break;
           }
