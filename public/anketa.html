@@ -219,13 +219,13 @@
             <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
           </div>
 
-          <!-- Pasport Nusxalari (Oldi va Orqa tomoni) -->
+          <!-- Shaxsni Tasdiqlovchi Hujjat Nusxalari -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <!-- 1. Pasport Oldi -->
+            <!-- 1. Hujjat Asosiy sahifasi -->
             <div class="p-3.5 rounded-xl border border-dashed border-brand-border bg-[#101728]/80 hover:border-cyan-500/60 transition-colors">
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-semibold text-slate-200">
-                  <span id="lblPassFrontTitle">Pasport (Oldi tomoni)</span> <span id="lblPassFrontOpt" class="text-[11px] text-slate-400">(ixtiyoriy)</span>
+                  <span id="lblPassFrontTitle">Hujjat nusxasi (Oldi / Asosiy)</span> <span id="lblPassFrontOpt" class="text-[11px] text-slate-400">(ixtiyoriy)</span>
                 </label>
                 <span id="passFrontBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                   Yuklandi
@@ -236,14 +236,14 @@
                   <div id="passFrontPreviewBox" class="w-16 h-20 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/90 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-cyan-500">
                     <div id="passFrontPlaceholder" class="flex flex-col items-center justify-center text-slate-400 group-hover:text-cyan-400 p-1 text-center">
                       <i data-lucide="file-text" class="w-5 h-5 mb-0.5 text-cyan-400"></i>
-                      <span class="text-[9px] font-semibold text-slate-300">Oldi</span>
+                      <span class="text-[9px] font-semibold text-slate-300">1-sahifa</span>
                     </div>
-                    <img id="passFrontPreviewImg" src="" alt="Pasport oldi" class="hidden w-full h-full object-cover">
+                    <img id="passFrontPreviewImg" src="" alt="Hujjat 1" class="hidden w-full h-full object-cover">
                   </div>
                 </div>
                 <div class="flex-1 space-y-1">
                   <p id="lblPassFrontDesc" class="text-[11px] text-slate-400 leading-tight">
-                    Pasport yoki ID kartaning oldi (asosiy sahifasi)
+                    Shaxsni tasdiqlovchi hujjatning asosiy sahifasi
                   </p>
                   <div class="flex items-center gap-1.5 pt-0.5">
                     <button type="button" onclick="document.getElementById('passFrontInput').click()"
@@ -261,11 +261,11 @@
               <input type="file" id="passFrontInput" accept="image/*" class="hidden" onchange="handlePassFrontUpload(event)">
             </div>
 
-            <!-- 2. Pasport Orqasi -->
+            <!-- 2. Hujjat 2-sahifasi -->
             <div class="p-3.5 rounded-xl border border-dashed border-brand-border bg-[#101728]/80 hover:border-indigo-500/60 transition-colors">
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-semibold text-slate-200">
-                  <span id="lblPassBackTitle">Pasport (Orqasi / Propiska)</span> <span id="lblPassBackOpt" class="text-[11px] text-slate-400">(ixtiyoriy)</span>
+                  <span id="lblPassBackTitle">Hujjat nusxasi (2-sahifa / Orqasi)</span> <span id="lblPassBackOpt" class="text-[11px] text-slate-400">(ixtiyoriy)</span>
                 </label>
                 <span id="passBackBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
                   Yuklandi
@@ -276,14 +276,14 @@
                   <div id="passBackPreviewBox" class="w-16 h-20 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/90 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-indigo-500">
                     <div id="passBackPlaceholder" class="flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-400 p-1 text-center">
                       <i data-lucide="file-text" class="w-5 h-5 mb-0.5 text-indigo-400"></i>
-                      <span class="text-[9px] font-semibold text-slate-300">Orqasi</span>
+                      <span class="text-[9px] font-semibold text-slate-300">2-sahifa</span>
                     </div>
-                    <img id="passBackPreviewImg" src="" alt="Pasport orqasi" class="hidden w-full h-full object-cover">
+                    <img id="passBackPreviewImg" src="" alt="Hujjat 2" class="hidden w-full h-full object-cover">
                   </div>
                 </div>
                 <div class="flex-1 space-y-1">
                   <p id="lblPassBackDesc" class="text-[11px] text-slate-400 leading-tight">
-                    Pasportning propiska sahifasi yoki ID karta orqasi
+                    Hujjatning ikkinchi tomoni yoki tegishli sahifasi
                   </p>
                   <div class="flex items-center gap-1.5 pt-0.5">
                     <button type="button" onclick="document.getElementById('passBackInput').click()"
@@ -597,11 +597,11 @@
         lblMarital: "Turmush qurganmisiz? *",
         optMaritalYes: "Ha",
         optMaritalNo: "Yo'q",
-        lblPassFrontTitle: "Pasport (Oldi tomoni)",
-        lblPassBackTitle: "Pasport (Orqasi / Propiska)",
+        lblPassFrontTitle: "Hujjat nusxasi (Oldi / Asosiy)",
+        lblPassBackTitle: "Hujjat nusxasi (2-sahifa / Orqasi)",
         lblPassOpt: "(ixtiyoriy)",
-        lblPassFrontDesc: "Pasport yoki ID kartaning oldi (asosiy sahifasi)",
-        lblPassBackDesc: "Pasportning propiska sahifasi yoki ID karta orqasi",
+        lblPassFrontDesc: "Shaxsni tasdiqlovchi hujjatning asosiy sahifasi",
+        lblPassBackDesc: "Hujjatning ikkinchi tomoni yoki tegishli sahifasi",
         btnPassChoose: "Rasm tanlash",
         secEduTitle: "2. MA'LUMOTI VA DARAJASI",
         lblEduDegree: "Ma'lumotingiz / Ilmiy darajangiz *",
@@ -702,11 +702,11 @@
         lblMarital: "Семейное положение *",
         optMaritalYes: "Женат / Замужем",
         optMaritalNo: "Холост / Не замужем",
-        lblPassFrontTitle: "Паспорт (Лицевая сторона)",
-        lblPassBackTitle: "Паспорт (Прописка / Задняя сторона)",
+        lblPassFrontTitle: "Документ соискателя (Стр. 1)",
+        lblPassBackTitle: "Документ соискателя (Стр. 2)",
         lblPassOpt: "(необязательно)",
-        lblPassFrontDesc: "Лицевая сторона паспорта или ID-карты (главная)",
-        lblPassBackDesc: "Страница прописки или обратная сторона ID-карты",
+        lblPassFrontDesc: "Основная страница документа, удостоверяющего личность",
+        lblPassBackDesc: "Вторая сторона или дополнительная страница документа",
         btnPassChoose: "Выбрать фото",
         secEduTitle: "2. ОБРАЗОВАНИЕ И СТЕПЕНЬ",
         lblEduDegree: "Уровень образования / Степень *",
