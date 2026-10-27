@@ -4,70 +4,143 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Ishga qabul qilish anketasi</title>
+  
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
           colors: {
             brand: {
-              50: '#f0f7ff', 100: '#e0effe', 500: '#2563eb', 600: '#1d4ed8',
-              700: '#1e40af', 800: '#1e3a8a', 900: '#0f172a',
-              dark: '#0a0f1d', card: '#131b2e', border: '#22304d'
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              800: '#1e3a8a',
+              900: '#0f172a',
+              dark: '#0a0f1d',
+              card: '#131b2e',
+              border: '#22304d'
             }
           },
           animation: {
             'fast-fade': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
             'fast-slide': 'slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
             'fast-pop': 'popIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(6px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideDown: {
+              '0%': { opacity: '0', transform: 'translateY(-10px)', maxHeight: '0px' },
+              '100%': { opacity: '1', transform: 'translateY(0)', maxHeight: '1000px' },
+            },
+            popIn: {
+              '0%': { transform: 'scale(0.95)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            }
           }
         }
       }
     }
   </script>
+
   <style>
-    * { -webkit-tap-highlight-color: transparent; user-select: none; }
-    input, textarea, select { user-select: auto; }
-    .fast-transition { transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 4px; }
-    .custom-input { background: rgba(19, 27, 46, 0.75); border: 1px solid #22304d; transition: border-color 0.18s, box-shadow 0.18s, background-color 0.18s; }
-    .custom-input:focus { border-color: #3b82f6; background: rgba(19, 27, 46, 0.95); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
-    .option-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
-    .option-card:active { transform: scale(0.975); }
-    .option-card.active { border-color: #3b82f6; background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(30, 58, 138, 0.25) 100%); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15); }
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: auto;
+    }
+    /* 1.5x tezkor silliq o'tishlar */
+    .fast-transition {
+      transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2563eb;
+      border-radius: 4px;
+    }
+    .custom-input {
+      background: rgba(19, 27, 46, 0.75);
+      border: 1px solid #22304d;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+    .custom-input:focus {
+      border-color: #3b82f6;
+      background: rgba(19, 27, 46, 0.95);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    /* Radio/Check card states */
+    .option-card {
+      cursor: pointer;
+      transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+    }
+    .option-card:active {
+      transform: scale(0.975);
+    }
+    .option-card.active {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(30, 58, 138, 0.25) 100%);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
+    }
   </style>
 </head>
-<body class="bg-[#0a0f1d] text-slate-100 font-sans min-h-screen pb-16">
+
+<body class="bg-[#0a0f1d] text-slate-100 font-sans min-h-screen pb-16 selection:bg-blue-600 selection:text-white">
+  
+  <!-- Sticky Top Navigation / Header -->
   <header class="sticky top-0 z-40 bg-[#0a0f1d]/90 backdrop-blur-md border-b border-brand-border/80 px-4 py-3">
     <div class="max-w-2xl mx-auto flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-slate-900 border border-brand-border flex items-center justify-center shrink-0 p-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 510 531" class="w-7 h-7">
-            <path d="M 211.00,529.00 L 211.00,239.00 L 214.00,236.00 L 281.00,236.00 L 256.00,189.00 L 95.00,189.00 L 96.00,236.00 L 155.00,236.00 L 158.00,239.00 L 157.00,469.00 L 140.10,460.91 L 122.41,449.99 L 106.55,437.55 L 92.49,423.74 L 80.22,408.72 L 69.72,392.65 L 60.98,375.67 L 53.97,357.95 L 48.68,339.64 L 45.09,320.90 L 43.18,301.88 L 42.93,282.73 L 44.33,263.62 L 47.35,244.70 L 51.98,226.13 L 58.20,208.05 L 66.00,190.63 L 75.35,174.03 L 86.23,158.39 L 98.56,143.83 L 112.21,130.44 L 127.03,118.30 L 142.90,107.49 L 159.67,98.10 L 177.21,90.21 L 195.38,83.90 L 214.04,79.26 L 233.05,76.37 L 252.29,75.31 L 271.60,76.17 L 290.86,79.02 L 309.93,83.96 L 328.66,91.07 L 346.93,100.42 L 364.59,112.11 L 382.00,80.00 L 381.00,74.00 L 363.88,64.61 L 344.48,54.23 L 324.69,46.11 L 304.62,40.16 L 284.37,36.30 L 264.04,34.44 L 243.74,34.50 L 223.58,36.39 L 203.65,40.04 L 184.06,45.34 L 164.91,52.22 L 146.32,60.59 L 128.37,70.37 L 111.18,81.48 L 94.85,93.82 L 79.49,107.31 L 65.19,121.87 L 52.06,137.41 L 40.21,153.84 L 29.74,171.09 L 20.75,189.07 L 13.34,207.68 L 7.63,226.85 L 3.71,246.49 L 1.60,266.49 L 1.25,286.71 L 2.61,307.00 L 5.62,327.23 L 10.23,347.26 L 16.38,366.95 L 24.03,386.16 L 33.11,404.75 L 43.57,422.59 L 55.36,439.52 L 68.42,455.42 L 82.71,470.13 L 98.15,483.53 L 114.71,495.48 L 132.33,505.83 L 150.94,514.44 L 170.51,521.18 L 190.96,525.90 L 212.26,528.47 Z" fill="#00A651"/>
-            <path d="M 406.00,92.00 L 403.00,92.00 L 301.00,263.00 L 297.00,262.00 L 291.00,251.00 L 230.00,251.00 L 271.00,315.00 L 271.00,491.00 L 237.00,492.00 L 237.00,530.00 L 255.11,531.14 L 275.31,531.14 L 294.94,529.31 L 313.95,525.76 L 332.30,520.57 L 349.93,513.83 L 366.81,505.64 L 382.89,496.09 L 398.12,485.27 L 412.45,473.28 L 425.84,460.22 L 438.24,446.16 L 449.61,431.21 L 459.90,415.45 L 469.06,398.99 L 477.05,381.92 L 483.82,364.31 L 489.33,346.29 L 493.56,327.93 L 496.48,309.34 L 498.06,290.62 L 498.28,271.86 L 497.11,253.17 L 494.52,234.64 L 490.49,216.38 L 485.00,198.47 L 478.01,181.02 L 469.49,164.14 L 459.44,147.90 L 447.81,132.43 L 434.58,117.81 L 419.72,104.14 L 403.22,91.52 Z M 420.00,166.00 L 430.23,180.72 L 439.15,196.48 L 446.34,212.89 L 451.86,229.83 L 455.74,247.18 L 458.02,264.80 L 458.73,282.58 L 457.93,300.39 L 455.64,318.10 L 451.91,335.58 L 446.77,352.71 L 440.26,369.37 L 432.42,385.42 L 423.30,400.75 L 412.92,415.22 L 401.33,428.71 L 388.57,441.10 L 374.67,452.25 L 359.68,462.04 L 343.63,470.36 L 326.56,477.06 L 326.00,316.00 L 416.00,168.00 L 420.00,166.00 Z" fill="#ED1C24" fillRule="evenodd"/>
-          </svg>
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+          <i data-lucide="briefcase" class="w-5 h-5 text-white"></i>
         </div>
         <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="font-black text-sm text-white tracking-tight" id="navTitle">TOYONA SAVDO</h1>
-            <span class="text-[9px] font-extrabold bg-blue-600/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">KARYERA</span>
-          </div>
+          <h1 class="font-bold text-sm leading-tight tracking-wide text-white" id="navTitle">KARYERA MARKAZI</h1>
           <p class="text-[11px] text-blue-400 font-medium" id="navSubtitle">Rasmiy ishga qabul anketasi</p>
         </div>
       </div>
+
+      <!-- Language Selector Pill -->
       <div class="flex items-center bg-[#131b2e] p-1 rounded-xl border border-brand-border">
-        <button type="button" onclick="setLanguage('uz')" id="langBtnUz" class="fast-transition px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white">UZB</button>
-        <button type="button" onclick="setLanguage('ru')" id="langBtnRu" class="fast-transition px-3 py-1 rounded-lg text-xs font-semibold text-slate-400">РУС</button>
+        <button type="button" onclick="setLanguage('uz')" id="langBtnUz" class="fast-transition px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm">
+          UZB
+        </button>
+        <button type="button" onclick="setLanguage('ru')" id="langBtnRu" class="fast-transition px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white">
+          РУС
+        </button>
       </div>
     </div>
+
+    <!-- Live Progress Bar -->
     <div class="max-w-2xl mx-auto mt-2.5">
       <div class="flex justify-between items-center text-[11px] text-slate-400 mb-1">
         <span id="progressText">To'ldirish jarayoni</span>
@@ -79,27 +152,178 @@
     </div>
   </header>
 
+  <!-- Main Form Container -->
   <main class="max-w-2xl mx-auto px-4 pt-4 pb-12">
     <form id="vacancyForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+
       <!-- 1. SHAXSIY MA'LUMOTLAR -->
       <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
         <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
-          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="user" class="w-4 h-4"></i></div>
-          <h2 class="font-bold text-sm text-white" id="secPersonalTitle">1. SHAXSIY MA'LUMOTLAR</h2>
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </div>
+          <h2 class="font-bold text-sm tracking-wide text-white" id="secPersonalTitle">1. SHAXSIY MA'LUMOTLAR</h2>
         </div>
-        <div class="space-y-3.5">
+
+                <div class="space-y-3.5">
+          <!-- Fotosurat yuklash (3x4 yoki shaxsiy fotosurat) -->
+          <div class="p-3.5 rounded-xl border border-dashed border-brand-border bg-[#101728]/80 hover:border-blue-500/60 transition-colors">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-semibold text-slate-200" id="lblPhotoUpload">
+                3x4 yoki shaxsiy fotosurat <span class="text-xs font-normal text-slate-400">(ixtiyoriy, tavsiya etiladi)</span>
+              </label>
+              <span id="photoBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Rasm yuklandi
+              </span>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <!-- Avatar Preview Container -->
+              <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('photoInput').click()">
+                <div id="photoPreviewBox" class="w-20 h-24 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/90 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-blue-500 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                  <div id="photoPlaceholder" class="flex flex-col items-center justify-center text-slate-400 group-hover:text-blue-400 p-2 text-center">
+                    <i data-lucide="camera" class="w-6 h-6 mb-1 text-blue-400"></i>
+                    <span class="text-[10px] font-semibold leading-tight text-slate-300">Rasm yuklash</span>
+                  </div>
+                  <img id="photoPreviewImg" src="" alt="Nomzod fotosurati" class="hidden w-full h-full object-cover">
+                </div>
+                <div class="absolute -bottom-1 -right-1 p-1 rounded-full bg-blue-600 text-white shadow-md">
+                  <i data-lucide="upload" class="w-3 h-3"></i>
+                </div>
+              </div>
+
+              <!-- Upload buttons and help text -->
+              <div class="flex-1 space-y-1.5">
+                <p class="text-xs text-slate-300 font-medium" id="photoHelpTitle">
+                  O'zingizning aniq, sifatli fotosuratingizni tanlang yoki telefoningizdan oling.
+                </p>
+                <p class="text-[11px] text-slate-500">
+                  Formatlar: JPG, PNG, WEBP (Avtomatik ixchamlashtiriladi)
+                </p>
+                <div class="flex items-center gap-2 pt-1">
+                  <button type="button" onclick="document.getElementById('photoInput').click()"
+                    class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                    <span id="btnSelectPhoto">Rasm tanlash</span>
+                  </button>
+                  <button type="button" id="btnRemovePhoto" onclick="removeUploadedPhoto()"
+                    class="hidden px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span id="btnRemovePhotoText">O'chirish</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hidden File Input -->
+            <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+          </div>
+
+          <!-- Pasport Nusxalari (Oldi va Orqa tomoni) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <!-- 1. Pasport Oldi -->
+            <div class="p-3.5 rounded-xl border border-dashed border-brand-border bg-[#101728]/80 hover:border-cyan-500/60 transition-colors">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-semibold text-slate-200">
+                  <span id="lblPassFrontTitle">Pasport (Oldi tomoni)</span> <span id="lblPassFrontOpt" class="text-[11px] text-slate-400">(ixtiyoriy)</span>
+                </label>
+                <span id="passFrontBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                  Yuklandi
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('passFrontInput').click()">
+                  <div id="passFrontPreviewBox" class="w-16 h-20 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/90 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-cyan-500">
+                    <div id="passFrontPlaceholder" class="flex flex-col items-center justify-center text-slate-400 group-hover:text-cyan-400 p-1 text-center">
+                      <i data-lucide="file-text" class="w-5 h-5 mb-0.5 text-cyan-400"></i>
+                      <span class="text-[9px] font-semibold text-slate-300">Oldi</span>
+                    </div>
+                    <img id="passFrontPreviewImg" src="" alt="Pasport oldi" class="hidden w-full h-full object-cover">
+                  </div>
+                </div>
+                <div class="flex-1 space-y-1">
+                  <p id="lblPassFrontDesc" class="text-[11px] text-slate-400 leading-tight">
+                    Pasport yoki ID kartaning oldi (asosiy sahifasi)
+                  </p>
+                  <div class="flex items-center gap-1.5 pt-0.5">
+                    <button type="button" onclick="document.getElementById('passFrontInput').click()"
+                      class="px-2.5 py-1 rounded-lg bg-cyan-600/80 hover:bg-cyan-600 text-white text-[11px] font-semibold flex items-center gap-1 cursor-pointer">
+                      <i data-lucide="upload" class="w-3 h-3"></i>
+                      <span id="btnPassFrontText">Rasm tanlash</span>
+                    </button>
+                    <button type="button" id="btnRemovePassFront" onclick="removeUploadedPassFront()"
+                      class="hidden px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-semibold cursor-pointer">
+                      <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <input type="file" id="passFrontInput" accept="image/*" class="hidden" onchange="handlePassFrontUpload(event)">
+            </div>
+
+            <!-- 2. Pasport Orqasi -->
+            <div class="p-3.5 rounded-xl border border-dashed border-brand-border bg-[#101728]/80 hover:border-indigo-500/60 transition-colors">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-semibold text-slate-200">
+                  <span id="lblPassBackTitle">Pasport (Orqasi / Propiska)</span> <span id="lblPassBackOpt" class="text-[11px] text-slate-400">(ixtiyoriy)</span>
+                </label>
+                <span id="passBackBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                  Yuklandi
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('passBackInput').click()">
+                  <div id="passBackPreviewBox" class="w-16 h-20 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/90 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-indigo-500">
+                    <div id="passBackPlaceholder" class="flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-400 p-1 text-center">
+                      <i data-lucide="file-text" class="w-5 h-5 mb-0.5 text-indigo-400"></i>
+                      <span class="text-[9px] font-semibold text-slate-300">Orqasi</span>
+                    </div>
+                    <img id="passBackPreviewImg" src="" alt="Pasport orqasi" class="hidden w-full h-full object-cover">
+                  </div>
+                </div>
+                <div class="flex-1 space-y-1">
+                  <p id="lblPassBackDesc" class="text-[11px] text-slate-400 leading-tight">
+                    Pasportning propiska sahifasi yoki ID karta orqasi
+                  </p>
+                  <div class="flex items-center gap-1.5 pt-0.5">
+                    <button type="button" onclick="document.getElementById('passBackInput').click()"
+                      class="px-2.5 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white text-[11px] font-semibold flex items-center gap-1 cursor-pointer">
+                      <i data-lucide="upload" class="w-3 h-3"></i>
+                      <span id="btnPassBackText">Rasm tanlash</span>
+                    </button>
+                    <button type="button" id="btnRemovePassBack" onclick="removeUploadedPassBack()"
+                      class="hidden px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-semibold cursor-pointer">
+                      <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <input type="file" id="passBackInput" accept="image/*" class="hidden" onchange="handlePassBackUpload(event)">
+            </div>
+          </div>
+
+          <!-- Familiya -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblLastName">Familiyangiz *</label>
-            <input type="text" name="lastName" required placeholder="Masalan: Karimov" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            <input type="text" name="lastName" required placeholder="Masalan: Karimov" oninput="updateProgress()"
+              class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
+
+          <!-- Ism -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblFirstName">Ismingiz *</label>
-            <input type="text" name="firstName" required placeholder="Masalan: Sardor" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            <input type="text" name="firstName" required placeholder="Masalan: Sardor" oninput="updateProgress()"
+              class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
+
+          <!-- Otasining ismi -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblMiddleName">Otasining ismi *</label>
-            <input type="text" name="middleName" required placeholder="Masalan: Alisher o'g'li" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            <input type="text" name="middleName" required placeholder="Masalan: Alisher o'g'li" oninput="updateProgress()"
+              class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
+
+          <!-- Jinsi -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblGender">Jinsi *</label>
             <div class="grid grid-cols-2 gap-2.5">
@@ -115,9 +339,58 @@
               </label>
             </div>
           </div>
+
+          <!-- Tug'ilgan sana -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblDob">Tug'ilgan sana *</label>
-            <input type="date" name="dob" required oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            <div class="relative">
+              <input type="date" name="dob" required oninput="updateProgress()"
+                class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            </div>
+          </div>
+
+          <!-- Turmush qurganligi -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblMarital">Turmush qurganmisiz? *</label>
+            <div class="grid grid-cols-2 gap-2.5">
+              <label class="option-card flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-brand-border bg-[#101728]" onclick="selectCardOption('marital', 'yes', this)">
+                <input type="radio" name="maritalStatus" value="Ha" class="hidden" required>
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                <span class="text-xs font-bold text-slate-200" id="optMaritalYes">Ha</span>
+              </label>
+              <label class="option-card flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-brand-border bg-[#101728]" onclick="selectCardOption('marital', 'no', this)">
+                <input type="radio" name="maritalStatus" value="Yo'q" class="hidden">
+                <i data-lucide="x-circle" class="w-4 h-4 text-slate-400"></i>
+                <span class="text-xs font-bold text-slate-200" id="optMaritalNo">Yo'q</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. MA'LUMOTI VA ILMIY DARAJASI -->
+      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+            <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+          </div>
+          <h2 class="font-bold text-sm tracking-wide text-white" id="secEduTitle">2. MA'LUMOTI VA DARAJASI</h2>
+        </div>
+
+        <div class="space-y-3.5">
+          <!-- Ilmiy daraja variantlari -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-2" id="lblEduDegree">Ma'lumotingiz / Ilmiy darajangiz *</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="eduContainer">
+              <!-- Dynamically localized via JS -->
+            </div>
+          </div>
+
+          <!-- Tugatgan yili -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblGradYear">Tugatgan yilingiz *</label>
+            <input type="number" name="gradYear" min="1970" max="2030" placeholder="Masalan: 2022" required oninput="updateProgress()"
+              class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
         </div>
       </section>
@@ -125,20 +398,32 @@
       <!-- 3. YASHASH MANZILI -->
       <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
         <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
-          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="map-pin" class="w-4 h-4"></i></div>
-          <h2 class="font-bold text-sm text-white" id="secAddressTitle">3. YASHASH MANZILI</h2>
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+          </div>
+          <h2 class="font-bold text-sm tracking-wide text-white" id="secAddressTitle">3. YASHASH MANZILI</h2>
         </div>
+
         <div class="space-y-3.5">
+          <!-- 12 ta viloyat -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblRegion">Viloyat / Hudud *</label>
             <div class="relative">
-              <select name="region" id="regionSelect" required onchange="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none appearance-none cursor-pointer"></select>
-              <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="chevron-down" class="w-4 h-4"></i></div>
+              <select name="region" id="regionSelect" required onchange="updateProgress()"
+                class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none appearance-none pr-10 cursor-pointer">
+                <!-- Populated by JS -->
+              </select>
+              <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+              </div>
             </div>
           </div>
+
+          <!-- Aniq manzil -->
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblExactAddress">Aniq yashash manzilingiz *</label>
-            <textarea name="exactAddress" rows="2" required placeholder="Masalan: Chilonzor tumani..." oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white outline-none resize-none"></textarea>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblExactAddress">Aniq yashash manzilingiz (Tuman, ko'cha, uy raqami) *</label>
+            <textarea name="exactAddress" rows="2" required placeholder="Masalan: Chilonzor tumani, 9-mavze, 24-uy" oninput="updateProgress()"
+              class="w-full custom-input rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none resize-none"></textarea>
           </div>
         </div>
       </section>
@@ -147,36 +432,65 @@
       <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
         <div class="flex items-center justify-between mb-4 pb-2.5 border-b border-brand-border/60">
           <div class="flex items-center space-x-2.5">
-            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="building-2" class="w-4 h-4"></i></div>
-            <h2 class="font-bold text-sm text-white" id="secBranchTitle">4. FILIALNI TANLANG</h2>
+            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+              <i data-lucide="building-2" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-bold text-sm tracking-wide text-white" id="secBranchTitle">4. QAYSI FILIALDA ISHLAMOQCHISIZ?</h2>
           </div>
+          <span class="text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md" id="branchCountBadge">13 ta filial</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="branchesContainer"></div>
+
+        <p class="text-xs text-slate-400 mb-3" id="branchSubText">O'zingizga eng qulay bo'lgan filialimizni tanlang:</p>
+
+        <!-- Filiallar ro'yxati -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="branchesContainer">
+          <!-- Populated by JS -->
+        </div>
       </section>
 
       <!-- 5. VAKANSIYA / LAVOZIM -->
       <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
         <div class="flex items-center justify-between mb-4 pb-2.5 border-b border-brand-border/60">
           <div class="flex items-center space-x-2.5">
-            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="award" class="w-4 h-4"></i></div>
-            <h2 class="font-bold text-sm text-white" id="secJobTitle">5. TALABGOR LAVOZIMINGIZ</h2>
+            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+              <i data-lucide="award" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-bold text-sm tracking-wide text-white" id="secJobTitle">5. TALABGOR LAVOZIMINGIZ</h2>
           </div>
+          <span class="text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md" id="jobCountBadge">21 ta lavozim</span>
         </div>
+
+        <!-- Lavozim Qidirish Inputi -->
         <div class="relative mb-3">
           <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <input type="text" id="jobSearchInput" oninput="filterJobs()" placeholder="Lavozim nomini qidirish..." class="w-full custom-input rounded-xl pl-9 pr-3.5 py-2 text-xs text-white outline-none">
+          <input type="text" id="jobSearchInput" oninput="filterJobs()" placeholder="Lavozim nomini qidirish..."
+            class="w-full custom-input rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-500 outline-none">
         </div>
-        <div class="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto pr-1" id="jobsContainer"></div>
-        <div id="experienceSection" class="hidden mt-4 pt-4 border-t border-brand-border/80">
+
+        <!-- Lavozimlar ro'yxati -->
+        <div class="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto pr-1" id="jobsContainer">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- DINAMIK QISM: Tanlangan ish tagida tajriba yili va oldingi tajriba -->
+        <div id="experienceSection" class="hidden mt-4 pt-4 border-t border-brand-border/80 animate-fast-slide">
           <div class="bg-blue-950/30 border border-blue-500/30 rounded-xl p-3.5 space-y-3.5">
+            
             <div class="flex items-center space-x-2">
               <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
               <span class="text-xs font-bold text-blue-300" id="expHeaderTitle">Ushbu lavozim bo'yicha tajribangiz *</span>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="expOptionsContainer"></div>
+
+            <!-- Tajriba yillari -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="expOptionsContainer">
+              <!-- Populated by JS -->
+            </div>
+
+            <!-- Oldingi ish joyi -->
             <div class="pt-2">
-              <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPastWork">Oldin qayerda ishlagansiz? *</label>
-              <textarea name="pastExperience" id="pastExpInput" rows="2" oninput="updateProgress()" class="w-full custom-input rounded-xl px-3.5 py-2.5 text-xs text-white outline-none resize-none"></textarea>
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPastWork">Oldin qayerda, qachon va kim bo'lib ishlagansiz? *</label>
+              <textarea name="pastExperience" id="pastExpInput" rows="2" placeholder="Masalan: 2021-2023 yy. 'Smart Savdo' kompaniyasida katta sotuvchi lavozimida..." oninput="updateProgress()"
+                class="w-full custom-input rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none resize-none"></textarea>
             </div>
           </div>
         </div>
@@ -185,150 +499,442 @@
       <!-- 6. BOG'LANISH RAQAMLARI -->
       <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
         <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
-          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="phone-call" class="w-4 h-4"></i></div>
-          <h2 class="font-bold text-sm text-white" id="secContactTitle">6. ALOQA MA'LUMOTLARI</h2>
+          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+            <i data-lucide="phone-call" class="w-4 h-4"></i>
+          </div>
+          <h2 class="font-bold text-sm tracking-wide text-white" id="secContactTitle">6. ALOQA MA'LUMOTLARI</h2>
         </div>
+
         <div class="space-y-3.5">
+          <!-- Asosiy raqam -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPhone1">Telefon raqamingiz *</label>
             <div class="relative">
-              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-300">🇺🇿 +998</div>
-              <input type="tel" name="phone1" id="phone1" required maxlength="12" placeholder="90 123 45 67" oninput="updateProgress()" class="w-full custom-input rounded-xl pl-16 pr-3.5 py-2.5 text-sm font-semibold tracking-wider text-white outline-none">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 text-slate-400 pointer-events-none">
+                <span class="text-xs font-bold text-slate-300">🇺🇿 +998</span>
+              </div>
+              <input type="tel" name="phone1" id="phone1" required maxlength="12" placeholder="90 123 45 67" oninput="formatPhoneInput(this); updateProgress();"
+                class="w-full custom-input rounded-xl pl-20 pr-3.5 py-2.5 text-sm font-semibold tracking-wider text-white placeholder-slate-500 outline-none">
             </div>
           </div>
+
+          <!-- Qo'shimcha raqam -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5" id="lblPhone2">Qo'shimcha telefon raqami</label>
             <div class="relative">
-              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-300">🇺🇿 +998</div>
-              <input type="tel" name="phone2" id="phone2" maxlength="12" placeholder="99 987 65 43" class="w-full custom-input rounded-xl pl-16 pr-3.5 py-2.5 text-sm font-semibold tracking-wider text-white outline-none">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 text-slate-400 pointer-events-none">
+                <span class="text-xs font-bold text-slate-300">🇺🇿 +998</span>
+              </div>
+              <input type="tel" name="phone2" id="phone2" maxlength="12" placeholder="99 987 65 43" oninput="formatPhoneInput(this)"
+                class="w-full custom-input rounded-xl pl-20 pr-3.5 py-2.5 text-sm font-semibold tracking-wider text-white placeholder-slate-500 outline-none">
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 7. HUJJATLAR VA RASMLAR -->
-      <section class="bg-brand-card/90 border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xl">
-        <div class="flex items-center space-x-2.5 mb-4 pb-2.5 border-b border-brand-border/60">
-          <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="camera" class="w-4 h-4"></i></div>
-          <h2 class="font-bold text-sm text-white" id="secPhotosTitle">7. RASM VA PASPORT NUSXASI</h2>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <!-- 1. Yuz rasmi -->
-          <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-slate-300">Nomzod yuzi / 3x4 rasm *</label>
-            <div class="relative border-2 border-dashed border-brand-border hover:border-blue-500 rounded-xl p-3 text-center transition-colors bg-[#101728] cursor-pointer group" onclick="document.getElementById('inputPhoto').click()">
-              <input type="file" id="inputPhoto" accept="image/*" class="hidden" onchange="handleImageUpload('photoUrl', this, 'previewPhoto', 'iconPhoto')">
-              <div id="iconPhoto" class="space-y-1 py-3">
-                <i data-lucide="user" class="w-7 h-7 mx-auto text-blue-400 group-hover:scale-110 transition-transform"></i>
-                <span class="text-[11px] font-semibold text-slate-300 block">3x4 yoki Selphi rasm</span>
-              </div>
-              <img id="previewPhoto" class="hidden w-full h-28 object-cover rounded-lg border border-brand-border">
-            </div>
-          </div>
-
-          <!-- 2. Pasport oldi -->
-          <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-slate-300">Pasport (Oldi tomoni) *</label>
-            <div class="relative border-2 border-dashed border-brand-border hover:border-blue-500 rounded-xl p-3 text-center transition-colors bg-[#101728] cursor-pointer group" onclick="document.getElementById('inputPassFront').click()">
-              <input type="file" id="inputPassFront" accept="image/*" class="hidden" onchange="handleImageUpload('passportFrontUrl', this, 'previewPassFront', 'iconPassFront')">
-              <div id="iconPassFront" class="space-y-1 py-3">
-                <i data-lucide="file-text" class="w-7 h-7 mx-auto text-cyan-400 group-hover:scale-110 transition-transform"></i>
-                <span class="text-[11px] font-semibold text-slate-300 block">Pasport old tarafidan rasm</span>
-              </div>
-              <img id="previewPassFront" class="hidden w-full h-28 object-cover rounded-lg border border-brand-border">
-            </div>
-          </div>
-
-          <!-- 3. Pasport orqasi -->
-          <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-slate-300">Pasport (Orqa/Propiska) *</label>
-            <div class="relative border-2 border-dashed border-brand-border hover:border-blue-500 rounded-xl p-3 text-center transition-colors bg-[#101728] cursor-pointer group" onclick="document.getElementById('inputPassBack').click()">
-              <input type="file" id="inputPassBack" accept="image/*" class="hidden" onchange="handleImageUpload('passportBackUrl', this, 'previewPassBack', 'iconPassBack')">
-              <div id="iconPassBack" class="space-y-1 py-3">
-                <i data-lucide="file-text" class="w-7 h-7 mx-auto text-indigo-400 group-hover:scale-110 transition-transform"></i>
-                <span class="text-[11px] font-semibold text-slate-300 block">Pasport orqa tarafidan rasm</span>
-              </div>
-              <img id="previewPassBack" class="hidden w-full h-28 object-cover rounded-lg border border-brand-border">
-            </div>
-          </div>
-        </div>
-      </section>
-
+      <!-- YUBORISH TUGMASI -->
       <div class="pt-2">
-        <button type="submit" id="submitBtn" class="fast-transition w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2.5">
+        <button type="submit" id="submitBtn"
+          class="fast-transition w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2.5 active:scale-[0.98]">
           <i data-lucide="send" class="w-5 h-5"></i>
           <span class="text-sm tracking-wider uppercase" id="btnSubmitText">Arizani yuborish</span>
         </button>
+        <p class="text-center text-[11px] text-slate-500 mt-2.5" id="privacyNote">Ma'lumotlaringiz xavfsizligi kafolatlanadi.</p>
       </div>
     </form>
   </main>
 
+  <!-- Success Confirmation Modal -->
   <div id="successModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-[#111827] border border-blue-500/40 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-fast-pop">
       <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
         <i data-lucide="check" class="w-8 h-8 stroke-[3]"></i>
       </div>
       <h3 class="text-lg font-extrabold text-white" id="modalTitle">Arizangiz qabul qilindi!</h3>
-      <p class="text-xs text-slate-300" id="modalDesc">Nomzodingiz tizimga muvaffaqiyatli saqlandi.</p>
-      <div class="space-y-2 pt-2">
-        <button onclick="closeModalAndGoToCandidates()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs tracking-wider uppercase transition-colors">Nomzodlar bo'limiga o'tish</button>
-        <button onclick="closeModalAndExit()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition-colors">Yopish</button>
+      <p class="text-xs text-slate-300 leading-relaxed" id="modalDesc">
+        Kadrlar bo'limi mutaxassislari arizangizni ko'rib chiqib, tez orada ko'rsatilgan telefon raqami orqali siz bilan bog'lanishadi.
+      </p>
+      <div class="bg-slate-900/80 rounded-xl p-3 text-left border border-slate-800 space-y-1 text-xs">
+        <div class="text-slate-400 flex justify-between"><span id="lblSummaryPos">Lavozim:</span> <strong id="summaryJob" class="text-blue-400 text-right">-</strong></div>
+        <div class="text-slate-400 flex justify-between"><span id="lblSummaryBranch">Filial:</span> <strong id="summaryBranch" class="text-slate-200 text-right">-</strong></div>
+        <div class="text-slate-400 flex justify-between"><span id="lblSummaryPhone">Telefon:</span> <strong id="summaryPhone" class="text-slate-200 text-right">-</strong></div>
       </div>
+      <button onclick="closeModalAndExit()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs tracking-wider uppercase fast-transition">
+        Yopish
+      </button>
     </div>
   </div>
 
   <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    // STATE
     let currentLang = 'uz';
     let selectedJob = '';
     let selectedBranch = '';
+    let selectedEdu = '';
     let selectedExp = '';
 
+    // TRANSLATION DICTIONARY
     const i18n = {
       uz: {
+        navTitle: "TOYONA SAVDO • KARYERA MARKAZI",
+        navSubtitle: "Rasmiy ishga qabul anketasi",
+        progressText: "To'ldirish jarayoni",
+        secPersonalTitle: "1. SHAXSIY MA'LUMOTLAR",
+        lblLastName: "Familiyangiz *",
+        lblFirstName: "Ismingiz *",
+        lblMiddleName: "Otasining ismi *",
+        lblGender: "Jinsi *",
+        optMale: "Erkak",
+        optFemale: "Ayol",
+        lblDob: "Tug'ilgan sana *",
+        lblMarital: "Turmush qurganmisiz? *",
+        optMaritalYes: "Ha",
+        optMaritalNo: "Yo'q",
+        lblPassFrontTitle: "Pasport (Oldi tomoni)",
+        lblPassBackTitle: "Pasport (Orqasi / Propiska)",
+        lblPassOpt: "(ixtiyoriy)",
+        lblPassFrontDesc: "Pasport yoki ID kartaning oldi (asosiy sahifasi)",
+        lblPassBackDesc: "Pasportning propiska sahifasi yoki ID karta orqasi",
+        btnPassChoose: "Rasm tanlash",
+        secEduTitle: "2. MA'LUMOTI VA DARAJASI",
+        lblEduDegree: "Ma'lumotingiz / Ilmiy darajangiz *",
+        lblGradYear: "Tugatgan yilingiz *",
+        secAddressTitle: "3. YASHASH MANZILI",
+        lblRegion: "Viloyat / Hudud *",
+        lblExactAddress: "Aniq yashash manzilingiz (Tuman, ko'cha, uy raqami) *",
+        secBranchTitle: "4. QAYSI FILIALDA ISHLAMOQCHISIZ?",
+        branchCountBadge: "13 ta filial",
+        branchSubText: "O'zingizga eng qulay bo'lgan filialimizni tanlang:",
+        secJobTitle: "5. TALABGOR LAVOZIMINGIZ",
+        jobCountBadge: "21 ta lavozim",
+        searchPlaceholder: "Lavozim nomini qidirish...",
+        expHeaderTitle: "Ushbu lavozim bo'yicha tajribangiz *",
+        lblPastWork: "Oldin qayerda, qachon va kim bo'lib ishlagansiz? *",
+        secContactTitle: "6. ALOQA MA'LUMOTLARI",
+        lblPhone1: "Telefon raqamingiz *",
+        lblPhone2: "Qo'shimcha telefon raqami",
+        btnSubmitText: "Arizani yuborish",
+        privacyNote: "Ma'lumotlaringiz maxfiyligi kafolatlanadi.",
+        modalTitle: "Arizangiz muvaffaqiyatli qabul qilindi!",
+        modalDesc: "Kadrlar bo'limi arizangizni ko'rib chiqib, tez orada ko'rsatilgan telefon orqali siz bilan bog'lanishadi.",
+        lblSummaryPos: "Lavozim:",
+        lblSummaryBranch: "Filial:",
+        lblSummaryPhone: "Telefon:",
         selectRegionDefault: "Viloyatni tanlang...",
-        regions: ["Toshkent shahri", "Toshkent viloyati", "Andijon viloyati", "Farg'ona viloyati", "Namangan viloyati"],
+        eduOptions: [
+          { id: "orta", label: "O'rta ma'lumot" },
+          { id: "orta_maxsus", label: "O'rta-maxsus (Kollej/Litsey)" },
+          { id: "tugallanmagan_oliy", label: "Tugallanmagan oliy" },
+          { id: "oliy_bakalavr", label: "Oliy (Bakalavr)" },
+          { id: "magistr", label: "Oliy (Magistratura / PhD)" }
+        ],
+        regions: [
+          "Toshkent shahri", "Toshkent viloyati", "Andijon viloyati", "Buxoro viloyati",
+          "Farg'ona viloyati", "Jizzax viloyati", "Xorazm viloyati", "Namangan viloyati",
+          "Navoiy viloyati", "Qashqadaryo viloyati", "Samarqand viloyati",
+          "Sirdaryo viloyati", "Surxondaryo viloyati", "Qoraqalpog'iston Respublikasi"
+        ],
         branches: [
-          { id: "b1", name: "Bosh ofis", icon: "building" },
-          { id: "b2", name: "Farg'ona filiali", icon: "map-pin" },
-          { id: "b3", name: "Toshkent filiali", icon: "map-pin" }
+          { id: "turkiston", name: "Turkiston filiali", icon: "map-pin" },
+          { id: "navoiy", name: "Navoiy filiali", icon: "map-pin" },
+          { id: "istiqlol", name: "Istiqlol (Gorod) filiali", icon: "map-pin" },
+          { id: "mingtut", name: "Mingtut filiali", icon: "map-pin" },
+          { id: "yakkatut", name: "Yakkatut filiali", icon: "map-pin" },
+          { id: "head_office", name: "Bosh ofis", icon: "building" },
+          { id: "pop", name: "Pop filiali", icon: "map-pin" },
+          { id: "furqat", name: "Furqat filiali", icon: "map-pin" },
+          { id: "buvayda", name: "Buvayda filiali", icon: "map-pin" },
+          { id: "yangiqorgon", name: "Yangiqo'rg'on (Buvayda) filiali", icon: "map-pin" },
+          { id: "yaypan", name: "Yaypan filiali", icon: "map-pin" },
+          { id: "margilon", name: "Marg'ilon filiali", icon: "map-pin" },
+          { id: "toshkent_chilonzor", name: "Toshkent Chilonzor filiali", icon: "map-pin" }
         ],
         jobs: [
-          { id: "j1", name: "Sotuvchi maslahatchi" },
-          { id: "j2", name: "Kassir" },
-          { id: "j3", name: "Haydovchi kuryer" },
-          { id: "j4", name: "Marketolog" }
+          { id: "sotuvchi_maslahatchi", name: "Sotuvchi maslahatchi", category: "savdo" },
+          { id: "bosh_sotuvchi", name: "Bosh sotuvchi maslahatchisi", category: "savdo" },
+          { id: "kassir_yordamchisi", name: "Kassir yordamchisi", category: "savdo" },
+          { id: "shartnoma_bosh_mutaxassis", name: "Shartnoma rasmiylashtirish bo'limi bosh mutaxassisi", category: "rasmiylashtirish" },
+          { id: "shartnoma_mutaxassis", name: "Shartnoma rasmiylashtirish bo'limi mutaxassisi", category: "rasmiylashtirish" },
+          { id: "savdo_boshligi", name: "Savdo bo'limi boshlig'i (Boshqaruvchi)", category: "boshqaruv" },
+          { id: "taklif_shikoyat_operator", name: "Taklif va shikoyatlar bilan ishlash operatori", category: "operator" },
+          { id: "ombor_mudiri", name: "Ombor sektori mudiri", category: "ombor" },
+          { id: "ombor_mutaxassis", name: "Ombor sektori mutaxassisi", category: "ombor" },
+          { id: "oshpaz", name: "Oshpaz", category: "xizmat" },
+          { id: "oshxona_ishchisi", name: "Oshxona ishchisi", category: "xizmat" },
+          { id: "hudud_tozalovchi", name: "Hudud tozalovchi", category: "xizmat" },
+          { id: "haydovchi", name: "Haydovchi", category: "logistika" },
+          { id: "kuryer", name: "Kuryer", category: "logistika" },
+          { id: "unduruv_mutaxassis", name: "Undiruv bo'limi mutaxassisi", category: "moliya" },
+          { id: "marketolog", name: "Marketolog", category: "marketing" },
+          { id: "targetolog", name: "Targetolog", category: "marketing" },
+          { id: "smm_manager", name: "SMM menejer", category: "marketing" },
+          { id: "texnik", name: "Texnik", category: "texnik" },
+          { id: "motion_designer", name: "Motion designer", category: "kreativ" },
+          { id: "copywriter", name: "Copywriter", category: "kreativ" }
         ],
         expOptions: [
-          { id: "none", label: "0 yil" },
-          { id: "less_1", label: "< 1 yil" },
-          { id: "1_3", label: "1-3 yil" }
+          { id: "none", label: "Yo'q (0 yil)" },
+          { id: "less_1", label: "1 yildan kam" },
+          { id: "1_2", label: "1 - 2 yil" },
+          { id: "2_3", label: "2 - 3 yil" },
+          { id: "3_plus", label: "3+ yil" }
+        ]
+      },
+      ru: {
+        navTitle: "TOYONA SAVDO • ЦЕНТР КАРЬЕРЫ",
+        navSubtitle: "Официальная анкета соискателя",
+        progressText: "Прогресс заполнения",
+        secPersonalTitle: "1. ЛИЧНЫЕ ДАННЫЕ",
+        lblLastName: "Ваша фамилия *",
+        lblFirstName: "Ваше имя *",
+        lblMiddleName: "Отчество *",
+        lblGender: "Пол *",
+        optMale: "Мужской",
+        optFemale: "Женский",
+        lblDob: "Дата рождения *",
+        lblMarital: "Семейное положение *",
+        optMaritalYes: "Женат / Замужем",
+        optMaritalNo: "Холост / Не замужем",
+        lblPassFrontTitle: "Паспорт (Лицевая сторона)",
+        lblPassBackTitle: "Паспорт (Прописка / Задняя сторона)",
+        lblPassOpt: "(необязательно)",
+        lblPassFrontDesc: "Лицевая сторона паспорта или ID-карты (главная)",
+        lblPassBackDesc: "Страница прописки или обратная сторона ID-карты",
+        btnPassChoose: "Выбрать фото",
+        secEduTitle: "2. ОБРАЗОВАНИЕ И СТЕПЕНЬ",
+        lblEduDegree: "Уровень образования / Степень *",
+        lblGradYear: "Год окончания *",
+        secAddressTitle: "3. АДРЕС ПРОЖИВАНИЯ",
+        lblRegion: "Регион / Область *",
+        lblExactAddress: "Точный адрес проживания (Район, улица, дом) *",
+        secBranchTitle: "4. В КАКОМ ФИЛИАЛЕ ХОТИТЕ РАБОТАТЬ?",
+        branchCountBadge: "13 филиалов",
+        branchSubText: "Выберите наиболее удобный для вас филиал:",
+        secJobTitle: "5. ЖЕЛАЕМАЯ ДОЛЖНОСТЬ",
+        jobCountBadge: "21 должность",
+        searchPlaceholder: "Поиск должности...",
+        expHeaderTitle: "Опыт работы по этой должности *",
+        lblPastWork: "Где, когда и кем вы работали ранее? *",
+        secContactTitle: "6. КОНТАКТНЫЕ ДАННЫЕ",
+        lblPhone1: "Ваш номер телефона *",
+        lblPhone2: "Дополнительный номер",
+        btnSubmitText: "Отправить анкету",
+        privacyNote: "Конфиденциальность ваших данных гарантируется.",
+        modalTitle: "Анкета успешно принята!",
+        modalDesc: "Специалисты отдела кадров рассмотрят вашу заявку и свяжутся с вами в ближайшее время.",
+        lblSummaryPos: "Должность:",
+        lblSummaryBranch: "Филиал:",
+        lblSummaryPhone: "Телефон:",
+        selectRegionDefault: "Выберите область...",
+        eduOptions: [
+          { id: "orta", label: "Среднее образование" },
+          { id: "orta_maxsus", label: "Средне-специальное (Колледж/Лицей)" },
+          { id: "tugallanmagan_oliy", label: "Неоконченное высшее" },
+          { id: "oliy_bakalavr", label: "Высшее (Бакалавриат)" },
+          { id: "magistr", label: "Высшее (Магистратура / PhD)" }
+        ],
+        regions: [
+          "г. Ташкент", "Ташкентская область", "Андижанская область", "Бухарская область",
+          "Ферганская область", "Джизакская область", "Хорезмская область", "Наманганская область",
+          "Навоийская область", "Кашкадарьинская область", "Самаркандская область",
+          "Сырдарьинская область", "Сурхандарьинская область", "Республика Каракалпакстан"
+        ],
+        branches: [
+          { id: "turkiston", name: "Филиал Туркистон", icon: "map-pin" },
+          { id: "navoiy", name: "Филиал Навои", icon: "map-pin" },
+          { id: "istiqlol", name: "Филиал Истиклол (Город)", icon: "map-pin" },
+          { id: "mingtut", name: "Филиал Мингтут", icon: "map-pin" },
+          { id: "yakkatut", name: "Филиал Яккатут", icon: "map-pin" },
+          { id: "head_office", name: "Главный офис", icon: "building" },
+          { id: "pop", name: "Филиал Поп", icon: "map-pin" },
+          { id: "furqat", name: "Филиал Фуркат", icon: "map-pin" },
+          { id: "buvayda", name: "Филиал Бувайда", icon: "map-pin" },
+          { id: "yangiqorgon", name: "Филиал Янгикурган (Бувайда)", icon: "map-pin" },
+          { id: "yaypan", name: "Филиал Яйпан", icon: "map-pin" },
+          { id: "margilon", name: "Филиал Маргилан", icon: "map-pin" },
+          { id: "toshkent_chilonzor", name: "Филиал Ташкент Чиланзар", icon: "map-pin" }
+        ],
+        jobs: [
+          { id: "sotuvchi_maslahatchi", name: "Продавец-консультант", category: "savdo" },
+          { id: "bosh_sotuvchi", name: "Старший продавец-консультант", category: "savdo" },
+          { id: "kassir_yordamchisi", name: "Помощник кассира", category: "savdo" },
+          { id: "shartnoma_bosh_mutaxassis", name: "Главный специалист отдела оформления договоров", category: "rasmiylashtirish" },
+          { id: "shartnoma_mutaxassis", name: "Специалист отдела оформления договоров", category: "rasmiylashtirish" },
+          { id: "savdo_boshligi", name: "Руководитель отдела продаж (Управляющий)", category: "boshqaruv" },
+          { id: "taklif_shikoyat_operator", name: "Оператор по работе с обращениями и жалобами", category: "operator" },
+          { id: "ombor_mudiri", name: "Заведующий складским сектором", category: "ombor" },
+          { id: "ombor_mutaxassis", name: "Специалист складского сектора", category: "ombor" },
+          { id: "oshpaz", name: "Повар", category: "xizmat" },
+          { id: "oshxona_ishchisi", name: "Работник кухни", category: "xizmat" },
+          { id: "hudud_tozalovchi", name: "Уборщик территории", category: "xizmat" },
+          { id: "haydovchi", name: "Водитель", category: "logistika" },
+          { id: "kuryer", name: "Курьер", category: "logistika" },
+          { id: "unduruv_mutaxassis", name: "Специалист отдела взыскания", category: "moliya" },
+          { id: "marketolog", name: "Маркетолог", category: "marketing" },
+          { id: "targetolog", name: "Таргетолог", category: "marketing" },
+          { id: "smm_manager", name: "SMM-менеджер", category: "marketing" },
+          { id: "texnik", name: "Техник", category: "texnik" },
+          { id: "motion_designer", name: "Motion-дизайнер", category: "kreativ" },
+          { id: "copywriter", name: "Копирайтер", category: "kreativ" }
+        ],
+        expOptions: [
+          { id: "none", label: "Нет (0 лет)" },
+          { id: "less_1", label: "Менее 1 года" },
+          { id: "1_2", label: "1 - 2 года" },
+          { id: "2_3", label: "2 - 3 года" },
+          { id: "3_plus", label: "Более 3 лет" }
         ]
       }
     };
 
+    // SET LANGUAGE FUNCTION
     function setLanguage(lang) {
-      currentLang = 'uz'; // Force uz for demo
-      renderRegions(); renderBranches(); renderJobs(); renderExpOptions();
+      currentLang = lang;
+      const dict = i18n[lang];
+
+      // Update Top Toggle UI
+      const uzBtn = document.getElementById('langBtnUz');
+      const ruBtn = document.getElementById('langBtnRu');
+      if (lang === 'uz') {
+        uzBtn.className = "fast-transition px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm";
+        ruBtn.className = "fast-transition px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white";
+      } else {
+        ruBtn.className = "fast-transition px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm";
+        uzBtn.className = "fast-transition px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white";
+      }
+
+      // Update static texts
+      document.getElementById('navTitle').innerText = dict.navTitle;
+      document.getElementById('navSubtitle').innerText = dict.navSubtitle;
+      document.getElementById('progressText').innerText = dict.progressText;
+      
+      document.getElementById('secPersonalTitle').innerText = dict.secPersonalTitle;
+      document.getElementById('lblLastName').innerText = dict.lblLastName;
+      document.getElementById('lblFirstName').innerText = dict.lblFirstName;
+      document.getElementById('lblMiddleName').innerText = dict.lblMiddleName;
+      document.getElementById('lblGender').innerText = dict.lblGender;
+      document.getElementById('optMale').innerText = dict.optMale;
+      document.getElementById('optFemale').innerText = dict.optFemale;
+      document.getElementById('lblDob').innerText = dict.lblDob;
+      document.getElementById('lblMarital').innerText = dict.lblMarital;
+      document.getElementById('optMaritalYes').innerText = dict.optMaritalYes;
+      document.getElementById('optMaritalNo').innerText = dict.optMaritalNo;
+
+      if (document.getElementById('lblPassFrontTitle')) document.getElementById('lblPassFrontTitle').innerText = dict.lblPassFrontTitle;
+      if (document.getElementById('lblPassBackTitle')) document.getElementById('lblPassBackTitle').innerText = dict.lblPassBackTitle;
+      if (document.getElementById('lblPassFrontOpt')) document.getElementById('lblPassFrontOpt').innerText = dict.lblPassOpt;
+      if (document.getElementById('lblPassBackOpt')) document.getElementById('lblPassBackOpt').innerText = dict.lblPassOpt;
+      if (document.getElementById('lblPassFrontDesc')) document.getElementById('lblPassFrontDesc').innerText = dict.lblPassFrontDesc;
+      if (document.getElementById('lblPassBackDesc')) document.getElementById('lblPassBackDesc').innerText = dict.lblPassBackDesc;
+      if (document.getElementById('btnPassFrontText')) document.getElementById('btnPassFrontText').innerText = dict.btnPassChoose;
+      if (document.getElementById('btnPassBackText')) document.getElementById('btnPassBackText').innerText = dict.btnPassChoose;
+
+      document.getElementById('secEduTitle').innerText = dict.secEduTitle;
+      document.getElementById('lblEduDegree').innerText = dict.lblEduDegree;
+      document.getElementById('lblGradYear').innerText = dict.lblGradYear;
+
+      document.getElementById('secAddressTitle').innerText = dict.secAddressTitle;
+      document.getElementById('lblRegion').innerText = dict.lblRegion;
+      document.getElementById('lblExactAddress').innerText = dict.lblExactAddress;
+
+      document.getElementById('secBranchTitle').innerText = dict.secBranchTitle;
+      document.getElementById('branchCountBadge').innerText = dict.branchCountBadge;
+      document.getElementById('branchSubText').innerText = dict.branchSubText;
+
+      document.getElementById('secJobTitle').innerText = dict.secJobTitle;
+      document.getElementById('jobCountBadge').innerText = dict.jobCountBadge;
+      document.getElementById('jobSearchInput').placeholder = dict.searchPlaceholder;
+
+      document.getElementById('expHeaderTitle').innerText = dict.expHeaderTitle;
+      document.getElementById('lblPastWork').innerText = dict.lblPastWork;
+
+      document.getElementById('secContactTitle').innerText = dict.secContactTitle;
+      document.getElementById('lblPhone1').innerText = dict.lblPhone1;
+      document.getElementById('lblPhone2').innerText = dict.lblPhone2;
+
+      document.getElementById('btnSubmitText').innerText = dict.btnSubmitText;
+      document.getElementById('privacyNote').innerText = dict.privacyNote;
+      document.getElementById('modalTitle').innerText = dict.modalTitle;
+      document.getElementById('modalDesc').innerText = dict.modalDesc;
+      document.getElementById('lblSummaryPos').innerText = dict.lblSummaryPos;
+      document.getElementById('lblSummaryBranch').innerText = dict.lblSummaryBranch;
+      document.getElementById('lblSummaryPhone').innerText = dict.lblSummaryPhone;
+
+      // Re-render dynamic components
+      renderEduOptions();
+      renderRegions();
+      renderBranches();
+      renderJobs();
+      renderExpOptions();
+
+      // Trigger icons re-render
       setTimeout(() => lucide.createIcons(), 20);
       updateProgress();
     }
 
-    function renderRegions() {
-      const select = document.getElementById('regionSelect');
-      const regions = i18n.uz.regions;
-      select.innerHTML = `<option value="" disabled selected>${i18n.uz.selectRegionDefault}</option>` + 
-        regions.map(r => `<option value="${r}">${r}</option>`).join('');
+    // RENDER EDUCATION OPTIONS
+    function renderEduOptions() {
+      const container = document.getElementById('eduContainer');
+      const list = i18n[currentLang].eduOptions;
+      container.innerHTML = list.map(item => `
+        <label class="option-card flex items-center justify-between p-2.5 rounded-xl border border-brand-border bg-[#101728] ${selectedEdu === item.id ? 'active' : ''}" 
+               onclick="selectEduOption('${item.id}', this)">
+          <div class="flex items-center space-x-2">
+            <div class="w-2 h-2 rounded-full ${selectedEdu === item.id ? 'bg-blue-400' : 'bg-slate-600'}"></div>
+            <span class="text-xs font-semibold text-slate-200">${item.label}</span>
+          </div>
+          <input type="radio" name="eduDegree" value="${item.label}" class="hidden" ${selectedEdu === item.id ? 'checked' : ''} required>
+          <i data-lucide="check" class="w-3.5 h-3.5 text-blue-400 ${selectedEdu === item.id ? 'opacity-100' : 'opacity-0'}"></i>
+        </label>
+      `).join('');
     }
 
+    function selectEduOption(id, el) {
+      selectedEdu = id;
+      document.querySelectorAll('#eduContainer .option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      const radio = el.querySelector('input');
+      if (radio) radio.checked = true;
+      triggerHaptic();
+      updateProgress();
+      setTimeout(() => lucide.createIcons(), 10);
+    }
+
+    // RENDER REGIONS
+    function renderRegions() {
+      const select = document.getElementById('regionSelect');
+      const regions = i18n[currentLang].regions;
+      const currentVal = select.value;
+      
+      let html = `<option value="" disabled ${!currentVal ? 'selected' : ''}>${i18n[currentLang].selectRegionDefault}</option>`;
+      regions.forEach(reg => {
+        html += `<option value="${reg}" ${currentVal === reg ? 'selected' : ''}>${reg}</option>`;
+      });
+      select.innerHTML = html;
+    }
+
+    // RENDER BRANCHES
     function renderBranches() {
       const container = document.getElementById('branchesContainer');
-      container.innerHTML = i18n.uz.branches.map(b => `
-        <label class="option-card flex items-center p-3 rounded-xl border border-brand-border bg-[#101728] ${selectedBranch === b.id ? 'active' : ''}" onclick="selectBranchOption('${b.id}', this)">
-          <div class="flex items-center space-x-2 flex-1">
-            <i data-lucide="${b.icon}" class="w-4 h-4 text-blue-400"></i>
+      const list = i18n[currentLang].branches;
+      container.innerHTML = list.map(b => `
+        <label class="option-card flex items-center justify-between p-3 rounded-xl border border-brand-border bg-[#101728] ${selectedBranch === b.id ? 'active' : ''}"
+               onclick="selectBranchOption('${b.id}', this)">
+          <div class="flex items-center space-x-2.5">
+            <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+              <i data-lucide="${b.icon}" class="w-3.5 h-3.5"></i>
+            </div>
             <span class="text-xs font-bold text-slate-200">${b.name}</span>
           </div>
-          <input type="radio" name="branch" value="${b.name}" class="hidden" required>
+          <input type="radio" name="branch" value="${b.name}" class="hidden" ${selectedBranch === b.id ? 'checked' : ''} required>
+          <i data-lucide="check-circle" class="w-4 h-4 text-blue-400 ${selectedBranch === b.id ? 'opacity-100' : 'opacity-0'}"></i>
         </label>
       `).join('');
     }
@@ -337,41 +943,76 @@
       selectedBranch = id;
       document.querySelectorAll('#branchesContainer .option-card').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
-      el.querySelector('input').checked = true;
+      const radio = el.querySelector('input');
+      if (radio) radio.checked = true;
+      triggerHaptic();
       updateProgress();
-    }
-
-    function renderJobs() {
-      const container = document.getElementById('jobsContainer');
-      const query = (document.getElementById('jobSearchInput')?.value || '').toLowerCase();
-      const filtered = i18n.uz.jobs.filter(j => j.name.toLowerCase().includes(query));
-      container.innerHTML = filtered.map(job => `
-        <label class="option-card flex items-center p-2.5 rounded-xl border border-brand-border bg-[#101728] ${selectedJob === job.id ? 'active' : ''}" onclick="selectJobOption('${job.id}', this)">
-          <span class="text-xs font-semibold text-slate-200 flex-1">${job.name}</span>
-          <input type="radio" name="jobPosition" value="${job.name}" class="hidden" required>
-        </label>
-      `).join('');
+      renderBranches(); // refresh check icons
       setTimeout(() => lucide.createIcons(), 10);
     }
 
-    function filterJobs() { renderJobs(); }
+    // RENDER JOBS
+    function renderJobs() {
+      const container = document.getElementById('jobsContainer');
+      const list = i18n[currentLang].jobs;
+      const query = (document.getElementById('jobSearchInput')?.value || '').toLowerCase().trim();
 
-    function selectJobOption(id, el) {
+      const filtered = list.filter(j => j.name.toLowerCase().includes(query));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">Hech qanday lavozim topilmadi</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(job => `
+        <label class="option-card flex items-center justify-between p-2.5 rounded-xl border border-brand-border bg-[#101728] ${selectedJob === job.id ? 'active' : ''}"
+               onclick="selectJobOption('${job.id}', '${job.name.replace(/'/g, "\\'")}', this)">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-2 h-2 rounded-full ${selectedJob === job.id ? 'bg-blue-400 ring-2 ring-blue-500/40' : 'bg-slate-600'}"></div>
+            <span class="text-xs font-semibold text-slate-200 leading-tight">${job.name}</span>
+          </div>
+          <input type="radio" name="jobPosition" value="${job.name}" class="hidden" ${selectedJob === job.id ? 'checked' : ''} required>
+          <i data-lucide="check" class="w-4 h-4 text-blue-400 ${selectedJob === job.id ? 'opacity-100' : 'opacity-0'}"></i>
+        </label>
+      `).join('');
+
+      setTimeout(() => lucide.createIcons(), 10);
+    }
+
+    function filterJobs() {
+      renderJobs();
+    }
+
+    function selectJobOption(id, jobName, el) {
       selectedJob = id;
       document.querySelectorAll('#jobsContainer .option-card').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
-      el.querySelector('input').checked = true;
-      document.getElementById('experienceSection').classList.remove('hidden');
-      document.getElementById('pastExpInput').setAttribute('required', 'true');
+      const radio = el.querySelector('input');
+      if (radio) radio.checked = true;
+
+      // Show Experience Section dynamically
+      const expSec = document.getElementById('experienceSection');
+      expSec.classList.remove('hidden');
+
+      // Make past experience required
+      const pastInput = document.getElementById('pastExpInput');
+      pastInput.setAttribute('required', 'true');
+
+      triggerHaptic();
       updateProgress();
+      renderJobs(); // refresh check icons
+      setTimeout(() => lucide.createIcons(), 10);
     }
 
+    // RENDER EXPERIENCE OPTIONS
     function renderExpOptions() {
       const container = document.getElementById('expOptionsContainer');
-      container.innerHTML = i18n.uz.expOptions.map(item => `
-        <label class="option-card flex items-center justify-center p-2 rounded-lg border border-brand-border bg-[#101728] text-center ${selectedExp === item.id ? 'active' : ''}" onclick="selectExpOption('${item.id}', this)">
+      const list = i18n[currentLang].expOptions;
+      container.innerHTML = list.map(item => `
+        <label class="option-card flex items-center justify-center p-2 rounded-lg border border-brand-border bg-[#101728] text-center ${selectedExp === item.id ? 'active' : ''}"
+               onclick="selectExpOption('${item.id}', this)">
           <span class="text-[11px] font-bold text-slate-200">${item.label}</span>
-          <input type="radio" name="experienceYears" value="${item.label}" class="hidden">
+          <input type="radio" name="experienceYears" value="${item.label}" class="hidden" ${selectedExp === item.id ? 'checked' : ''}>
         </label>
       `).join('');
     }
@@ -380,186 +1021,608 @@
       selectedExp = id;
       document.querySelectorAll('#expOptionsContainer .option-card').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
-      el.querySelector('input').checked = true;
+      const radio = el.querySelector('input');
+      if (radio) radio.checked = true;
+      triggerHaptic();
       updateProgress();
     }
 
-    let uploadedImages = {
-      photoUrl: '',
-      passportFrontUrl: '',
-      passportBackUrl: ''
-    };
+    // GENERAL CARD SELECTOR (For Gender, Marital Status)
+    function selectCardOption(group, val, el) {
+      const parent = el.parentElement;
+      parent.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      const radio = el.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+      triggerHaptic();
+      updateProgress();
+    }
 
-    function handleImageUpload(key, input, previewId, iconId) {
-      if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          uploadedImages[key] = e.target.result;
-          const img = document.getElementById(previewId);
-          const icon = document.getElementById(iconId);
-          if (img && icon) {
-            img.src = e.target.result;
-            img.classList.remove('hidden');
-            icon.classList.add('hidden');
+    // PHONE FORMATTER
+    function formatPhoneInput(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (val.length > 9) val = val.substring(0, 9);
+      
+      // Formatting visually: 90 123 45 67
+      let formatted = '';
+      if (val.length > 0) formatted += val.substring(0, 2);
+      if (val.length > 2) formatted += ' ' + val.substring(2, 5);
+      if (val.length > 5) formatted += ' ' + val.substring(5, 7);
+      if (val.length > 7) formatted += ' ' + val.substring(7, 9);
+      
+      input.value = formatted;
+    }
+
+    // HAPTIC FEEDBACK FOR TELEGRAM MINI APP
+    function triggerHaptic() {
+      try {
+        if (tg?.HapticFeedback) {
+          tg.HapticFeedback.impactOccurred('light');
+        }
+      } catch (e) {}
+    }
+
+    let uploadedPhotoBase64 = '';
+    let uploadedPassFrontBase64 = '';
+    let uploadedPassBackBase64 = '';
+
+    function handlePhotoUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert(currentLang === 'uz' ? "Iltimos, faqat rasm faylini tanlang!" : "Пожалуйста, выберите файл изображения!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 600;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
           }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          uploadedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          const previewImg = document.getElementById('photoPreviewImg');
+          const placeholder = document.getElementById('photoPlaceholder');
+          const removeBtn = document.getElementById('btnRemovePhoto');
+          const badge = document.getElementById('photoBadge');
+          const previewBox = document.getElementById('photoPreviewBox');
+
+          if (previewImg) {
+            previewImg.src = uploadedPhotoBase64;
+            previewImg.classList.remove('hidden');
+          }
+          if (placeholder) placeholder.classList.add('hidden');
+          if (removeBtn) removeBtn.classList.remove('hidden');
+          if (badge) badge.classList.remove('hidden');
+          if (previewBox) {
+            previewBox.classList.remove('border-dashed');
+            previewBox.classList.add('border-solid', 'border-blue-500');
+          }
+
+          if (window.lucide) lucide.createIcons();
           updateProgress();
         };
-        reader.readAsDataURL(file);
-      }
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
-    function selectCardOption(group, val, el) {
-      el.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
-      el.querySelector('input').checked = true;
+    function removeUploadedPhoto() {
+      uploadedPhotoBase64 = '';
+      const input = document.getElementById('photoInput');
+      if (input) input.value = '';
+
+      const previewImg = document.getElementById('photoPreviewImg');
+      const placeholder = document.getElementById('photoPlaceholder');
+      const removeBtn = document.getElementById('btnRemovePhoto');
+      const badge = document.getElementById('photoBadge');
+      const previewBox = document.getElementById('photoPreviewBox');
+
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+      }
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (removeBtn) removeBtn.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
+      if (previewBox) {
+        previewBox.classList.remove('border-solid', 'border-blue-500');
+        previewBox.classList.add('border-dashed');
+      }
+
+      if (window.lucide) lucide.createIcons();
       updateProgress();
     }
 
+    function handlePassFrontUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert(currentLang === 'uz' ? "Iltimos, faqat rasm faylini tanlang!" : "Пожалуйста, выберите файл изображения!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          uploadedPassFrontBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          const previewImg = document.getElementById('passFrontPreviewImg');
+          const placeholder = document.getElementById('passFrontPlaceholder');
+          const removeBtn = document.getElementById('btnRemovePassFront');
+          const badge = document.getElementById('passFrontBadge');
+          const previewBox = document.getElementById('passFrontPreviewBox');
+
+          if (previewImg) {
+            previewImg.src = uploadedPassFrontBase64;
+            previewImg.classList.remove('hidden');
+          }
+          if (placeholder) placeholder.classList.add('hidden');
+          if (removeBtn) removeBtn.classList.remove('hidden');
+          if (badge) badge.classList.remove('hidden');
+          if (previewBox) {
+            previewBox.classList.remove('border-dashed');
+            previewBox.classList.add('border-solid', 'border-cyan-500');
+          }
+
+          if (window.lucide) lucide.createIcons();
+          updateProgress();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeUploadedPassFront() {
+      uploadedPassFrontBase64 = '';
+      const input = document.getElementById('passFrontInput');
+      if (input) input.value = '';
+
+      const previewImg = document.getElementById('passFrontPreviewImg');
+      const placeholder = document.getElementById('passFrontPlaceholder');
+      const removeBtn = document.getElementById('btnRemovePassFront');
+      const badge = document.getElementById('passFrontBadge');
+      const previewBox = document.getElementById('passFrontPreviewBox');
+
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+      }
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (removeBtn) removeBtn.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
+      if (previewBox) {
+        previewBox.classList.remove('border-solid', 'border-cyan-500');
+        previewBox.classList.add('border-dashed');
+      }
+
+      if (window.lucide) lucide.createIcons();
+      updateProgress();
+    }
+
+    function handlePassBackUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert(currentLang === 'uz' ? "Iltimos, faqat rasm faylini tanlang!" : "Пожалуйста, выберите файл изображения!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          uploadedPassBackBase64 = canvas.toDataURL('image/jpeg', 0.82);
+
+          const previewImg = document.getElementById('passBackPreviewImg');
+          const placeholder = document.getElementById('passBackPlaceholder');
+          const removeBtn = document.getElementById('btnRemovePassBack');
+          const badge = document.getElementById('passBackBadge');
+          const previewBox = document.getElementById('passBackPreviewBox');
+
+          if (previewImg) {
+            previewImg.src = uploadedPassBackBase64;
+            previewImg.classList.remove('hidden');
+          }
+          if (placeholder) placeholder.classList.add('hidden');
+          if (removeBtn) removeBtn.classList.remove('hidden');
+          if (badge) badge.classList.remove('hidden');
+          if (previewBox) {
+            previewBox.classList.remove('border-dashed');
+            previewBox.classList.add('border-solid', 'border-indigo-500');
+          }
+
+          if (window.lucide) lucide.createIcons();
+          updateProgress();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeUploadedPassBack() {
+      uploadedPassBackBase64 = '';
+      const input = document.getElementById('passBackInput');
+      if (input) input.value = '';
+
+      const previewImg = document.getElementById('passBackPreviewImg');
+      const placeholder = document.getElementById('passBackPlaceholder');
+      const removeBtn = document.getElementById('btnRemovePassBack');
+      const badge = document.getElementById('passBackBadge');
+      const previewBox = document.getElementById('passBackPreviewBox');
+
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+      }
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (removeBtn) removeBtn.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
+      if (previewBox) {
+        previewBox.classList.remove('border-solid', 'border-indigo-500');
+        previewBox.classList.add('border-dashed');
+      }
+
+      if (window.lucide) lucide.createIcons();
+      updateProgress();
+    }
+
+    // LIVE PROGRESS BAR CALCULATION
     function updateProgress() {
       const form = document.getElementById('vacancyForm');
-      let fields = 0; let total = 8;
-      if (form.lastName?.value) fields++;
-      if (form.firstName?.value) fields++;
-      if (form.dob?.value) fields++;
-      if (form.region?.value) fields++;
-      if (form.exactAddress?.value) fields++;
-      if (form.phone1?.value) fields++;
-      if (selectedBranch) fields++;
-      if (selectedJob) { total += 2; fields++; if (selectedExp) fields++; if (form.pastExperience?.value) fields++; }
-      
-      const percent = Math.min(Math.round((fields / total) * 100), 100);
+      let totalFields = 11; // base count of primary requirements
+      let completedFields = 0;
+
+      if (form.lastName.value.trim()) completedFields++;
+      if (form.firstName.value.trim()) completedFields++;
+      if (form.middleName.value.trim()) completedFields++;
+      if (form.querySelector('input[name="gender"]:checked')) completedFields++;
+      if (form.dob.value) completedFields++;
+      if (form.querySelector('input[name="maritalStatus"]:checked')) completedFields++;
+      if (selectedEdu) completedFields++;
+      if (form.gradYear.value) completedFields++;
+      if (form.region.value) completedFields++;
+      if (form.exactAddress.value.trim()) completedFields++;
+      if (selectedBranch) completedFields++;
+      if (selectedJob) {
+        totalFields += 2; // exp years + past work info
+        completedFields++;
+        if (selectedExp) completedFields++;
+        if (form.pastExperience?.value.trim()) completedFields++;
+      }
+      if (form.phone1.value.replace(/\D/g, '').length === 9) completedFields++;
+
+      const percent = Math.min(Math.round((completedFields / totalFields) * 100), 100);
       document.getElementById('progressBar').style.width = percent + '%';
       document.getElementById('progressPercent').innerText = percent + '%';
     }
 
-    function handleFormSubmit(e) {
+    // HANDLE FORM SUBMISSION
+    async function handleFormSubmit(e) {
       e.preventDefault();
-      const form = e.target;
-      const formData = {
-        id: 'cand_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-        fullName: `${form.lastName.value} ${form.firstName.value} ${form.middleName.value}`.trim(),
-        gender: form.querySelector('input[name="gender"]:checked')?.value || 'Erkak',
-        dob: form.dob.value || '',
-        region: form.region.value || '',
-        exactAddress: form.exactAddress.value || '',
-        address: form.exactAddress.value || '',
-        branch: form.querySelector('input[name="branch"]:checked')?.value || 'Bosh ofis',
-        jobPosition: form.querySelector('input[name="jobPosition"]:checked')?.value || 'Sotuvchi maslahatchi',
-        position: form.querySelector('input[name="jobPosition"]:checked')?.value || 'Sotuvchi maslahatchi',
-        pastExperience: form.pastExperience?.value || 'Ko\'rsatilmadi',
-        phone1: '+998 ' + form.phone1.value,
-        phone2: form.phone2.value ? '+998 ' + form.phone2.value : "Ko'rsatilmadi",
-        photoUrl: uploadedImages.photoUrl || 'https://i.pravatar.cc/150?img=33',
-        passportFrontUrl: uploadedImages.passportFrontUrl || '',
-        passportBackUrl: uploadedImages.passportBackUrl || '',
-        submittedAt: new Date().toISOString(),
-        status: 'Yangi nomzod'
-      };
 
-      // 1. LocalStorage-ga saqlash (Offline / Instant)
-      try {
-        const stored = JSON.parse(localStorage.getItem('hrms_candidates') || '[]');
-        stored.unshift(formData);
-        localStorage.setItem('hrms_candidates', JSON.stringify(stored));
-      } catch (err) {
-        console.error("LocalStorage error:", err);
+      if (!selectedJob) {
+        alert(currentLang === 'uz' ? "Iltimos, talabgor lavozimingizni tanlang!" : "Пожалуйста, выберите желаемую должность!");
+        return;
+      }
+      if (!selectedBranch) {
+        alert(currentLang === 'uz' ? "Iltimos, ishlamoqchi bo'lgan filialimizni tanlang!" : "Пожалуйста, выберите филиал!");
+        return;
+      }
+      if (!selectedExp) {
+        alert(currentLang === 'uz' ? "Iltimos, tajriba muddatini tanlang!" : "Пожалуйста, выберите опыт работы!");
+        return;
       }
 
-      // 2. Parent oynaga bildirish
-      try {
-        window.parent.postMessage({ type: 'CANDIDATE_SUBMITTED', candidate: formData }, '*');
-      } catch (e) {}
-
-      // 3. Backend API ga yuborish (Server orqali Firestore'ga 100% kafolatli saqlash)
-      try {
-        fetch('/api/candidates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        }).catch(err => console.warn("Backend API candidates notice:", err));
-      } catch (e) {}
-
-      // 4. Firestore REST API ga parallel to'g'ridan-to'g'ri yozish (Client fallback)
-      const firestoreBody = {
-        fields: {
-          id: { stringValue: formData.id },
-          date: { stringValue: new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.') },
-          submittedAt: { stringValue: new Date().toISOString() },
-          status: { stringValue: 'Yangi nomzod' },
-          fullName: { stringValue: formData.fullName || "Noma\'lum" },
-          fatherName: { stringValue: formData.fatherName || "" },
-          position: { stringValue: formData.jobPosition || "Noma\'lum" },
-          jobPosition: { stringValue: formData.jobPosition || "Noma\'lum" },
-          region: { stringValue: formData.region || "Noma\'lum" },
-          address: { stringValue: formData.exactAddress || "" },
-          exactAddress: { stringValue: formData.exactAddress || "" },
-          targetBranch: { stringValue: formData.branch || formData.targetBranch || "" },
-          maritalStatus: { stringValue: formData.maritalStatus || "" },
-          educationLevel: { stringValue: formData.educationLevel || "" },
-          graduationYear: { stringValue: formData.graduationYear || "" },
-          phone1: { stringValue: formData.phone1 || "" },
-          phone2: { stringValue: formData.phone2 || "" },
-          gender: { stringValue: formData.gender || "Erkak" },
-          dob: { stringValue: formData.dob || "" },
-          pastExperience: { stringValue: formData.pastExperience || "" },
-          candidateMessage: { stringValue: formData.pastExperience || "" }
-        }
+      const form = e.target;
+      const submitButton = document.getElementById('submitBtn');
+      const formData = {
+        fullName: `${form.firstName.value} ${form.lastName.value}`,
+        fatherName: form.middleName.value,
+        gender: form.querySelector('input[name="gender"]:checked')?.value,
+        dob: form.dob.value,
+        maritalStatus: form.querySelector('input[name="maritalStatus"]:checked')?.value === 'Ha'
+          ? 'Turmush qurgan'
+          : 'Turmush qurmagan',
+        educationLevel: form.querySelector('input[name="eduDegree"]:checked')?.value,
+        graduationYear: form.gradYear.value,
+        region: form.region.value,
+        exactAddress: form.exactAddress.value,
+        targetBranch: form.querySelector('input[name="branch"]:checked')?.value,
+        jobPosition: form.querySelector('input[name="jobPosition"]:checked')?.value,
+        experienceYears: form.querySelector('input[name="experienceYears"]:checked')?.value,
+        pastExperience: form.pastExperience.value,
+        phone1: '+998 ' + form.phone1.value,
+        phone2: form.phone2.value ? '+998 ' + form.phone2.value : "Ko'rsatilmadi",
+        submittedAt: new Date().toISOString()
       };
 
-      const firestoreDocId = formData.id;
-      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/gen-lang-client-0391742872/databases/ai-studio-toyonasavdo-a87699da-8d38-4976-8749-f4100631b191/documents/candidates/${firestoreDocId}?key=AIzaSyB6DEX7gW5Z9grIcZJrkNwTeUsiRl2N568`;
-      
-      const fsController = new AbortController();
-      const fsTimeout = setTimeout(() => fsController.abort(), 4000);
+      const backendPayload = {
+        full_name: formData.fullName,
+        father_name: formData.fatherName || '',
+        job_position: formData.jobPosition || '',
+        region: formData.region || '',
+        exact_address: formData.exactAddress || '',
+        phone1: formData.phone1,
+        phone2: formData.phone2,
+        gender: formData.gender || '',
+        dob: formData.dob || '',
+        marital_status: formData.maritalStatus || '',
+        education_level: formData.educationLevel || '',
+        graduation_year: formData.graduationYear || '',
+        target_branch: formData.targetBranch || '',
+        past_experience: formData.pastExperience || '',
+        branch: formData.targetBranch || '',
+        education: formData.educationLevel || '',
+        grad_year: formData.graduationYear || '',
+        experience_years: formData.experienceYears || '',
+        marital_status: formData.maritalStatus || '',
+        photo_url: uploadedPhotoBase64 || '',
+        photoUrl: uploadedPhotoBase64 || '',
+        passportFrontUrl: uploadedPassFrontBase64 || '',
+        passport_front_url: uploadedPassFrontBase64 || '',
+        passportBackUrl: uploadedPassBackBase64 || '',
+        passport_back_url: uploadedPassBackBase64 || ''
+      };
 
-      fetch(firestoreUrl, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(firestoreBody),
-        signal: fsController.signal
-      })
-      .then(() => clearTimeout(fsTimeout))
-      .catch(err => {
-        clearTimeout(fsTimeout);
-        console.warn("Direct Firestore fallback notice:", err);
-      });
+      submitButton.disabled = true;
+      submitButton.classList.add('opacity-70', 'cursor-wait');
 
+      let submittedSuccessfully = false;
 
-      // 4. Modalni ochish
+      // 1. Backend API orqali yuborish
+      try {
+        const response = await fetch('/api/candidates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(backendPayload)
+        });
+
+        if (response.ok) {
+          submittedSuccessfully = true;
+        }
+      } catch (apiError) {
+        console.warn('Backend API mavjud emas, to\'g\'ridan-to\'g\'ri Firestorega yozyapmiz:', apiError);
+      }
+
+      // 2. To'g'ridan-to'g'ri Firestore REST API fallback (100% kafolatli saqlash)
+      if (!submittedSuccessfully) {
+        try {
+          const docId = 'cand_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+          const firestoreUrl = 'https://firestore.googleapis.com/v1/projects/gen-lang-client-0391742872/databases/ai-studio-toyonasavdo-a87699da-8d38-4976-8749-f4100631b191/documents/candidates/' + docId + '?key=AIzaSyB6DEX7gW5Z9grIcZJrkNwTeUsiRl2N568';
+
+          const fsFields = {
+            id: { stringValue: docId },
+            fullName: { stringValue: formData.fullName || '' },
+            full_name: { stringValue: formData.fullName || '' },
+            fatherName: { stringValue: formData.fatherName || '' },
+            father_name: { stringValue: formData.fatherName || '' },
+            gender: { stringValue: formData.gender || '' },
+            dob: { stringValue: formData.dob || '' },
+            maritalStatus: { stringValue: formData.maritalStatus || '' },
+            marital_status: { stringValue: formData.maritalStatus || '' },
+            educationLevel: { stringValue: formData.educationLevel || '' },
+            education_level: { stringValue: formData.educationLevel || '' },
+            graduationYear: { stringValue: formData.graduationYear || '' },
+            graduation_year: { stringValue: formData.graduationYear || '' },
+            region: { stringValue: formData.region || '' },
+            exactAddress: { stringValue: formData.exactAddress || '' },
+            exact_address: { stringValue: formData.exactAddress || '' },
+            targetBranch: { stringValue: formData.targetBranch || formData.branch || '' },
+            target_branch: { stringValue: formData.targetBranch || formData.branch || '' },
+            branch: { stringValue: formData.targetBranch || formData.branch || '' },
+            jobPosition: { stringValue: formData.jobPosition || '' },
+            job_position: { stringValue: formData.jobPosition || '' },
+            position: { stringValue: formData.jobPosition || '' },
+            phone1: { stringValue: formData.phone1 || '' },
+            phone2: { stringValue: formData.phone2 || '' },
+            pastExperience: { stringValue: formData.pastExperience || '' },
+            past_experience: { stringValue: formData.pastExperience || '' },
+            status: { stringValue: 'Yangi nomzod' },
+            submittedAt: { stringValue: new Date().toISOString() },
+            submitted_at: { stringValue: new Date().toISOString() },
+            date: { stringValue: new Date().toLocaleDateString('uz-UZ').replace(/\//g, '.') },
+            photoUrl: { stringValue: uploadedPhotoBase64 || '' },
+            photo_url: { stringValue: uploadedPhotoBase64 || '' },
+            passportFrontUrl: { stringValue: uploadedPassFrontBase64 || '' },
+            passport_front_url: { stringValue: uploadedPassFrontBase64 || '' },
+            passportBackUrl: { stringValue: uploadedPassBackBase64 || '' },
+            passport_back_url: { stringValue: uploadedPassBackBase64 || '' }
+          };
+
+          const fsRes = await fetch(firestoreUrl, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: fsFields })
+          });
+
+          if (fsRes.ok) {
+            submittedSuccessfully = true;
+          } else {
+            throw new Error('Firestore error ' + fsRes.status);
+          }
+        } catch (fsErr) {
+          console.error('All submission attempts failed:', fsErr);
+          alert(currentLang === 'uz'
+            ? 'Arizani yuborishda xatolik yuz berdi. Iltimos, internet aloqasini tekshirib qayta urinib ko\'ring.'
+            : 'Произошла ошибка при отправке анкеты. Пожалуйста, проверьте подключение к интернету.');
+          submitButton.disabled = false;
+          submitButton.classList.remove('opacity-70', 'cursor-wait');
+          return;
+        }
+      }
+
+      submitButton.disabled = false;
+      submitButton.classList.remove('opacity-70', 'cursor-wait');
+
+      // Summary preview in modal
+      document.getElementById('summaryJob').innerText = formData.jobPosition;
+      document.getElementById('summaryBranch').innerText = formData.branch;
+      document.getElementById('summaryPhone').innerText = formData.phone1;
+      resetFormAfterSubmit();
+
+      // Confetti celebration
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+      } catch (err) {}
+
+      // Telegram WebApp sendData if running inside telegram
+      if (tg && tg.sendData) {
+        try {
+          tg.HapticFeedback?.notificationOccurred('success');
+        } catch(e){}
+      }
+
+      // Show Success Modal
       document.getElementById('successModal').classList.remove('hidden');
-      try { confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } }); } catch (err) {}
-
-      // 5. Formani tozalash
-      form.reset();
-      selectedJob = ''; selectedBranch = ''; selectedExp = '';
-      uploadedImages = { photoUrl: '', passportFrontUrl: '', passportBackUrl: '' };
-      ['previewPhoto', 'previewPassFront', 'previewPassBack'].forEach(id => {
-        const img = document.getElementById(id);
-        if (img) { img.src = ''; img.classList.add('hidden'); }
-      });
-      ['iconPhoto', 'iconPassFront', 'iconPassBack'].forEach(id => {
-        const icon = document.getElementById(id);
-        if (icon) icon.classList.remove('hidden');
-      });
-      document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
-      const expSec = document.getElementById('experienceSection');
-      if (expSec) expSec.classList.add('hidden');
     }
 
-    function closeModalAndGoToCandidates() {
-      document.getElementById('successModal').classList.add('hidden');
-      try {
-        window.parent.postMessage({ type: 'SWITCH_TO_CANDIDATES' }, '*');
-      } catch (e) {}
+    function resetFormAfterSubmit() {
+      const form = document.getElementById('vacancyForm');
+      form.reset();
+      removeUploadedPhoto();
+      removeUploadedPassFront();
+      removeUploadedPassBack();
+      selectedJob = '';
+      selectedBranch = '';
+      selectedEdu = '';
+      selectedExp = '';
+
+      document.getElementById('jobSearchInput').value = '';
+      document.getElementById('experienceSection').classList.add('hidden');
+      document.getElementById('pastExpInput').removeAttribute('required');
+      document.querySelectorAll('.option-card.active').forEach(card => card.classList.remove('active'));
+
+      renderEduOptions();
+      renderRegions();
+      renderBranches();
+      renderJobs();
+      renderExpOptions();
+      updateProgress();
+      setTimeout(() => lucide.createIcons(), 10);
     }
 
     function closeModalAndExit() {
       document.getElementById('successModal').classList.add('hidden');
+      if (tg && tg.close) {
+        tg.close();
+      }
     }
 
+    // DYNAMIC VACANCIES & BRANCHES SYNC FROM FIRESTORE
+    async function loadLiveVacancies() {
+      try {
+        const firestoreBase = 'https://firestore.googleapis.com/v1/projects/gen-lang-client-0391742872/databases/ai-studio-toyonasavdo-a87699da-8d38-4976-8749-f4100631b191/documents';
+        const apiKey = 'AIzaSyB6DEX7gW5Z9grIcZJrkNwTeUsiRl2N568';
+        const res = await fetch(`${firestoreBase}/vacancies?key=${apiKey}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data || !data.documents || !data.documents.length) return;
+
+        let hasNew = false;
+        data.documents.forEach(doc => {
+          const f = doc.fields || {};
+          const title = (f.title?.stringValue || '').trim();
+          const status = (f.status?.stringValue || 'Faol').trim();
+          const department = (f.department?.stringValue || '').trim();
+          const branch = (f.branch?.stringValue || '').trim();
+
+          if (title && (status === 'Faol' || status === 'Ochiq')) {
+            const exists = i18n.uz.jobs.some(j => j.name.toLowerCase() === title.toLowerCase());
+            if (!exists) {
+              const newJob = {
+                id: 'fb_' + Math.random().toString(36).slice(2, 8),
+                name: title,
+                category: department || 'Umumiy',
+                branch: branch
+              };
+              i18n.uz.jobs.push(newJob);
+              i18n.ru.jobs.push({ ...newJob, name: title });
+              hasNew = true;
+            }
+          }
+        });
+
+        if (hasNew) {
+          const count = i18n[currentLang].jobs.length;
+          const badge = document.getElementById('jobCountBadge');
+          if (badge) {
+            badge.innerText = `${count} ${currentLang === 'uz' ? 'ta lavozim' : 'должностей'}`;
+          }
+          renderJobs();
+          setTimeout(() => lucide.createIcons(), 10);
+        }
+      } catch (err) {
+        console.warn('Realtime vacancies sync info:', err);
+      }
+    }
+
+    // INITIALIZATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
       setLanguage('uz');
+      lucide.createIcons();
+      loadLiveVacancies();
     });
   </script>
 </body>

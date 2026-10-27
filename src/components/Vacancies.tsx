@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, Plus, Briefcase, Building2, MapPin, Users, UserCheck, 
   Trash2, Edit2, CheckCircle2, Clock, DollarSign, X, Phone, 
-  ChevronRight, ArrowUpDown, UserX, AlertCircle, Check, Eye, Loader2
+  ChevronRight, ArrowUpDown, UserX, AlertCircle, Check, Eye, Loader2,
+  FileText, ExternalLink
 } from 'lucide-react';
 import { POSITIONS_LIST, BRANCHES_LIST, Candidate } from './Candidates';
 import { exportToExcel, exportToPDF } from '../lib/export';
@@ -631,7 +632,20 @@ export default function Vacancies({ currentUser, isSuperAdmin, onNavigateToCandi
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Asosiy anketa shakli (GitHub form-html-5.0) */}
+          <a
+            href="https://github.com/ZarifjonZokirov/form-html-5.0"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 hover:text-[#00A651] dark:hover:text-[#00A651] text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:border-[#00A651]/40 transition-all cursor-pointer shadow-2xs"
+            title="Nomzodlar anketasi (form-html-5.0) dasturini alohida havolada ochish"
+          >
+            <FileText className="w-3.5 h-3.5 text-[#00A651]" />
+            <span>Nomzodlar Anketasi (Form 5.0)</span>
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </a>
+
           {/* Excel va PDF Yuklab olish */}
           <ExportButtons 
             onExportExcel={() => handleExportVacancies('excel')}
