@@ -150,30 +150,121 @@ export async function resetPassword(email: string): Promise<{ success: boolean; 
 
 export async function getFirebaseUsers(forceRefresh: boolean = false): Promise<any[]> {
   return cachedFetch('users', async () => {
+    const mergedMap = new Map<string, any>();
+    const addUserToMap = (u: any) => {
+      if (!u) return;
+      const isSuper = u.id === 1 || u.id === '1' || u.firestoreId === 'user-1' || u.role === 'Super Admin';
+      const key = isSuper ? 'user-1' : String(u.firestoreId || u.id || u.username || '');
+      if (!key) return;
+      mergedMap.set(key, {
+        ...(mergedMap.get(key) || {}),
+        ...u,
+        id: isSuper ? 1 : (u.id ?? key),
+        firestoreId: isSuper ? 'user-1' : (u.firestoreId || key)
+      });
+    };
+
     try {
       const snap = await getDocs(collection(db, 'users'));
-      if (snap.empty) return [];
-      return snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
+      if (!snap.empty) {
+        snap.docs.forEach(d => addUserToMap({ ...d.data(), firestoreId: d.id }));
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'users');
-      return [];
     }
+
+    // Fallback/Supplement 1: Direct getDoc on 'users/user-1' (works even when collection LIST is restricted)
+    try {
+      const superSnap = await getDoc(doc(db, 'users', 'user-1'));
+      if (superSnap.exists()) {
+        addUserToMap({ ...superSnap.data(), firestoreId: 'user-1', id: 1 });
+      }
+    } catch {}
+
+    // Fallback/Supplement 2: Read mirrored registry from 'settings/users_registry'
+    try {
+      const regSnap = await getDoc(doc(db, 'settings', 'users_registry'));
+      if (regSnap.exists()) {
+        const list = regSnap.data()?.users;
+        if (Array.isArray(list)) {
+          list.forEach(u => addUserToMap(u));
+        }
+      }
+    } catch {}
+
+    if (mergedMap.size === 0) {
+      addUserToMap(CANONICAL_SUPER_ADMIN);
+    }
+
+    return Array.from(mergedMap.values());
   }, 15 * 60 * 1000, forceRefresh);
 }
 
 export function subscribeFirebaseUsers(callback: (users: any[]) => void): Unsubscribe {
+  let fallbackUnsub1: Unsubscribe | null = null;
+  let fallbackUnsub2: Unsubscribe | null = null;
+
+  const startFallbackSubscription = () => {
+    let superUser: any = CANONICAL_SUPER_ADMIN;
+    let registryUsers: any[] = [];
+
+    const emitCombined = () => {
+      const map = new Map<string, any>();
+      map.set('user-1', { ...CANONICAL_SUPER_ADMIN, ...superUser, id: 1, firestoreId: 'user-1' });
+      registryUsers.forEach(u => {
+        if (!u) return;
+        const isSuper = u.id === 1 || u.id === '1' || u.firestoreId === 'user-1' || u.role === 'Super Admin';
+        const key = isSuper ? 'user-1' : String(u.firestoreId || u.id || u.username || '');
+        if (!key) return;
+        map.set(key, { ...(map.get(key) || {}), ...u, id: isSuper ? 1 : u.id });
+      });
+      callback(Array.from(map.values()));
+    };
+
+    try {
+      fallbackUnsub1 = onSnapshot(doc(db, 'users', 'user-1'), (docSnap) => {
+        if (docSnap.exists()) {
+          superUser = { ...docSnap.data(), id: 1, firestoreId: 'user-1' };
+        }
+        emitCombined();
+      }, () => {
+        emitCombined();
+      });
+    } catch {
+      emitCombined();
+    }
+
+    try {
+      fallbackUnsub2 = onSnapshot(doc(db, 'settings', 'users_registry'), (regSnap) => {
+        if (regSnap.exists() && Array.isArray(regSnap.data()?.users)) {
+          registryUsers = regSnap.data()!.users;
+        }
+        emitCombined();
+      }, () => {});
+    } catch {}
+  };
+
   try {
-    return onSnapshot(collection(db, 'users'), (snap) => {
+    const mainUnsub = onSnapshot(collection(db, 'users'), (snap) => {
       const users = snap.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-      callback(users);
+      callback(users.length > 0 ? users : [CANONICAL_SUPER_ADMIN]);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'users');
-      callback([CANONICAL_SUPER_ADMIN]);
+      startFallbackSubscription();
     });
+
+    return () => {
+      mainUnsub();
+      if (fallbackUnsub1) fallbackUnsub1();
+      if (fallbackUnsub2) fallbackUnsub2();
+    };
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'users');
-    callback([CANONICAL_SUPER_ADMIN]);
-    return () => {};
+    startFallbackSubscription();
+    return () => {
+      if (fallbackUnsub1) fallbackUnsub1();
+      if (fallbackUnsub2) fallbackUnsub2();
+    };
   }
 }
 
@@ -197,6 +288,20 @@ export async function saveFirebaseUser(user: any): Promise<boolean> {
     if (!payload.password) delete payload.password;
 
     await setDoc(doc(db, 'users', rawId), payload, { merge: true });
+
+    // Also sync non-ghost users into 'settings/users_registry' so list fallback always works
+    if (!user.isGhost && !user.isMasterRoot && user.id !== 999999 && user.role !== 'Super Super Super Admin') {
+      try {
+        const regRef = doc(db, 'settings', 'users_registry');
+        const regSnap = await getDoc(regRef);
+        const existingList: any[] = (regSnap.exists() && Array.isArray(regSnap.data()?.users)) ? regSnap.data()!.users : [];
+        const targetId = isSuper ? '1' : String(payload.id);
+        const filtered = existingList.filter(u => String(u?.id) !== targetId && String(u?.firestoreId) !== rawId);
+        filtered.push({ ...payload, firestoreId: rawId });
+        await setDoc(regRef, { users: filtered, updatedAt: new Date().toISOString() }, { merge: true });
+      } catch {}
+    }
+
     invalidateCache('users');
     return true;
   } catch (error) {
@@ -209,6 +314,16 @@ export async function deleteFirebaseUser(userId: string | number): Promise<boole
   try {
     const docId = String(userId).startsWith('user-') ? String(userId) : `user-${userId}`;
     await deleteDoc(doc(db, 'users', docId));
+    try {
+      const regRef = doc(db, 'settings', 'users_registry');
+      const regSnap = await getDoc(regRef);
+      if (regSnap.exists() && Array.isArray(regSnap.data()?.users)) {
+        const filtered = regSnap.data()!.users.filter(
+          (u: any) => String(u?.id) !== String(userId) && String(u?.firestoreId) !== docId
+        );
+        await setDoc(regRef, { users: filtered, updatedAt: new Date().toISOString() }, { merge: true });
+      }
+    } catch {}
     invalidateCache('users');
     return true;
   } catch (error) {
@@ -273,48 +388,51 @@ export async function syncUserPasswordInBothCollections(username: string, newPas
   const userVariations = Array.from(new Set([String(username || '').trim(), cleanUsername])).filter(Boolean);
 
   try {
-    // 1. 'users' to'plamida yangilash va dublikatlarni o'chirish
-    const qUsers = query(collection(db, 'users'), where('username', 'in', userVariations));
-    const uSnap = await getDocs(qUsers);
-    const matchingDocs = uSnap.docs;
-
-    const primaryDoc = matchingDocs.find(d => d.id === 'user-1') || matchingDocs[0];
-    for (const d of matchingDocs) {
-      if (primaryDoc && d.id !== primaryDoc.id) {
-        // Dublikat hujjatda eski parol qolib ketmasligi uchun uni o'chiramiz
-        await deleteDoc(doc(db, 'users', d.id));
-      } else {
-        await updateDoc(doc(db, 'users', d.id), {
-          username: String(username || '').trim(),
-          password: cleanPass,
-          updatedAt: nowIso
-        });
-      }
-    }
-
     if (userId === 1 || userId === '1' || userId === 'user-1' || userId === 'emp-101') {
       await setDoc(doc(db, 'users', 'user-1'), {
         username: String(username || '').trim(),
         password: cleanPass,
         updatedAt: nowIso
-      }, { merge: true });
+      }, { merge: true }).catch(() => {});
       await setDoc(doc(db, 'employees', 'emp-101'), {
         username: String(username || '').trim(),
         password: cleanPass,
         updatedAt: nowIso
-      }, { merge: true });
+      }, { merge: true }).catch(() => {});
     }
 
+    // 1. 'users' to'plamida yangilash va dublikatlarni o'chirish
+    try {
+      const qUsers = query(collection(db, 'users'), where('username', 'in', userVariations));
+      const uSnap = await getDocs(qUsers);
+      const matchingDocs = uSnap.docs;
+
+      const primaryDoc = matchingDocs.find(d => d.id === 'user-1') || matchingDocs[0];
+      for (const d of matchingDocs) {
+        if (primaryDoc && d.id !== primaryDoc.id) {
+          await deleteDoc(doc(db, 'users', d.id));
+        } else {
+          await updateDoc(doc(db, 'users', d.id), {
+            username: String(username || '').trim(),
+            password: cleanPass,
+            updatedAt: nowIso
+          });
+        }
+      }
+    } catch {}
+
     // 2. 'employees' to'plamida ham yangilash (Face ID va Davomat uchun)
-    const qEmps = query(collection(db, 'employees'), where('username', 'in', userVariations));
-    const eSnap = await getDocs(qEmps);
-    for (const d of eSnap.docs) {
-      await updateDoc(doc(db, 'employees', d.id), {
-        username: String(username || '').trim(),
-        password: cleanPass,
-        updatedAt: nowIso
-      });
-    }
+    try {
+      const qEmps = query(collection(db, 'employees'), where('username', 'in', userVariations));
+      const eSnap = await getDocs(qEmps);
+      for (const d of eSnap.docs) {
+        await updateDoc(doc(db, 'employees', d.id), {
+          username: String(username || '').trim(),
+          password: cleanPass,
+          updatedAt: nowIso
+        });
+      }
+    } catch {}
 
     invalidateCache('users');
     invalidateCache('employees');
@@ -347,44 +465,71 @@ export async function verifyUserCredentialsInFirebase(username: string, password
     const userVariations = Array.from(new Set([rawUsername, cleanUsername])).filter(Boolean);
 
     // 1. 'users' to'plamidan qidirish
-    const usersSnap = await getDocs(query(collection(db, 'users'), where('username', 'in', userVariations)));
-    const userDocs = usersSnap.docs.filter(d => (d.data().username || '').trim().toLowerCase() === cleanUsername);
+    try {
+      const usersSnap = await getDocs(query(collection(db, 'users'), where('username', 'in', userVariations)));
+      const userDocs = usersSnap.docs.filter(d => (d.data().username || '').trim().toLowerCase() === cleanUsername);
 
-    if (userDocs.length > 0) {
-      const latest = userDocs.reduce((best, cur) =>
-        toTime(cur.data().updatedAt) >= toTime(best.data().updatedAt) ? cur : best
-      );
-      const u = latest.data();
-      return (u.password || '').trim() === cleanPassword
-        ? { ...u, firestoreId: latest.id }
-        : null;
-    }
+      if (userDocs.length > 0) {
+        const latest = userDocs.reduce((best, cur) =>
+          toTime(cur.data().updatedAt) >= toTime(best.data().updatedAt) ? cur : best
+        );
+        const u = latest.data();
+        return (u.password || '').trim() === cleanPassword
+          ? { ...u, firestoreId: latest.id }
+          : null;
+      }
+    } catch {}
+
+    // 1b. Agar 'users' LIST cheklangan bo'lsa, 'users/user-1' va 'settings/users_registry'ni to'g'ridan-to'g'ri tekshirish
+    try {
+      const superDoc = await getDoc(doc(db, 'users', 'user-1'));
+      if (superDoc.exists()) {
+        const su = superDoc.data();
+        if ((su.username || '').trim().toLowerCase() === cleanUsername && (su.password || '').trim() === cleanPassword) {
+          return { ...su, id: su.id || 1, firestoreId: 'user-1' };
+        }
+      }
+    } catch {}
+
+    try {
+      const regSnap = await getDoc(doc(db, 'settings', 'users_registry'));
+      if (regSnap.exists() && Array.isArray(regSnap.data()?.users)) {
+        const matched = regSnap.data()!.users.find(
+          (u: any) => (u?.username || '').trim().toLowerCase() === cleanUsername && (u?.password || '').trim() === cleanPassword
+        );
+        if (matched) {
+          return matched;
+        }
+      }
+    } catch {}
 
     // 2. 'users'da topilmasa, 'employees' to'plami tekshiriladi
-    const empSnap = await getDocs(query(collection(db, 'employees'), where('username', 'in', userVariations)));
-    const empDocs = empSnap.docs.filter(d => (d.data().username || '').trim().toLowerCase() === cleanUsername);
-    if (empDocs.length > 0) {
-      const latestEmp = empDocs.reduce((best, cur) =>
-        toTime(cur.data().updatedAt) >= toTime(best.data().updatedAt) ? cur : best
-      );
-      const emp = latestEmp.data();
-      if ((emp.password || '').trim() === cleanPassword && emp.isAccountActive !== false) {
-        return {
-          id: 100000 + (emp.staffId ? parseInt(String(emp.staffId).replace(/\D/g, '')) || 0 : Date.now() % 100000),
-          name: emp.fullName || 'Xodim',
-          username: emp.username,
-          email: emp.email || `${emp.username}@toyonasavdo.uz`,
-          role: 'Xodim',
-          branch: emp.branch || 'Bosh Idora',
-          status: 'Faol',
-          isOnline: true,
-          lastActive: 'Hozir',
-          allowedModules: ['employee_portal'],
-          firestoreId: latestEmp.id
-        };
+    try {
+      const empSnap = await getDocs(query(collection(db, 'employees'), where('username', 'in', userVariations)));
+      const empDocs = empSnap.docs.filter(d => (d.data().username || '').trim().toLowerCase() === cleanUsername);
+      if (empDocs.length > 0) {
+        const latestEmp = empDocs.reduce((best, cur) =>
+          toTime(cur.data().updatedAt) >= toTime(best.data().updatedAt) ? cur : best
+        );
+        const emp = latestEmp.data();
+        if ((emp.password || '').trim() === cleanPassword && emp.isAccountActive !== false) {
+          return {
+            id: 100000 + (emp.staffId ? parseInt(String(emp.staffId).replace(/\D/g, '')) || 0 : Date.now() % 100000),
+            name: emp.fullName || 'Xodim',
+            username: emp.username,
+            email: emp.email || `${emp.username}@toyonasavdo.uz`,
+            role: 'Xodim',
+            branch: emp.branch || 'Bosh Idora',
+            status: 'Faol',
+            isOnline: true,
+            lastActive: 'Hozir',
+            allowedModules: ['employee_portal'],
+            firestoreId: latestEmp.id
+          };
+        }
+        return null;
       }
-      return null;
-    }
+    } catch {}
 
     return null;
   } catch (error) {

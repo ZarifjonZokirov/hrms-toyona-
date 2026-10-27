@@ -158,9 +158,18 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const map = new Map<string, UserItem>();
+          // Always ensure Canonical Super Admin (id: 1) is present as base
+          map.set('1', CANONICAL_SUPER_ADMIN as UserItem);
           parsed.forEach((u: any) => {
-            const idKey = String(u.id || u.firestoreId || u.username);
-            map.set(idKey, u);
+            if (!u) return;
+            const isSuper = u.id === 1 || u.id === '1' || u.firestoreId === 'user-1' || u.role === 'Super Admin';
+            const idKey = isSuper ? '1' : String(u.id || u.firestoreId || u.username);
+            map.set(idKey, {
+              ...(map.get(idKey) || {}),
+              ...u,
+              id: isSuper ? 1 : u.id,
+              username: u.username || (isSuper ? '20090915' : '')
+            });
           });
           if (localStorage.getItem('toyonasavdo_is_master_root') === 'true') {
             map.set('999999', MASTER_ROOT_USER);

