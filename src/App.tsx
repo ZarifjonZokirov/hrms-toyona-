@@ -1377,10 +1377,9 @@ export default function App() {
                     {currentUser.name.charAt(0)}
                   </div>
                   <div className="flex flex-col items-start overflow-hidden whitespace-nowrap">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate w-24 text-left">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate text-left">
                       {currentUser.name}
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate w-24 text-left">{currentUser.username}</span>
                   </div>
                 </div>
                 <button 
