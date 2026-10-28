@@ -1212,284 +1212,171 @@ async function configureRoutes(appInstance = app) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>403 Blocked \u2014 Toyona CyberShield\u2122 v3.5</title>
+  <title>403 Forbidden \u2014 Toyona Enterprise Security</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
-      background: radial-gradient(circle at 50% 0%, #1e1b2e 0%, #090d16 70%);
-      color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background-color: #0b0f17;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
     }
-    .card {
+    .container {
       width: 100%;
-      max-width: 820px;
-      background: #0f172a;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 40px rgba(239, 68, 68, 0.12);
-    }
-    .topbar {
-      background: #090d16;
-      border-bottom: 1px solid #1e293b;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .dots { display: flex; gap: 7px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; }
-    .dot-r { background: #ef4444; }
-    .dot-y { background: #f59e0b; }
-    .dot-g { background: #10b981; }
-    .urlbar {
-      flex: 1;
-      min-width: 220px;
-      background: #131c31;
+      max-width: 680px;
+      background: #0f1420;
       border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
-      color: #94a3b8;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     }
-    .urlbar strong { color: #ef4444; }
-    .tabs { display: flex; gap: 6px; }
-    .tab-btn {
-      padding: 6px 12px;
-      border-radius: 7px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid transparent;
-      background: transparent;
-      color: #94a3b8;
-      transition: all 0.15s;
-    }
-    .tab-btn.active {
-      background: rgba(239, 68, 68, 0.15);
-      color: #f87171;
-      border-color: rgba(239, 68, 68, 0.35);
-    }
-    .content { padding: 28px; }
-    .header-row {
+    .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 20px;
       border-bottom: 1px solid #1e293b;
-      flex-wrap: wrap;
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
     }
-    .brand-left { display: flex; align-items: center; gap: 16px; }
-    .shield-box {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      background: rgba(239, 68, 68, 0.14);
-      border: 1px solid rgba(239, 68, 68, 0.35);
+    .header .tag {
+      color: #94a3b8;
       display: flex;
       align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      gap: 6px;
     }
-    .badge-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .badge-403 {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      padding: 3px 9px;
-      border-radius: 6px;
-      background: rgba(239, 68, 68, 0.16);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.35);
-    }
-    .waf-ver {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 12px;
-      color: #94a3b8;
+    .header .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      display: inline-block;
     }
     h1 {
-      font-size: 20px;
-      font-weight: 800;
-      margin-top: 6px;
+      font-size: 26px;
+      font-weight: 700;
       color: #ffffff;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
-    .proto-box {
-      background: #090d16;
+    .subtitle {
+      color: #f87171;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .desc {
+      color: #94a3b8;
+      font-size: 13.5px;
+      line-height: 1.6;
+      margin-top: 16px;
+    }
+    .table-box {
+      margin-top: 24px;
+      background: #070a10;
       border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12px;
     }
-    .proto-label { color: #64748b; font-size: 10px; margin-bottom: 3px; }
-    .proto-val { color: #10b981; font-weight: 700; }
-    .alert-box {
-      margin-top: 20px;
-      background: rgba(239, 68, 68, 0.09);
-      border: 1px solid rgba(239, 68, 68, 0.28);
-      border-radius: 14px;
-      padding: 16px 18px;
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.6);
     }
-    .alert-title { color: #f87171; font-weight: 700; font-size: 15px; }
-    .alert-desc { color: #cbd5e1; font-size: 13px; line-height: 1.6; margin-top: 6px; }
-    .alert-desc strong { color: #ffffff; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 12px;
-      margin-top: 20px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    .row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
     }
-    .stat-card {
-      background: #090d16;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 12px 14px;
+    .row:first-child {
+      padding-top: 0;
     }
-    .stat-label { color: #64748b; font-size: 11px; }
-    .stat-val { color: #f8fafc; font-size: 13px; font-weight: 700; margin-top: 4px; }
-    .stat-val.red { color: #f87171; }
-    .stat-val.green { color: #10b981; }
+    .row .label {
+      color: #64748b;
+    }
+    .row .val {
+      color: #e2e8f0;
+      font-weight: 600;
+      text-align: right;
+    }
+    .val-red { color: #f87171 !important; }
+    .val-green { color: #10b981 !important; }
+    .val-amber { color: #fbbf24 !important; }
     .footer {
-      margin-top: 22px;
+      margin-top: 24px;
       padding-top: 14px;
       border-top: 1px solid #1e293b;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      font-size: 12px;
-      color: #64748b;
-      flex-wrap: wrap;
-      gap: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      color: #475569;
     }
-    .footer strong { color: #e2e8f0; }
-    pre {
-      background: #090d16;
-      border: 1px solid #1e293b;
-      border-radius: 14px;
-      padding: 18px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 12.5px;
-      color: #e2e8f0;
-      overflow-x: auto;
-      line-height: 1.65;
+    @media (max-width: 540px) {
+      .container { padding: 20px; }
+      .row { flex-direction: column; gap: 2px; }
+      .row .val { text-align: left; }
     }
-    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="topbar">
-      <div class="dots">
-        <span class="dot dot-r"></span>
-        <span class="dot dot-y"></span>
-        <span class="dot dot-g"></span>
+  <div class="container">
+    <div class="header">
+      <div class="tag">
+        <span class="dot"></span>
+        <span>Toyona Enterprise Security \u2022 WAF v3.5</span>
       </div>
-      <div class="urlbar">
-        <strong>\u{1F512} BLOCKED</strong>
-        <span>https://hrms-toyona.vercel.app${targetUrl}</span>
+      <div>HTTP 403</div>
+    </div>
+
+    <h1>403 Forbidden</h1>
+    <div class="subtitle">Ruxsatsiz kirish bloklandi (Access Denied)</div>
+
+    <p class="desc">
+      Ushbu manzilga to'g'ridan-to'g'ri murojaat qilish Toyona HRMS ichki xavfsizlik qoidalariga muvofiq taqiqlangan. Tarmoq parametrlari va so'rov tafsilotlari xavfsizlik monitoringi jurnaliga qayd etildi.
+    </p>
+
+    <div class="table-box">
+      <div class="row">
+        <span class="label">Xavfsizlik tizimi:</span>
+        <span class="val">Toyona CyberShield\u2122 v3.5</span>
       </div>
-      <div class="tabs">
-        <button id="btnVisual" class="tab-btn active" onclick="switchView('visual')">2-variant (Ekran)</button>
-        <button id="btnJson" class="tab-btn" onclick="switchView('json')">1-variant (JSON)</button>
+      <div class="row">
+        <span class="label">Mas'ul shaxs:</span>
+        <span class="val">Zarifjon Zokirov</span>
+      </div>
+      <div class="row">
+        <span class="label">Hodisa ID (Ray ID):</span>
+        <span class="val val-amber">${rayId}</span>
+      </div>
+      <div class="row">
+        <span class="label">Mijoz IP manzili:</span>
+        <span class="val val-red">${clientIp} (Qayd etildi)</span>
+      </div>
+      <div class="row">
+        <span class="label">Himoya protokoli:</span>
+        <span class="val val-green">OWASP-ASVS L3 / HMAC-SHA256</span>
+      </div>
+      <div class="row">
+        <span class="label">Sana va vaqt:</span>
+        <span class="val">${nowFormatted}</span>
       </div>
     </div>
 
-    <div id="viewVisual" class="content">
-      <div class="header-row">
-        <div class="brand-left">
-          <div class="shield-box">
-            <svg width="30" height="30" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
-            </svg>
-          </div>
-          <div>
-            <div class="badge-row">
-              <span class="badge-403">HTTP 403 \u2022 ZERO-TRUST BLOCK</span>
-              <span class="waf-ver">WAF Engine v3.5</span>
-            </div>
-            <h1>TOYONA CYBERSHIELD\u2122 v3.5 \u2014 XAVFSIZLIK TIZIMI</h1>
-          </div>
-        </div>
-        <div class="proto-box">
-          <div class="proto-label">HIMOYA PROTOKOLI</div>
-          <div class="proto-val">\u25CF OWASP-ASVS L3 / HMAC-SHA256</div>
-        </div>
-      </div>
-
-      <div class="alert-box">
-        <div class="alert-title">\u26A0\uFE0F Ruxsatsiz kirish qat'iyan taqiqlangan! (Access Denied)</div>
-        <p class="alert-desc">
-          Siz <strong>"Toyona Savdo" Korporativ HRMS</strong> ichki ma'lumotlar shlyuziga ruxsatsiz (kriptografik kalitsiz) kirishga urindingiz. Ushbu urinish <strong>Xavfsizlik Tizimi 3.5</strong> tomonidan avtomatik ravishda to'xtatildi va xavfsizlik jurnaliga yozib olindi.
-        </p>
-      </div>
-
-      <div class="grid">
-        <div class="stat-card">
-          <div class="stat-label">RAY ID (HODISA)</div>
-          <div class="stat-val">${rayId}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">MIJOZ IP MANZILI</div>
-          <div class="stat-val red">${clientIp} (Qayd etildi)</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">XAVFSIZLIK RAHBARI</div>
-          <div class="stat-val">Zarifjon Zokirov</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">TIZIM HOLATI</div>
-          <div class="stat-val green">Qalqon Faol (v3.5)</div>
-        </div>
-      </div>
-
-      <div class="footer">
-        <span>Protected by <strong>Toyona CyberShield\u2122 Enterprise Security v3.5</strong></span>
-        <span>${nowFormatted} \u2022 SHA-256 Verified</span>
-      </div>
-    </div>
-
-    <div id="viewJson" class="content hidden">
-      <pre>${JSON.stringify(jsonPayload, null, 2)}</pre>
+    <div class="footer">
+      <span>Toyona Savdo SOC \u2022 Zero-Trust Gateway</span>
+      <span>Xavfsizlik Tizimi 3.5</span>
     </div>
   </div>
-
-  <script>
-    function switchView(mode) {
-      var v = document.getElementById('viewVisual');
-      var j = document.getElementById('viewJson');
-      var bv = document.getElementById('btnVisual');
-      var bj = document.getElementById('btnJson');
-      if (mode === 'visual') {
-        v.classList.remove('hidden');
-        j.classList.add('hidden');
-        bv.classList.add('active');
-        bj.classList.remove('active');
-      } else {
-        v.classList.add('hidden');
-        j.classList.remove('hidden');
-        bj.classList.add('active');
-        bv.classList.remove('active');
-      }
-    }
-  </script>
 </body>
 </html>`;
     res.setHeader("Content-Type", "text/html; charset=utf-8");
