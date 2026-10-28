@@ -35,6 +35,7 @@ __export(server_exports, {
   startServer: () => startServer
 });
 module.exports = __toCommonJS(server_exports);
+var import_crypto = __toESM(require("crypto"), 1);
 var import_express = __toESM(require("express"), 1);
 var import_path = __toESM(require("path"), 1);
 var import_vite = require("vite");
@@ -1156,6 +1157,64 @@ async function configureRoutes(appInstance = app) {
     }
     next();
   });
+  const HRMS_INTERNAL_TOKEN = process.env.HRMS_INTERNAL_TOKEN || "ts_hrms_internal_v5_9f8a7b6c";
+  const SESSION_HMAC_SECRET = process.env.SESSION_HMAC_SECRET || "toyona_hrms_hmac_secret_2026_998877";
+  const loginRateLimitMap = /* @__PURE__ */ new Map();
+  function getClientIp(req) {
+    const forwarded = req.headers["x-forwarded-for"];
+    let ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.socket?.remoteAddress || req.ip || "127.0.0.1";
+    if (ip.startsWith("::ffff:")) ip = ip.substring(7);
+    if (ip === "::1") ip = "127.0.0.1";
+    return ip;
+  }
+  function hasInternalAdminToken(req) {
+    const token = String(req.headers["x-hrms-internal-token"] || req.headers["x-hrms-key"] || "").trim();
+    return token === HRMS_INTERNAL_TOKEN;
+  }
+  function createSignedSessionToken(empId) {
+    const ts = Date.now();
+    const payload = `${empId}:${ts}`;
+    const sig = import_crypto.default.createHmac("sha256", SESSION_HMAC_SECRET).update(payload).digest("hex").slice(0, 24);
+    return `token_${empId}_${ts}_${sig}`;
+  }
+  function isDirectBrowserNavigation(req) {
+    const fetchMode = String(req.headers["sec-fetch-mode"] || "").toLowerCase();
+    const fetchDest = String(req.headers["sec-fetch-dest"] || "").toLowerCase();
+    const accept = String(req.headers["accept"] || "").toLowerCase();
+    if (fetchMode === "navigate" || fetchDest === "document") return true;
+    if (req.method === "GET" && accept.includes("text/html") && !hasInternalAdminToken(req)) return true;
+    return false;
+  }
+  app.use("/api", (req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    if (isDirectBrowserNavigation(req)) {
+      return res.status(403).json({
+        success: false,
+        code: "ACCESS_DENIED",
+        message: "Xavfsizlik tizimi: API manzillarini brauzer orqali to'g'ridan-to'g'ri ochish qat'iyan taqiqlangan!"
+      });
+    }
+    if (!hasInternalAdminToken(req)) {
+      const p = req.path.toLowerCase();
+      const m = req.method.toUpperCase();
+      const isPublicCandidatePost = m === "POST" && (p === "/candidates" || p === "/candidate" || p === "/submit-candidate" || p === "/submit-anketa" || p === "/anketa");
+      const isMiniAppLoginPost = m === "POST" && (p === "/attendance/login" || p === "/qatnashish/kirish" || p === "/davomat/login" || p === "/davomat/kirish");
+      const isMiniAppCheckInPost = m === "POST" && (p === "/attendance/check-in" || p === "/qatnashish/check-in" || p === "/davomat/check-in");
+      const isMiniAppPhotoSubmitPost = m === "POST" && p === "/attendance/photo-request/submit";
+      const isMiniAppGeozonesGet = m === "GET" && (p === "/branch-geozones" || p === "/geozones" || p === "/geozone" || p === "/branches" || p === "/attendance/geozones" || p === "/attendance/geozone" || p === "/attendance/branches" || p === "/qatnashish/geozonalar" || p === "/qatnashish/geozone" || p === "/davomat/geozonalar");
+      const isMiniAppStatusOrHistoryGet = m === "GET" && (p === "/attendance/today-status" || p === "/qatnashish/today-status" || p === "/davomat/today-status" || p === "/qatnashish/bugungi-holat" || p === "/davomat/bugungi-holat" || p === "/attendance/history" || p === "/qatnashish/tarix" || p === "/davomat/tarix" || p === "/attendance/employee-photo" || p === "/qatnashish/xodim-rasmi" || p === "/davomat/xodim-rasmi" || p === "/attendance/penalty-settings");
+      if (!isPublicCandidatePost && !isMiniAppLoginPost && !isMiniAppCheckInPost && !isMiniAppPhotoSubmitPost && !isMiniAppGeozonesGet && !isMiniAppStatusOrHistoryGet) {
+        return res.status(403).json({
+          success: false,
+          code: "ACCESS_DENIED",
+          message: "Xavfsizlik tizimi: Ruxsatsiz kirish qat'iyan taqiqlangan!"
+        });
+      }
+    }
+    next();
+  });
   const TELEGRAM_SECURITY_BOT_TOKEN = "8975567213:AAGDNAyKPKGNoIrBsipqAgASO88KEY6ThS4";
   const ADMIN_CHATS_FILE = import_path.default.join(process.cwd(), "telegram_admin_chats.json");
   function getSavedAdminChatIds() {
@@ -1423,13 +1482,7 @@ async function configureRoutes(appInstance = app) {
     res.status(405).json({
       success: false,
       code: "METHOD_NOT_ALLOWED",
-      message: "Login uchun POST so'rovi yuborilishi kerak. Content-Type: application/json bo'lishi shart.",
-      method: "POST",
-      endpoints: ["/api/attendance/login", "/api/qatnashish/kirish", "/api/davomat/login"],
-      example: {
-        username: "qodirov.alisher",
-        password: "Toyona#2026"
-      }
+      message: "Faqat POST so'rovi ruxsat etilgan."
     });
   };
   function findServerEmployee(allEmployees, input) {
@@ -1464,6 +1517,17 @@ async function configureRoutes(appInstance = app) {
   }
   const handleAttendanceLogin = async (req, res) => {
     try {
+      const clientIp = getClientIp(req);
+      const nowMs = Date.now();
+      const rateRecord = loginRateLimitMap.get(clientIp);
+      if (rateRecord && rateRecord.lockUntil > nowMs) {
+        const waitMin = Math.ceil((rateRecord.lockUntil - nowMs) / 6e4);
+        return res.status(429).json({
+          success: false,
+          code: "TOO_MANY_ATTEMPTS",
+          message: `Xavfsizlik himoyasi: Juda ko'p noto'g'ri urinish! Iltimos, ${waitMin} daqiqadan so'ng qayta urinib ko'ring.`
+        });
+      }
       const usernameInput = (req.body?.username || req.body?.login || req.body?.foydalanuvchi || req.body?.user || req.body?.employeeId || req.body?.id || req.body?.phone || "").toString().trim();
       const passwordInput = (req.body?.password || req.body?.parol || req.body?.pass || req.body?.pin || "").toString().trim();
       if (!usernameInput || !passwordInput) {
@@ -1473,13 +1537,23 @@ async function configureRoutes(appInstance = app) {
           message: "Login va parol kiritilishi shart!"
         });
       }
+      const registerFailedAttempt = () => {
+        const prev = loginRateLimitMap.get(clientIp) || { count: 0, lockUntil: 0, lastAttempt: 0 };
+        const resetCount = nowMs - prev.lastAttempt > 10 * 60 * 1e3 ? 1 : prev.count + 1;
+        loginRateLimitMap.set(clientIp, {
+          count: resetCount,
+          lockUntil: resetCount >= 6 ? nowMs + 10 * 60 * 1e3 : 0,
+          lastAttempt: nowMs
+        });
+      };
       const allEmployees = await getAllServerEmployees();
       const matched = findServerEmployee(allEmployees, usernameInput);
       if (!matched) {
+        registerFailedAttempt();
         return res.status(401).json({
           success: false,
           code: "INVALID_CREDENTIALS",
-          message: "Bunday loginli xodim tizimda topilmadi!"
+          message: "Login yoki parol noto'g'ri!"
         });
       }
       if (matched.id === "emp-101") {
@@ -1496,12 +1570,14 @@ async function configureRoutes(appInstance = app) {
       const passTrim = passwordInput.trim();
       const isPasswordValid = Boolean(empPassword && passTrim === empPassword);
       if (!isPasswordValid) {
+        registerFailedAttempt();
         return res.status(401).json({
           success: false,
           code: "INVALID_CREDENTIALS",
-          message: "Kiritilgan parol noto'g'ri. Qaytadan urinib ko'ring."
+          message: "Login yoki parol noto'g'ri!"
         });
       }
+      loginRateLimitMap.delete(clientIp);
       const allBranches = await getAllServerGeozones();
       const targetBranch = findMatchingGeozone(allBranches, matched.branch);
       const nameParts = matched.fullName.split(" ");
@@ -1537,7 +1613,7 @@ async function configureRoutes(appInstance = app) {
           radius: targetBranch.radius,
           address: targetBranch.address
         },
-        sessionToken: `token_${matched.id}_${Date.now()}`
+        sessionToken: createSignedSessionToken(matched.id)
       });
     } catch (err) {
       console.error("Attendance login error:", err);
@@ -1555,8 +1631,14 @@ async function configureRoutes(appInstance = app) {
   const handleGetEmployeePhoto = async (req, res) => {
     try {
       const lookup = (req.query.employeeId || req.query.id || req.query.username || req.query.login || "").toString().trim();
+      if (!lookup) {
+        return res.status(400).json({ success: false, message: "employeeId ko'rsatilishi shart" });
+      }
       const allEmployees = await getAllServerEmployees();
       const emp = findServerEmployee(allEmployees, lookup);
+      if (emp && emp.id === "emp-101" && !hasInternalAdminToken(req)) {
+        return res.status(403).json({ success: false, message: "Ruxsat taqiqlangan" });
+      }
       if (!emp) {
         return res.status(404).json({
           success: false,
@@ -1743,6 +1825,9 @@ async function configureRoutes(appInstance = app) {
   const handleTodayStatus = async (req, res) => {
     try {
       const employeeId = (req.query.employeeId || req.query.id || req.query.username || req.query.login || "").toString().trim();
+      if (!employeeId && !hasInternalAdminToken(req)) {
+        return res.status(403).json({ success: false, message: "employeeId parametri talab qilinadi" });
+      }
       const now = /* @__PURE__ */ new Date();
       const todayIso = getLocalIsoDate(now);
       const todayStr = getLocalDateFormatted(now);
@@ -1800,22 +1885,7 @@ async function configureRoutes(appInstance = app) {
     res.status(405).json({
       success: false,
       code: "METHOD_NOT_ALLOWED",
-      message: "Check-in uchun POST so'rovi yuborilishi kerak (/api/attendance/check-in).",
-      method: "POST",
-      headersRequired: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer token_<employeeId>_<timestamp> (ixtiyoriy, agar body'da employeeId berilsa)"
-      },
-      requestBodyExample: {
-        employeeId: "emp-102",
-        action: "keldim",
-        // 'keldim' yoki 'ketdim'
-        userLat: 40.5283,
-        userLon: 70.9425,
-        capturedPhoto: "data:image/jpeg;base64,...",
-        faceVerified: true,
-        faceConfidence: 0.96
-      }
+      message: "Faqat POST so'rovi ruxsat etilgan."
     });
   });
   const handleAttendanceCheckIn = async (req, res) => {
@@ -1876,7 +1946,7 @@ async function configureRoutes(appInstance = app) {
       const numLat = Number(latVal);
       const numLon = Number(lonVal);
       const distance = !isNaN(numLat) && !isNaN(numLon) ? calculateDistanceMeters(numLat, numLon, targetBranch.lat, targetBranch.lon) : 0;
-      const insideZone = req.body?.skipGeoCheck === true ? true : distance <= targetBranch.radius;
+      const insideZone = req.body?.skipGeoCheck === true && hasInternalAdminToken(req) ? true : distance <= targetBranch.radius;
       const now = /* @__PURE__ */ new Date();
       const currentHours = Number(now.toLocaleTimeString("en-GB", { timeZone: "Asia/Tashkent", hour: "2-digit", hour12: false }));
       const currentMinutes = Number(now.toLocaleTimeString("en-GB", { timeZone: "Asia/Tashkent", minute: "2-digit", hour12: false }));
@@ -2050,8 +2120,8 @@ async function configureRoutes(appInstance = app) {
           avatarUrl: e.avatarUrl || e.photoUrl,
           photoUrl: e.photoUrl,
           rasmUrl: e.rasmUrl || e.photoUrl,
-          username: e.username,
-          login: e.username,
+          username: e.id === "emp-101" ? "" : e.username,
+          login: e.id === "emp-101" ? "" : e.username,
           isAccountActive: e.isAccountActive !== false,
           accountCreatedAt: e.accountCreatedAt || "2026-10-12",
           salary: e.salary || "4,000,000 UZS",
@@ -2116,7 +2186,8 @@ async function configureRoutes(appInstance = app) {
       }
       saveLocalEmployees(currentList);
       firestoreDocFallbackCache.delete(`employees/${id}`);
-      res.json({ success: true, employee: merged });
+      const { password: _p, ...safeEmp } = merged;
+      res.json({ success: true, employee: safeEmp });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });
     }
@@ -2279,7 +2350,10 @@ async function configureRoutes(appInstance = app) {
     });
   });
   const handleAttendanceHistory = async (req, res) => {
-    const employeeId = (req.query.employeeId || req.query.id || "").toString();
+    const employeeId = (req.query.employeeId || req.query.id || "").toString().trim();
+    if ((!employeeId || employeeId === "all") && !hasInternalAdminToken(req)) {
+      return res.status(403).json({ success: false, message: "Ruxsatsiz so'rov bloklandi" });
+    }
     const month = (req.query.month || "").toString();
     const year = (req.query.year || "2026").toString();
     const allLogs = await getAllServerAttendanceLogs(employeeId);
@@ -2386,23 +2460,8 @@ async function configureRoutes(appInstance = app) {
   app.all("/api/*", (req, res) => {
     res.status(404).json({
       success: false,
-      code: "API_ENDPOINT_NOT_FOUND",
-      message: `API endpoint topilmadi: ${req.method} ${req.path}`,
-      hint: "So'rov metodini (GET/POST) va manzilini tekshiring.",
-      availableEndpoints: [
-        { method: "POST", path: "/api/attendance/login", description: "Xodim login-parol bilan kirish" },
-        { method: "GET", path: "/api/attendance/employee-photo?employeeId=...", description: "Xodim etalon rasmini olish" },
-        { method: "POST", path: "/api/attendance/employee-photo", description: "Xodim etalon rasmini saqlash/yangilash (Base64/URL)" },
-        { method: "POST", path: "/api/attendance/check-in", description: "Keldim/Ketdim qayd etish" },
-        { method: "GET", path: "/api/attendance/today-status?employeeId=...", description: "Bugungi kelgan/ketgan holati" },
-        { method: "GET", path: "/api/attendance/history?employeeId=...&month=2026-10", description: "Oylik davomat tarixi va kechikishlar" },
-        { method: "GET", path: "/api/attendance/logs", description: "Barcha davomat jurnali" },
-        { method: "GET", path: "/api/attendance/employees", description: "Xodimlar va ta'til/safar holatlari" },
-        { method: "POST", path: "/api/attendance/leave-sync", description: "Ta'til (\u2708\uFE0F) / Safar (\u{1F343}) belgilash" },
-        { method: "GET", path: "/api/branch-geozones", description: "Filial geozonalari (lat, lon, radius)" },
-        { method: "GET", path: "/api/geozones", description: "Filial geozonalari (alias)" },
-        { method: "GET", path: "/api/attendance/docs", description: "To'liq rasmiy hujjat va kontrakt" }
-      ]
+      code: "NOT_FOUND",
+      message: "Manzil topilmadi"
     });
   });
 }
