@@ -350,11 +350,11 @@ export const INITIAL_USERS_DATA: UserItem[] = [
 ];
 
 export const INITIAL_ROLES_DATA: RoleItem[] = [
-  { id: 1, name: 'Super Admin', description: 'Tizim bo'yicha to'liq cheksiz huquqlar va modul nazorati', usersCount: 1, color: 'bg-[#ED1C24]', defaultModules: ALL_MODULE_DEFS.map(m => m.id) },
+  { id: 1, name: 'Super Admin', description: "Tizim bo'yicha to'liq cheksiz huquqlar va modul nazorati", usersCount: 1, color: 'bg-[#ED1C24]', defaultModules: ALL_MODULE_DEFS.map(m => m.id) },
   { id: 2, name: 'HR Menejer', description: 'Nomzodlar, anketalar va xodimlarni boshqarish huquqi', usersCount: 5, color: 'bg-[#00A651]', defaultModules: ['branches', 'candidates', 'vacancies', 'employees', 'quality', 'attendance', 'transfers'] },
-  { id: 3, name: 'Filial Mudiri', description: 'O'z filialidagi bo'sh o'rinlar va nomzodlarni ko'rish', usersCount: 9, color: 'bg-blue-500', defaultModules: ['branches', 'candidates', 'vacancies', 'employees', 'attendance'] },
-  { id: 4, name: 'Recruiter', description: 'Suhbatlar o'tkazish va nomzodlar statusini o'zgartirish', usersCount: 3, color: 'bg-amber-500', defaultModules: ['candidates', 'vacancies'] },
-  { id: 5, name: 'Operator', description: 'Anketalarni kiritish va ko'rish huquqi', usersCount: 3, color: 'bg-indigo-500', defaultModules: ['candidates'] },
+  { id: 3, name: 'Filial Mudiri', description: "O'z filialidagi bo'sh o'rinlar va nomzodlarni ko'rish", usersCount: 9, color: 'bg-blue-500', defaultModules: ['branches', 'candidates', 'vacancies', 'employees', 'attendance'] },
+  { id: 4, name: 'Recruiter', description: "Suhbatlar o'tkazish va nomzodlar statusini o'zgartirish", usersCount: 3, color: 'bg-amber-500', defaultModules: ['candidates', 'vacancies'] },
+  { id: 5, name: 'Operator', description: "Anketalarni kiritish va ko'rish huquqi", usersCount: 3, color: 'bg-indigo-500', defaultModules: ['candidates'] },
 ];
 
 // Helper to create initial default permission set for a role
