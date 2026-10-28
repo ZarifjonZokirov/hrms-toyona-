@@ -317,12 +317,20 @@ export default function Statistics() {
     window.addEventListener('toyonasavdo_candidates_updated', handleDataSync);
     window.addEventListener('toyonasavdo_job_requests_updated', handleDataSync);
     window.addEventListener('toyonasavdo_data_sync', handleDataSync);
+    window.addEventListener('hrms_transfers_updated', handleDataSync);
+    window.addEventListener('hrms_employees_updated', handleDataSync);
+    window.addEventListener('hrms_branches_updated', handleDataSync);
+    window.addEventListener('hrms_vacancies_updated', handleDataSync);
     window.addEventListener('storage', handleDataSync);
 
     return () => {
       window.removeEventListener('toyonasavdo_candidates_updated', handleDataSync);
       window.removeEventListener('toyonasavdo_job_requests_updated', handleDataSync);
       window.removeEventListener('toyonasavdo_data_sync', handleDataSync);
+      window.removeEventListener('hrms_transfers_updated', handleDataSync);
+      window.removeEventListener('hrms_employees_updated', handleDataSync);
+      window.removeEventListener('hrms_branches_updated', handleDataSync);
+      window.removeEventListener('hrms_vacancies_updated', handleDataSync);
       window.removeEventListener('storage', handleDataSync);
     };
   }, []);

@@ -62,6 +62,9 @@ export interface TransferItem {
   num: number;
   fio: string;
   filial: string;
+  qaysiFilialdan?: string;
+  qaysiFilialga?: string;
+  type?: 'branch' | 'position' | 'both';
   viloyat: string;
   kategoriya: string;
   qaysiLavozimdan: string;
@@ -149,6 +152,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
   const [formData, setFormData] = useState<Partial<TransferItem>>({
     fio: '',
     filial: BRANCHES_LIST[0] || "Turkiston filiali",
+    qaysiFilialdan: BRANCHES_LIST[0] || "Turkiston filiali",
+    qaysiFilialga: BRANCHES_LIST[0] || "Turkiston filiali",
     viloyat: "Farg'ona viloyati",
     kategoriya: "Savdo bo'limi",
     qaysiLavozimdan: '',
@@ -366,6 +371,9 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     if (transferItem.status !== 'Yakunlangan') return;
     try {
       const emps = await getFirebaseEmployees();
+      const targetBranch = transferItem.qaysiFilialga || transferItem.filial;
+      const targetPosition = transferItem.qaysiLavozimga ? transferItem.qaysiLavozimga.replace(/\s*\(.*?\)\s*/g, '').trim() : '';
+
       let targetEmp = emps?.find((e: any) => 
         (transferItem.employeeId && (String(e.id) === String(transferItem.employeeId) || e.staffId === transferItem.employeeId)) ||
         (transferItem.staffId && e.staffId === transferItem.staffId) ||
@@ -373,10 +381,9 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       );
 
       if (targetEmp) {
-        targetEmp.branch = transferItem.filial;
-        if (transferItem.qaysiLavozimga) {
-          targetEmp.position = transferItem.qaysiLavozimga.replace(/\s*\(.*?\)\s*/g, '').trim() || targetEmp.position;
-        }
+        if (targetBranch) targetEmp.branch = targetBranch;
+        if (targetPosition) targetEmp.position = targetPosition;
+        if (transferItem.kategoriya) targetEmp.department = transferItem.kategoriya;
         await saveFirebaseEmployee(targetEmp);
       } else if (transferItem.fio) {
         const allCandidates = await getFirebaseCandidates();
@@ -391,8 +398,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
           id: newEmpId,
           staffId: `TY-${Math.floor(1000 + Math.random() * 9000)}`,
           fullName: transferItem.fio,
-          branch: transferItem.filial || 'Bosh ofis',
-          position: transferItem.qaysiLavozimga || 'Hodim',
+          branch: targetBranch || 'Bosh ofis',
+          position: targetPosition || 'Hodim',
           department: transferItem.kategoriya || 'Savdo bo\'limi',
           phone: matchedCandidate?.phone || '+998 90 000 00 00',
           email: matchedCandidate?.email || `${baseUsername}@toyonasavdo.uz`,
@@ -413,6 +420,14 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
           });
         }
       }
+
+      // Real-time broadcast for all connected views: Branches, Statistics, Employees, Attendance
+      try {
+        window.dispatchEvent(new Event('hrms_employees_updated'));
+        window.dispatchEvent(new Event('hrms_transfers_updated'));
+        window.dispatchEvent(new Event('toyonasavdo_data_sync'));
+        window.dispatchEvent(new Event('storage'));
+      } catch {}
     } catch (e) {
       console.warn('syncEmployeeBranchIfCompleted error:', e);
     }
@@ -448,6 +463,10 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       if ((updatedItem as TransferItem).status === 'Yakunlangan') {
         await syncEmployeeBranchIfCompleted(updatedItem);
       }
+      try {
+        window.dispatchEvent(new Event('hrms_transfers_updated'));
+        window.dispatchEvent(new Event('storage'));
+      } catch {}
     }
 
     if (newStatus === 'Yakunlangan') {
@@ -464,9 +483,13 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
     setEditingTransfer(null);
     const now = new Date();
     const nowStr = `${now.toLocaleDateString('uz-UZ')}, ${now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
+    const originBranch = (allBranches && allBranches[0]) || 'Turkiston filiali';
+    const targetBranch = (allBranches && allBranches[1]) || originBranch;
     setFormData({
       fio: '',
-      filial: (allBranches && allBranches[0]) || 'Turkiston filiali',
+      filial: targetBranch,
+      qaysiFilialdan: originBranch,
+      qaysiFilialga: targetBranch,
       viloyat: "Farg'ona",
       kategoriya: "Omborxona",
       qaysiLavozimdan: "Ombor sektori mutaxassisi",
@@ -477,8 +500,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       yakunlanganSana: '',
       sababi: "Ichki rotatsiya va tajriba oshirish",
       tasdiqlovchi: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov",
-        employeeId: formData.employeeId || "",
-        staffId: formData.staffId || ""
+      employeeId: "",
+      staffId: ""
     });
     setIsAddEditModalOpen(true);
   };
@@ -492,7 +515,11 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       return;
     }
     setEditingTransfer(item);
-    setFormData(item);
+    setFormData({
+      ...item,
+      qaysiFilialdan: item.qaysiFilialdan || item.filial,
+      qaysiFilialga: item.qaysiFilialga || item.filial
+    });
     setIsAddEditModalOpen(true);
   };
 
@@ -502,6 +529,18 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
 
     const now = new Date();
     const nowStr = `${now.toLocaleDateString('uz-UZ')}, ${now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}`;
+
+    const originBranch = formData.qaysiFilialdan || formData.filial || 'Turkiston filiali';
+    const targetBranch = formData.qaysiFilialga || formData.filial || 'Turkiston filiali';
+    const originPos = formData.qaysiLavozimdan || '';
+    const targetPos = formData.qaysiLavozimga || '';
+
+    const isBranchChange = originBranch !== targetBranch;
+    const isPosChange = originPos !== targetPos;
+    let transferType: 'branch' | 'position' | 'both' = 'position';
+    if (isBranchChange && isPosChange) transferType = 'both';
+    else if (isBranchChange) transferType = 'branch';
+    else transferType = 'position';
 
     if (editingTransfer) {
       if (!effectiveIsSuperAdmin) {
@@ -515,6 +554,10 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       const updated: TransferItem = {
         ...editingTransfer,
         ...formData,
+        filial: targetBranch,
+        qaysiFilialdan: originBranch,
+        qaysiFilialga: targetBranch,
+        type: transferType,
         yakunlanganSana: formData.status === 'Yakunlangan' 
           ? (formData.yakunlanganSana || editingTransfer.yakunlanganSana || nowStr) 
           : formData.yakunlanganSana
@@ -525,6 +568,10 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       if (updated.status === 'Yakunlangan') {
         syncEmployeeBranchIfCompleted(updated);
       }
+      try {
+        window.dispatchEvent(new Event('hrms_transfers_updated'));
+        window.dispatchEvent(new Event('storage'));
+      } catch {}
 
       setToastMessage({ text: `O'tkazma ma'lumoti muvaffaqiyatli tahrirlandi!`, type: 'success' });
     } else {
@@ -533,7 +580,10 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         id: `tr-${Date.now()}`,
         num: maxNum + 1,
         fio: formData.fio || '',
-        filial: formData.filial || ((allBranches && allBranches[0]) || 'Turkiston filiali'),
+        filial: targetBranch,
+        qaysiFilialdan: originBranch,
+        qaysiFilialga: targetBranch,
+        type: transferType,
         viloyat: formData.viloyat || "Farg'ona",
         kategoriya: formData.kategoriya || "Omborxona",
         qaysiLavozimdan: formData.qaysiLavozimdan || '',
@@ -543,13 +593,19 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         boshlanganSana: formData.boshlanganSana || nowStr,
         yakunlanganSana: formData.status === 'Yakunlangan' ? (formData.yakunlanganSana || nowStr) : '',
         sababi: formData.sababi || "Ichki rotatsiya va tajriba oshirish",
-        tasdiqlovchi: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov"
+        tasdiqlovchi: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov",
+        employeeId: formData.employeeId || "",
+        staffId: formData.staffId || ""
       };
       setTransfers(prev => [newTransfer, ...prev]);
       saveFirebaseTransfer(newTransfer);
       if (newTransfer.status === 'Yakunlangan') {
         syncEmployeeBranchIfCompleted(newTransfer);
       }
+      try {
+        window.dispatchEvent(new Event('hrms_transfers_updated'));
+        window.dispatchEvent(new Event('storage'));
+      } catch {}
       setToastMessage({ text: `Yangi o'tkazma muvaffaqiyatli qo'shildi!`, type: 'success' });
       recordSystemHistory({
         action: "Xodim o'tkazmasi (rotatsiyasi) kiritildi",
@@ -557,7 +613,7 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
         type: 'create',
         performedBy: (currentUser as any)?.fullName || (currentUser as any)?.name || "Zarifjon Zokirov",
         role: (currentUser as any)?.role || "Super Admin",
-        details: `Xodim: ${newTransfer.fio} (Filial: ${newTransfer.filial}, Lavozim: ${newTransfer.qaysiLavozimdan} -> ${newTransfer.qaysiLavozimga})`
+        details: `Xodim: ${newTransfer.fio} (Filial: ${originBranch} -> ${targetBranch}, Lavozim: ${newTransfer.qaysiLavozimdan} -> ${newTransfer.qaysiLavozimga})`
       });
     }
 
@@ -600,11 +656,12 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
 
   const handleExportTransfers = (type: 'excel' | 'pdf') => {
     const fileName = `Toyona_Otkazmalar_${new Date().toISOString().slice(0, 10)}`;
-    const headers = ['№', 'F.I.O', 'Filial', 'Viloyat', 'Kategoriya', 'Oldingi Lavozim', 'Yangi Lavozim', 'Status', 'Sana'];
+    const headers = ['№', 'F.I.O', 'Qaysi Filialdan', 'Qaysi Filialga', 'Viloyat', 'Kategoriya', 'Oldingi Lavozim', 'Yangi Lavozim', 'Status', 'Sana'];
     const data = filteredTransfers.map((t, i) => [
       i + 1,
       t.fio,
-      t.filial,
+      t.qaysiFilialdan || t.filial,
+      t.qaysiFilialga || t.filial,
       t.viloyat || '-',
       t.kategoriya || '-',
       t.qaysiLavozimdan,
@@ -617,7 +674,8 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
       const excelData = filteredTransfers.map((t, i) => ({
         '№': i + 1,
         'F.I.O': t.fio,
-        'Filial': t.filial,
+        'Qaysi Filialdan': t.qaysiFilialdan || t.filial,
+        'Qaysi Filialga': t.qaysiFilialga || t.filial,
         'Viloyat': t.viloyat || '-',
         'Kategoriya': t.kategoriya || '-',
         'Oldingi Lavozim': t.qaysiLavozimdan,
@@ -801,8 +859,16 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                     </td>
 
                     {/* FILIAL */}
-                    <td className="py-3.5 px-2 font-bold text-[#1E3A8A] text-[12px] sm:text-[13px] whitespace-nowrap">
-                      {item.filial}
+                    <td className="py-3.5 px-2 text-[12px] sm:text-[13px] whitespace-nowrap">
+                      {item.qaysiFilialdan && item.qaysiFilialga && item.qaysiFilialdan !== item.qaysiFilialga ? (
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <span className="text-slate-600 font-semibold">{item.qaysiFilialdan}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span className="text-[#1E3A8A] font-bold">{item.qaysiFilialga}</span>
+                        </div>
+                      ) : (
+                        <span className="font-bold text-[#1E3A8A]">{item.qaysiFilialga || item.filial}</span>
+                      )}
                     </td>
 
                     {/* QAYSI LAVOZIMDAN */}
@@ -1045,12 +1111,16 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                         const val = e.target.value;
                         const cand = allCandidates.find(c => (c.name || c.fio || '') === val);
                         if (cand) {
+                          const targetBr = cand.targetBranch || cand.branch || formData.qaysiFilialga || formData.filial || 'Turkiston filiali';
                           setFormData({
                             ...formData,
                             fio: cand.name || cand.fio || val,
+                            employeeId: cand.id || "",
                             qaysiLavozimdan: "Nomzod / Vakansiya",
                             qaysiLavozimga: cand.jobPosition || cand.position || formData.qaysiLavozimga || '',
-                            filial: cand.targetBranch || cand.branch || formData.filial,
+                            qaysiFilialdan: "Nomzodlar zaxirasi",
+                            qaysiFilialga: targetBr,
+                            filial: targetBr,
                             viloyat: cand.region || formData.viloyat || "Farg'ona",
                             kategoriya: cand.department || formData.kategoriya || "Savdo bo'limi",
                             sababi: `Vakansiyadan ishga qabul qilish: ${cand.jobPosition || ''}`
@@ -1080,13 +1150,16 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                           const val = e.target.value;
                           const matched = allEmployees.find(emp => (emp.fullName || '').toLowerCase() === val.toLowerCase());
                           if (matched) {
+                            const empBranch = matched.branch || 'Bosh ofis';
                             setFormData({
                               ...formData,
                               fio: matched.fullName,
                               employeeId: matched.id || "",
                               staffId: matched.staffId || "",
-                              qaysiLavozimdan: matched.position || formData.qaysiLavozimdan,
-                              filial: matched.branch || formData.filial,
+                              qaysiLavozimdan: matched.position || formData.qaysiLavozimdan || 'Hodim',
+                              qaysiFilialdan: empBranch,
+                              qaysiFilialga: formData.qaysiFilialga && formData.qaysiFilialga !== empBranch ? formData.qaysiFilialga : empBranch,
+                              filial: formData.qaysiFilialga && formData.qaysiFilialga !== empBranch ? formData.qaysiFilialga : empBranch,
                               kategoriya: matched.department || formData.kategoriya
                             });
                           } else {
@@ -1109,19 +1182,39 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 mb-1">
-                      {transferSourceType === 'candidate' ? "Qabul qilinadigan filial *" : "Qaysi filialga o'tkaziladi *"}
+                      {transferSourceType === 'candidate' ? "Qayerdan (Manba)" : "Qaysi filialdan (Hozirgi filial) *"}
                     </label>
                     <select
-                      value={formData.filial}
-                      onChange={(e) => setFormData({ ...formData, filial: e.target.value })}
+                      value={formData.qaysiFilialdan || formData.filial}
+                      onChange={(e) => setFormData({ ...formData, qaysiFilialdan: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20 cursor-pointer"
                     >
+                      {transferSourceType === 'candidate' && (
+                        <option value="Nomzodlar zaxirasi">Nomzodlar zaxirasi</option>
+                      )}
                       {allBranches.map(b => (
-                        <option key={b} value={b}>{b}</option>
+                        <option key={`from-${b}`} value={b}>{b}</option>
                       ))}
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-slate-700 mb-1">
+                      {transferSourceType === 'candidate' ? "Qabul qilinadigan filial *" : "Qaysi filialga (Yangi filial) *"}
+                    </label>
+                    <select
+                      value={formData.qaysiFilialga || formData.filial}
+                      onChange={(e) => setFormData({ ...formData, qaysiFilialga: e.target.value, filial: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20 cursor-pointer"
+                    >
+                      {allBranches.map(b => (
+                        <option key={`to-${b}`} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 mb-1">Viloyat</label>
                     <select
@@ -1131,6 +1224,19 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                     >
                       {REGIONS_LIST.map(reg => (
                         <option key={reg} value={reg}>{reg}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 mb-1">Kategoriya / Bo'lim</label>
+                    <select
+                      value={formData.kategoriya}
+                      onChange={(e) => setFormData({ ...formData, kategoriya: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#70B42C]/20 cursor-pointer"
+                    >
+                      {['Savdo bo\'limi', 'Kassa va hisob-kitob', 'Omborxona va logistika', 'Ma\'muriyat', 'Xizmat ko\'rsatish'].map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
                   </div>
@@ -1266,6 +1372,22 @@ export default function Transfers({ isSuperAdmin, currentUser }: TransfersProps)
                   </div>
                   <div>
                     {renderStatusBadge(selectedDetailTransfer)}
+                  </div>
+                </div>
+
+                {/* Branches Transition (Filial o'zgarishi) */}
+                <div className="p-3.5 bg-amber-50/50 rounded-xl border border-amber-100/70">
+                  <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider block mb-2">Filial o'zgarishi</span>
+                  <div className="flex items-center gap-2 text-xs font-semibold">
+                    <div className="flex-1 bg-white p-2.5 rounded-lg border border-amber-200/60 text-slate-700">
+                      <span className="text-[10px] text-slate-400 block font-normal">Avvalgi filial</span>
+                      <span className="font-bold text-slate-800">{selectedDetailTransfer.qaysiFilialdan || selectedDetailTransfer.filial}</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-amber-500 shrink-0" />
+                    <div className="flex-1 bg-white p-2.5 rounded-lg border border-amber-200/60 text-slate-700">
+                      <span className="text-[10px] text-slate-400 block font-normal">Yangi filial</span>
+                      <span className="font-bold text-[#1E3A8A]">{selectedDetailTransfer.qaysiFilialga || selectedDetailTransfer.filial}</span>
+                    </div>
                   </div>
                 </div>
 
