@@ -132,7 +132,7 @@ export default function EmployeeCredentials({ currentUser, isSuperAdmin = false 
           avatarUrl: emp.avatarUrl || (emp as any).photoUrl || (emp as any).rasmUrl || 'https://hrms-toyona.vercel.app/zarifjon.jpg',
           username: uname,
           password: upass,
-          isAccountActive: !!(uname && upass && emp.isAccountActive !== false)
+          isAccountActive: !!(uname && (upass || emp.isAccountActive === true) && emp.isAccountActive !== false)
         };
       });
     };
