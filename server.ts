@@ -1350,6 +1350,321 @@ export async function configureRoutes(appInstance: express.Express = app) {
     return false;
   }
 
+  function sendCyberShieldBlock(req: any, res: any) {
+    const clientIp = getClientIp(req);
+    const rayId = `TS-35-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const targetUrl = String(req.originalUrl || req.url || '/api/attendance/employees').replace(/[<>"']/g, '');
+    const nowFormatted = new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
+    const accept = String(req.headers['accept'] || '').toLowerCase();
+    const wantsJsonOnly = accept.includes('application/json') && !accept.includes('text/html') && !isDirectBrowserNavigation(req);
+
+    const jsonPayload = {
+      success: false,
+      status: 403,
+      code: "ZERO_TRUST_ACCESS_DENIED",
+      securitySystem: "Toyona CyberShield™ v3.5 (Enterprise Zero-Trust WAF)",
+      protocol: "OWASP-ASVS-L3 / HMAC-SHA256",
+      securityDirector: "Zarifjon Zokirov (Toyona Savdo SOC)",
+      rayId,
+      clientIp,
+      timestamp: nowFormatted,
+      message: "Xavfsizlik Tizimi 3.5: Ruxsatsiz kirish qat'iyan taqiqlangan! Qurilma va IP manzilingiz xavfsizlik jurnaliga qayd etildi."
+    };
+
+    if (wantsJsonOnly) {
+      return res.status(403).json(jsonPayload);
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>403 Blocked — Toyona CyberShield™ v3.5</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 0%, #1e1b2e 0%, #090d16 70%);
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 820px;
+      background: #0f172a;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 40px rgba(239, 68, 68, 0.12);
+    }
+    .topbar {
+      background: #090d16;
+      border-bottom: 1px solid #1e293b;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .dots { display: flex; gap: 7px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ef4444; }
+    .dot-y { background: #f59e0b; }
+    .dot-g { background: #10b981; }
+    .urlbar {
+      flex: 1;
+      min-width: 220px;
+      background: #131c31;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .urlbar strong { color: #ef4444; }
+    .tabs { display: flex; gap: 6px; }
+    .tab-btn {
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+    .content { padding: 28px; }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #1e293b;
+      flex-wrap: wrap;
+    }
+    .brand-left { display: flex; align-items: center; gap: 16px; }
+    .shield-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .badge-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge-403 {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.16);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .waf-ver {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 6px;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+    .proto-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+    }
+    .proto-label { color: #64748b; font-size: 10px; margin-bottom: 3px; }
+    .proto-val { color: #10b981; font-weight: 700; }
+    .alert-box {
+      margin-top: 20px;
+      background: rgba(239, 68, 68, 0.09);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .alert-title { color: #f87171; font-weight: 700; font-size: 15px; }
+    .alert-desc { color: #cbd5e1; font-size: 13px; line-height: 1.6; margin-top: 6px; }
+    .alert-desc strong { color: #ffffff; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .stat-card {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .stat-label { color: #64748b; font-size: 11px; }
+    .stat-val { color: #f8fafc; font-size: 13px; font-weight: 700; margin-top: 4px; }
+    .stat-val.red { color: #f87171; }
+    .stat-val.green { color: #10b981; }
+    .footer {
+      margin-top: 22px;
+      padding-top: 14px;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #64748b;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .footer strong { color: #e2e8f0; }
+    pre {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12.5px;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.65;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="topbar">
+      <div class="dots">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+      </div>
+      <div class="urlbar">
+        <strong>🔒 BLOCKED</strong>
+        <span>https://hrms-toyona.vercel.app${targetUrl}</span>
+      </div>
+      <div class="tabs">
+        <button id="btnVisual" class="tab-btn active" onclick="switchView('visual')">2-variant (Ekran)</button>
+        <button id="btnJson" class="tab-btn" onclick="switchView('json')">1-variant (JSON)</button>
+      </div>
+    </div>
+
+    <div id="viewVisual" class="content">
+      <div class="header-row">
+        <div class="brand-left">
+          <div class="shield-box">
+            <svg width="30" height="30" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
+            </svg>
+          </div>
+          <div>
+            <div class="badge-row">
+              <span class="badge-403">HTTP 403 • ZERO-TRUST BLOCK</span>
+              <span class="waf-ver">WAF Engine v3.5</span>
+            </div>
+            <h1>TOYONA CYBERSHIELD™ v3.5 — XAVFSIZLIK TIZIMI</h1>
+          </div>
+        </div>
+        <div class="proto-box">
+          <div class="proto-label">HIMOYA PROTOKOLI</div>
+          <div class="proto-val">● OWASP-ASVS L3 / HMAC-SHA256</div>
+        </div>
+      </div>
+
+      <div class="alert-box">
+        <div class="alert-title">⚠️ Ruxsatsiz kirish qat'iyan taqiqlangan! (Access Denied)</div>
+        <p class="alert-desc">
+          Siz <strong>"Toyona Savdo" Korporativ HRMS</strong> ichki ma'lumotlar shlyuziga ruxsatsiz (kriptografik kalitsiz) kirishga urindingiz. Ushbu urinish <strong>Xavfsizlik Tizimi 3.5</strong> tomonidan avtomatik ravishda to'xtatildi va xavfsizlik jurnaliga yozib olindi.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="stat-card">
+          <div class="stat-label">RAY ID (HODISA)</div>
+          <div class="stat-val">${rayId}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">MIJOZ IP MANZILI</div>
+          <div class="stat-val red">${clientIp} (Qayd etildi)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">XAVFSIZLIK RAHBARI</div>
+          <div class="stat-val">Zarifjon Zokirov</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">TIZIM HOLATI</div>
+          <div class="stat-val green">Qalqon Faol (v3.5)</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span>Protected by <strong>Toyona CyberShield™ Enterprise Security v3.5</strong></span>
+        <span>${nowFormatted} • SHA-256 Verified</span>
+      </div>
+    </div>
+
+    <div id="viewJson" class="content hidden">
+      <pre>${JSON.stringify(jsonPayload, null, 2)}</pre>
+    </div>
+  </div>
+
+  <script>
+    function switchView(mode) {
+      var v = document.getElementById('viewVisual');
+      var j = document.getElementById('viewJson');
+      var bv = document.getElementById('btnVisual');
+      var bj = document.getElementById('btnJson');
+      if (mode === 'visual') {
+        v.classList.remove('hidden');
+        j.classList.add('hidden');
+        bv.classList.add('active');
+        bj.classList.remove('active');
+      } else {
+        v.classList.add('hidden');
+        j.classList.remove('hidden');
+        bj.classList.add('active');
+        bv.classList.remove('active');
+      }
+    }
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(403).send(html);
+  }
+
   app.use('/api', (req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -1357,11 +1672,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
 
     // 1. Brauzer manzil qatoridan (/api/...) to'g'ridan-to'g'ri kirishni 100% bloklash
     if (isDirectBrowserNavigation(req)) {
-      return res.status(403).json({
-        success: false,
-        code: "ACCESS_DENIED",
-        message: "Xavfsizlik tizimi: API manzillarini brauzer orqali to'g'ridan-to'g'ri ochish qat'iyan taqiqlangan!"
-      });
+      return sendCyberShieldBlock(req, res);
     }
 
     // 2. Ichki token bo'lmasa, faqat ruxsat etilgan tashqi Mini App / Anketa so'rovlarigagina ruxsat berish
@@ -1400,11 +1711,7 @@ export async function configureRoutes(appInstance: express.Express = app) {
         !isMiniAppGeozonesGet &&
         !isMiniAppStatusOrHistoryGet
       ) {
-        return res.status(403).json({
-          success: false,
-          code: "ACCESS_DENIED",
-          message: "Xavfsizlik tizimi: Ruxsatsiz kirish qat'iyan taqiqlangan!"
-        });
+        return sendCyberShieldBlock(req, res);
       }
     }
 
