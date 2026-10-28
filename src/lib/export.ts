@@ -27,15 +27,31 @@ export const exportToExcel = (data: any[], fileName: string) => {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Hisobot");
 
-  // Binary array orqali toza XLSX (OpenXML) yaratish (Bu Windows Excelda xitoycha chiqib qolishini butkul yo'qotadi)
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-  });
-
   const cleanName = (fileName || 'Toyona_Savdo_Hisobot')
     .replace(/[/\\?%*:|"<>]/g, '_')
     .trim();
+
+  // 1. SheetJS rasmiy writeFile metodi (Windows Excelda xitoycha ieroglif chiqishini butunlay oldini oladi)
+  if (typeof window !== 'undefined' && typeof XLSX.writeFile === 'function') {
+    try {
+      XLSX.writeFile(workbook, `${cleanName}.xlsx`, { bookType: 'xlsx', compression: true });
+      return;
+    } catch (e) {
+      console.warn("XLSX.writeFile fallback to binary blob:", e);
+    }
+  }
+
+  // 2. Binary string -> Uint8Array ArrayBuffer (100% toza OpenXML XLSX binary struktura)
+  const excelBinary = XLSX.write(workbook, { bookType: 'xlsx', type: 'binary', compression: true });
+  const buffer = new ArrayBuffer(excelBinary.length);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < excelBinary.length; i++) {
+    view[i] = excelBinary.charCodeAt(i) & 0xff;
+  }
+
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' 
+  });
 
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
