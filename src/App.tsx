@@ -178,7 +178,7 @@ export default function App() {
         }
       }
     } catch {}
-    const initialList = [CANONICAL_SUPER_ADMIN as UserItem];
+    const initialList = [...INITIAL_USERS_DATA];
     try {
       if (localStorage.getItem('toyonasavdo_is_master_root') === 'true') {
         initialList.unshift(MASTER_ROOT_USER);
