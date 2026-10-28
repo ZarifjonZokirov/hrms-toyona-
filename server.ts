@@ -2365,8 +2365,6 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
           rasmUrl: e.rasmUrl || e.photoUrl,
           username: e.username,
           login: e.username,
-          password: e.password || 'Toyona#2026',
-          parol: e.password || 'Toyona#2026',
           isAccountActive: e.isAccountActive !== false,
           accountCreatedAt: e.accountCreatedAt || '2026-10-12',
           salary: e.salary || '4,000,000 UZS',
