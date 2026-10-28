@@ -130,9 +130,9 @@ export const getEmployeeRegion = (emp: Employee, branchList: Branch[]): string =
 const initialBranches: Branch[] = [
   { id: '1', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'A', vacancyCount: 1, date: '7.9.2026' },
   { id: '2', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'B', vacancyCount: 4, date: '7.9.2026' },
-  { id: '3', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'C', vacancyCount: 2, date: '7.9.2026' },
+  { id: '3', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'C', vacancyCount: 0, date: '7.9.2026' },
   { id: '4', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'D', vacancyCount: 1, date: '7.9.2026' },
-  { id: '5', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'Mini', vacancyCount: 2, date: '7.9.2026' },
+  { id: '5', nameUz: 'Andijon', nameRu: 'Андижан', region: 'Andijon viloyati', category: 'Mini', vacancyCount: 0, date: '7.9.2026' },
 ];
 
 const categoryColors: Record<BranchCategory, string> = {
@@ -161,7 +161,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             description: g.description,
             region: 'Farg\'ona viloyati',
             category: (['A', 'B', 'C', 'D', 'Mini'][idx % 5] || 'A') as BranchCategory,
-            vacancyCount: Math.floor(Math.random() * 4) + 1,
+            vacancyCount: 0,
             date: '15.9.2026',
             address: g.address
           }));
@@ -177,11 +177,14 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
       description: g.description,
       region: 'Farg\'ona viloyati',
       category: (['A', 'B', 'C', 'D', 'Mini'][idx % 5] || 'A') as BranchCategory,
-      vacancyCount: 2,
+      vacancyCount: 0,
       date: '15.9.2026',
       address: g.address
     }));
   });
+
+  // Real-time vacancies state connected with Bo'sh ish o'rinlari (Vacancies) module
+  const [vacancies, setVacancies] = useState<Vacancy[]>(INITIAL_21_VACANCIES);
 
   // Dynamic employees state connected with Xodimlar (Employees) module
   const [employees, setEmployees] = useState<Employee[]>(() => {
@@ -218,7 +221,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
           description: g.description,
           region: g.name.includes('Toshkent') ? 'Toshkent shahri' : "Farg'ona viloyati",
           category: (['A', 'B', 'C', 'D', 'Mini'][idx % 5] || 'A') as BranchCategory,
-          vacancyCount: 2,
+          vacancyCount: 0,
           date: '15.9.2026',
           address: g.address
         }));
@@ -248,7 +251,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                 description: fb.description,
                 region: fb.region || (branchName.includes('Toshkent') ? 'Toshkent shahri' : "Farg'ona viloyati"),
                 category: fb.category || 'A',
-                vacancyCount: fb.vacancyCount ?? 2,
+                vacancyCount: 0,
                 date: fb.date || '15.9.2026',
                 address: fb.address,
                 landmark: fb.landmark,
@@ -282,6 +285,11 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
         if (fbEmployees && fbEmployees.length > 0) {
           setEmployees(fbEmployees as Employee[]);
         }
+      }),
+      getFirebaseVacancies().then(fbVacs => {
+        if (fbVacs && fbVacs.length > 0) {
+          setVacancies(fbVacs as Vacancy[]);
+        }
       })
     ]).finally(() => {
       if (active) setIsLoading(false);
@@ -301,7 +309,16 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
 
     window.addEventListener('storage', handleEmployeesSync);
     window.addEventListener('hrms_employees_updated', handleEmployeesSync);
+    const unsubVacancies = subscribeFirebaseVacancies((liveVacancies) => {
+      if (!active) return;
+      if (liveVacancies && liveVacancies.length > 0) {
+        setVacancies(liveVacancies as Vacancy[]);
+      }
+    });
+
     return () => {
+      active = false;
+      unsubVacancies();
       window.removeEventListener('storage', handleEmployeesSync);
       window.removeEventListener('hrms_employees_updated', handleEmployeesSync);
     };
@@ -805,7 +822,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
           b.region,
           b.category,
           `${bEmps.length} ta`,
-          `${b.vacancyCount || 0} ta`,
+          `${getBranchVacancies(b.nameUz, vacancies).length} ta (${getBranchVacancyQuota(b.nameUz, vacancies)} o'rin)`,
           b.date,
           b.address || '-'
         ];
@@ -821,7 +838,7 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
             'Viloyat': b.region,
             'Kategoriya': b.category,
             'Xodimlar Soni': bEmps.length,
-            'Vakansiyalar': b.vacancyCount || 0,
+            'Vakansiyalar': `${getBranchVacancies(b.nameUz, vacancies).length} ta (${getBranchVacancyQuota(b.nameUz, vacancies)} o'rin)`,
             'Sana': b.date,
             'Manzil': b.address || '-',
             'Telefon': b.phone || '-',
@@ -925,7 +942,11 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
           <div>
             <div className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Bo'sh o'rinlar</div>
             <div className="text-lg font-extrabold text-slate-800 dark:text-slate-100">
-              {branches.reduce((acc, b) => acc + (Number(b.vacancyCount) || 0), 0)} ta
+              {(() => {
+                const openVacs = vacancies.filter(v => v.status !== "To'ldirilgan" && v.status !== "Yopilgan");
+                const totalSpots = openVacs.reduce((acc, v) => acc + (Number(v.headcount) || 1), 0);
+                return `${openVacs.length} ta (${totalSpots} o'rin)`;
+              })()}
             </div>
           </div>
         </div>
@@ -1261,7 +1282,35 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                       )}
                     </td>
 
-                    <td className="p-4 font-semibold text-slate-700 dark:text-slate-300">{branch.vacancyCount} ta</td>
+                    <td className="p-4">
+                      {(() => {
+                        const branchVacs = getBranchVacancies(branch.nameUz, vacancies);
+                        const branchQuota = getBranchVacancyQuota(branch.nameUz, vacancies);
+                        if (branchVacs.length > 0) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onNavigateToVacancies) onNavigateToVacancies();
+                              }}
+                              title="Bo'sh ish o'rinlari moduliga o'tish"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-amber-50/80 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/40 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer group"
+                            >
+                              <Briefcase className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                              <span>{branchVacs.length} ta vakansiya</span>
+                              <span className="text-[10px] opacity-75">({branchQuota} o'rin)</span>
+                            </button>
+                          );
+                        }
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700">
+                            <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                            Vakansiya yo'q
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="p-4 text-slate-500 dark:text-slate-500 font-mono text-xs">{branch.date}</td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -1959,6 +2008,81 @@ export default function Branches({ onNavigateToVacancies }: BranchesProps = {}) 
                       </table>
                     </div>
                   </div>
+
+                  {/* Vacancies List in Branch Detail Card */}
+                  {(() => {
+                    const branchVacs = getBranchVacancies(selectedBranchCard.nameUz, vacancies);
+                    const branchQuota = getBranchVacancyQuota(selectedBranchCard.nameUz, vacancies);
+                    return (
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                              <Briefcase className="w-5 h-5 text-amber-500" />
+                              Filialdagi Bo'sh Ish O'rinlari
+                            </h3>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">
+                              Ushbu filial bo'yicha qidirilayotgan ochiq vakansiyalar
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-extrabold text-xs px-3.5 py-1.5 rounded-full border border-amber-200/60 dark:border-amber-800/40">
+                              {branchVacs.length} ta vakansiya • {branchQuota} ta ochiq o'rin
+                            </span>
+                            {onNavigateToVacancies && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBranchCard(null);
+                                  onNavigateToVacancies();
+                                }}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00A651] hover:text-[#008d44] bg-[#00A651]/10 hover:bg-[#00A651]/20 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <span>Barcha vakansiyalarga o'tish</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {branchVacs.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                              <thead>
+                                <tr className="bg-slate-50/70 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                  <th className="p-4">Lavozim</th>
+                                  <th className="p-4">Bo'lim</th>
+                                  <th className="p-4">Kvota</th>
+                                  <th className="p-4">Maosh</th>
+                                  <th className="p-4">Holati</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {branchVacs.map(v => (
+                                  <tr key={v.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td className="p-4 font-bold text-slate-800 dark:text-slate-100">{v.title}</td>
+                                    <td className="p-4 text-slate-600 dark:text-slate-400">{v.department}</td>
+                                    <td className="p-4 font-semibold text-amber-600 dark:text-amber-400">{v.headcount || 1} ta o'rin</td>
+                                    <td className="p-4 font-mono text-slate-700 dark:text-slate-300">{v.salaryRange || "Kelishilgan"}</td>
+                                    <td className="p-4">
+                                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                                        {v.status || "Faol"}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center text-slate-400 dark:text-slate-500 font-medium">
+                            <Briefcase className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2 opacity-60" />
+                            <p className="font-semibold text-slate-600 dark:text-slate-400 text-xs">Ushbu filialda hozircha ochiq bo'sh ish o'rni mavjud emas</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                 </div>
               </div>
