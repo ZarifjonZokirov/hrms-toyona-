@@ -1681,6 +1681,55 @@ export async function saveFirebaseSettings(settings: Partial<SystemSettings>): P
   }
 }
 
+export interface PenaltySettingsData {
+  workStartTime: string;
+  workEndTime: string;
+  gracePeriodMinutes: number;
+  penaltyType: 'minute' | 'hour';
+  penaltyRate: number;
+  restDays: number[];
+  customHolidays: string[];
+  updatedAt?: string;
+}
+
+export const DEFAULT_PENALTY_SETTINGS: PenaltySettingsData = {
+  workStartTime: "09:00",
+  workEndTime: "18:00",
+  gracePeriodMinutes: 15,
+  penaltyType: "minute",
+  penaltyRate: 1000,
+  restDays: [0], // 0: Yakshanba
+  customHolidays: [],
+  updatedAt: new Date().toISOString()
+};
+
+export async function getFirebasePenaltySettings(): Promise<PenaltySettingsData> {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'penalty'));
+    if (snap.exists()) {
+      return { ...DEFAULT_PENALTY_SETTINGS, ...snap.data() } as PenaltySettingsData;
+    }
+    return DEFAULT_PENALTY_SETTINGS;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, 'settings/penalty');
+    return DEFAULT_PENALTY_SETTINGS;
+  }
+}
+
+export async function saveFirebasePenaltySettings(settings: Partial<PenaltySettingsData>): Promise<boolean> {
+  try {
+    await setDoc(doc(db, 'settings', 'penalty'), {
+      ...settings,
+      id: 'penalty',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, 'settings/penalty');
+    return false;
+  }
+}
+
 // ----------------------------------------------------------------------
 // 10. BRANCHES, DEPARTMENTS & OTHER EXISTING ENTITIES
 // ----------------------------------------------------------------------

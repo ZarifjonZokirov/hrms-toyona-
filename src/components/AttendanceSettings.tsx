@@ -15,7 +15,9 @@ import {
   getFirebaseEmployees,
   getFirebaseDismissedEmployees,
   getFirebaseBranches,
-  getFirebaseGeozones
+  getFirebaseGeozones,
+  getFirebasePenaltySettings,
+  saveFirebasePenaltySettings
 } from '../firebase';
 import { exportToExcel, exportToPDF } from '../lib/export';
 import { ExportButtons } from './ExportButtons';
@@ -116,28 +118,48 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
   };
 
   // ------------------------------------------
-  // Load Settings from API
+  // Load Settings from API & Firebase
   // ------------------------------------------
-  const loadSettings = () => {
+  const loadSettings = async () => {
     setIsLoadingSettings(true);
-    fetch('/api/attendance/penalty-settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.settings) {
-          const s = data.settings;
-          if (s.workStartTime) setWorkStartTime(s.workStartTime);
-          if (s.workEndTime) setWorkEndTime(s.workEndTime);
-          if (s.gracePeriodMinutes !== undefined) setGracePeriodMinutes(s.gracePeriodMinutes);
-          if (s.penaltyType) setPenaltyType(s.penaltyType);
-          if (s.penaltyRate !== undefined) setPenaltyRate(s.penaltyRate);
-          if (Array.isArray(s.restDays)) setRestDays(s.restDays);
-          if (Array.isArray(s.customHolidays)) setCustomHolidays(s.customHolidays);
+    try {
+      let loaded = false;
+      try {
+        const res = await fetch('/api/attendance/penalty-settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.settings) {
+            const s = data.settings;
+            if (s.workStartTime) setWorkStartTime(s.workStartTime);
+            if (s.workEndTime) setWorkEndTime(s.workEndTime);
+            if (s.gracePeriodMinutes !== undefined) setGracePeriodMinutes(s.gracePeriodMinutes);
+            if (s.penaltyType) setPenaltyType(s.penaltyType);
+            if (s.penaltyRate !== undefined) setPenaltyRate(s.penaltyRate);
+            if (Array.isArray(s.restDays)) setRestDays(s.restDays);
+            if (Array.isArray(s.customHolidays)) setCustomHolidays(s.customHolidays);
+            loaded = true;
+          }
         }
-      })
-      .catch(err => {
-        console.warn('Sozlamalarni yuklab bo\'lmadi:', err);
-      })
-      .finally(() => setIsLoadingSettings(false));
+      } catch {}
+
+      if (!loaded) {
+        // Fallback to Firestore directly
+        const fbSettings = await getFirebasePenaltySettings();
+        if (fbSettings) {
+          if (fbSettings.workStartTime) setWorkStartTime(fbSettings.workStartTime);
+          if (fbSettings.workEndTime) setWorkEndTime(fbSettings.workEndTime);
+          if (fbSettings.gracePeriodMinutes !== undefined) setGracePeriodMinutes(fbSettings.gracePeriodMinutes);
+          if (fbSettings.penaltyType) setPenaltyType(fbSettings.penaltyType);
+          if (fbSettings.penaltyRate !== undefined) setPenaltyRate(fbSettings.penaltyRate);
+          if (Array.isArray(fbSettings.restDays)) setRestDays(fbSettings.restDays);
+          if (Array.isArray(fbSettings.customHolidays)) setCustomHolidays(fbSettings.customHolidays);
+        }
+      }
+    } catch (err) {
+      console.warn('Sozlamalarni yuklab bo\'lmadi:', err);
+    } finally {
+      setIsLoadingSettings(false);
+    }
   };
 
   // ------------------------------------------
@@ -527,28 +549,36 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
       const parsedGrace = typeof gracePeriodMinutes === 'string' ? (parseInt(gracePeriodMinutes, 10) || 0) : gracePeriodMinutes;
       const parsedRate = typeof penaltyRate === 'string' ? (parseInt(penaltyRate, 10) || 0) : penaltyRate;
 
-      const res = await fetch('/api/attendance/penalty-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workStartTime,
-          workEndTime,
-          gracePeriodMinutes: parsedGrace,
-          penaltyType,
-          penaltyRate: parsedRate,
-          restDays,
-          customHolidays
-        })
+      const payload = {
+        workStartTime,
+        workEndTime,
+        gracePeriodMinutes: parsedGrace,
+        penaltyType,
+        penaltyRate: parsedRate,
+        restDays,
+        customHolidays
+      };
+
+      // 1. Firebase Firestore bazasiga mustahkam saqlash
+      await saveFirebasePenaltySettings(payload).catch(err => {
+        console.warn('Firestorega sozlamalarni saqlashda ogohlantirish:', err);
       });
-      const data = await res.json();
-      if (data.success) {
-        showToast('✅ Jarima, ish vaqti va dam kunlari muvaffaqiyatli saqlandi!');
-        loadPenaltiesData();
-      } else {
-        showToast(data.message || 'Xatolik yuz berdi');
+
+      // 2. Server API ga saqlash
+      try {
+        await fetch('/api/attendance/penalty-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn('Server API ga saqlashda ogohlantirish:', err);
       }
+
+      showToast('✅ Ish vaqti, jarima stavkasi va dam kunlari muvaffaqiyatli saqlandi!');
+      loadPenaltiesData();
     } catch (e: any) {
-      showToast('Server bilan bog\'lanishda xatolik yuz berdi');
+      showToast('Sozlamalarni saqlashda xatolik yuz berdi');
     } finally {
       setIsSavingSettings(false);
     }

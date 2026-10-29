@@ -410,6 +410,39 @@ let penaltySettings: PenaltySettings = {
   updatedAt: new Date().toISOString()
 };
 
+const LOCAL_PENALTY_SETTINGS_FILE = path.join(process.cwd(), 'penalty_settings.json');
+const TMP_PENALTY_SETTINGS_FILE = path.join(os.tmpdir(), 'toyonasavdo_penalty_settings.json');
+
+function savePersistentPenaltySettings(settings: PenaltySettings) {
+  try {
+    const data = JSON.stringify(settings, null, 2);
+    try { fs.writeFileSync(LOCAL_PENALTY_SETTINGS_FILE, data, 'utf8'); } catch {}
+    try { fs.writeFileSync(TMP_PENALTY_SETTINGS_FILE, data, 'utf8'); } catch {}
+  } catch (err) {
+    console.warn('Could not write penalty_settings file:', err);
+  }
+}
+
+function loadPersistentPenaltySettings(): PenaltySettings | null {
+  for (const p of [LOCAL_PENALTY_SETTINGS_FILE, TMP_PENALTY_SETTINGS_FILE]) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+try {
+  const loadedSettings = loadPersistentPenaltySettings();
+  if (loadedSettings) {
+    penaltySettings = { ...penaltySettings, ...loadedSettings };
+  }
+} catch {}
+
 function calculatePenaltyAmount(delayMinutes: number, settings: PenaltySettings = penaltySettings): number {
   if (delayMinutes <= 0) return 0;
   if (settings.penaltyType === 'hour') {
@@ -3028,6 +3061,8 @@ function findServerEmployee(allEmployees: ServerEmployee[], input: string): Serv
       if (Array.isArray(restDays)) penaltySettings.restDays = restDays.map(Number);
       if (Array.isArray(customHolidays)) penaltySettings.customHolidays = customHolidays;
       penaltySettings.updatedAt = new Date().toISOString();
+
+      savePersistentPenaltySettings(penaltySettings);
 
       res.json({
         success: true,

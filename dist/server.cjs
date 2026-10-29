@@ -404,6 +404,43 @@ var penaltySettings = {
   customHolidays: [],
   updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 };
+var LOCAL_PENALTY_SETTINGS_FILE = import_path.default.join(process.cwd(), "penalty_settings.json");
+var TMP_PENALTY_SETTINGS_FILE = import_path.default.join(import_os.default.tmpdir(), "toyonasavdo_penalty_settings.json");
+function savePersistentPenaltySettings(settings) {
+  try {
+    const data = JSON.stringify(settings, null, 2);
+    try {
+      import_fs.default.writeFileSync(LOCAL_PENALTY_SETTINGS_FILE, data, "utf8");
+    } catch {
+    }
+    try {
+      import_fs.default.writeFileSync(TMP_PENALTY_SETTINGS_FILE, data, "utf8");
+    } catch {
+    }
+  } catch (err) {
+    console.warn("Could not write penalty_settings file:", err);
+  }
+}
+function loadPersistentPenaltySettings() {
+  for (const p of [LOCAL_PENALTY_SETTINGS_FILE, TMP_PENALTY_SETTINGS_FILE]) {
+    try {
+      if (import_fs.default.existsSync(p)) {
+        const raw = import_fs.default.readFileSync(p, "utf8");
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") return parsed;
+      }
+    } catch {
+    }
+  }
+  return null;
+}
+try {
+  const loadedSettings = loadPersistentPenaltySettings();
+  if (loadedSettings) {
+    penaltySettings = { ...penaltySettings, ...loadedSettings };
+  }
+} catch {
+}
 function calculatePenaltyAmount(delayMinutes, settings = penaltySettings) {
   if (delayMinutes <= 0) return 0;
   if (settings.penaltyType === "hour") {
@@ -2630,6 +2667,7 @@ async function configureRoutes(appInstance = app) {
       if (Array.isArray(restDays)) penaltySettings.restDays = restDays.map(Number);
       if (Array.isArray(customHolidays)) penaltySettings.customHolidays = customHolidays;
       penaltySettings.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      savePersistentPenaltySettings(penaltySettings);
       res.json({
         success: true,
         message: "Jarima va dam olish kunlari sozlamalari muvaffaqiyatli yangilandi!",
