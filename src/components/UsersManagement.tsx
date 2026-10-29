@@ -78,7 +78,7 @@ export const INITIAL_USERS_DATA: UserItem[] = [
     id: 1, 
     name: 'Zarifjon Zokirov', 
     username: '20090915', 
-    password: '', 
+    password: 'ZZOKIROV2009@z', 
     email: 'zarifjon@toyonasavdo.uz', 
     role: 'Super Admin', 
     branch: 'Bosh ofis', 
