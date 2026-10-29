@@ -1596,7 +1596,10 @@ export default function App() {
                 {visitedTabs.has('attendance_settings') && (
                   <div className={normalizedActiveTab === 'attendance_settings' ? 'block' : 'hidden'} key="tab-attendance-settings">
                     <ModuleErrorBoundary moduleName="Ish vaqti, jarima va dam kunlari sozlamalari">
-                      <AttendanceSettings />
+                      <AttendanceSettings 
+                        currentUser={currentUser} 
+                        isSuperAdmin={isSuperAdmin} 
+                      />
                     </ModuleErrorBoundary>
                   </div>
                 )}
