@@ -4,7 +4,8 @@ import {
   HelpCircle, RefreshCw, Sun, Moon, Coffee, ShieldAlert,
   Percent, DollarSign, ArrowRight, Search, Filter, Download, 
   User, Building2, Check, X, ShieldCheck, FileSpreadsheet, 
-  AlertCircle, FileText, ChevronDown, Undo2, Award, Info
+  AlertCircle, FileText, ChevronDown, Undo2, Award, Info,
+  UserX, UserCheck
 } from 'lucide-react';
 import { ModuleHeaderLogo, ToyonaBrand } from './Logo';
 import { 
@@ -12,6 +13,7 @@ import {
   saveFirebaseAttendance, 
   updateAttendanceWithAudit,
   getFirebaseEmployees,
+  getFirebaseDismissedEmployees,
   getFirebaseBranches,
   getFirebaseGeozones
 } from '../firebase';
@@ -39,6 +41,7 @@ export interface PenaltyRecord {
   waivedAt?: string;
   status: string;
   notes?: string;
+  isDismissed?: boolean;
 }
 
 interface AttendanceSettingsProps {
@@ -86,6 +89,7 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
   const [customEndDate, setCustomEndDate] = useState('');
   const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'waived'>('all');
+  const [employeeStatusFilter, setEmployeeStatusFilter] = useState<'all' | 'active' | 'dismissed'>('all');
 
   // Waiver Modal state
   const [waivingRecord, setWaivingRecord] = useState<PenaltyRecord | null>(null);
@@ -142,9 +146,10 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
   const loadPenaltiesData = async () => {
     setIsLoadingPenalties(true);
     try {
-      const [rawAttRecords, emps, branches, geozones] = await Promise.all([
+      const [rawAttRecords, emps, dismissedEmps, branches, geozones] = await Promise.all([
         getFirebaseAttendance().catch(() => []),
         getFirebaseEmployees().catch(() => []),
+        getFirebaseDismissedEmployees().catch(() => []),
         getFirebaseBranches().catch(() => []),
         getFirebaseGeozones().catch(() => [])
       ]);
@@ -155,14 +160,23 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
       (branches || []).forEach((b: any) => { if (b.name || b.nameUz) branchSet.add(b.name || b.nameUz); });
       (geozones || []).forEach((g: any) => { if (g.name) branchSet.add(g.name); });
       (emps || []).forEach((e: any) => { if (e.branch) branchSet.add(e.branch); });
+      (dismissedEmps || []).forEach((d: any) => { if (d.branch) branchSet.add(d.branch); });
       setAllBranches(Array.from(branchSet).filter(Boolean).sort());
 
-      // Xodimlar xaritasi (ID bo'yicha)
+      // Faol xodimlar xaritasi (ID bo'yicha)
       const empMap = new Map<string, any>();
       (emps || []).forEach((e: any) => {
         if (e.id) empMap.set(String(e.id), e);
         if (e.staffId) empMap.set(String(e.staffId), e);
         if (e.fullName) empMap.set(String(e.fullName).toLowerCase().trim(), e);
+      });
+
+      // Ishdan bo'shagan / arxivdagi xodimlar xaritasi
+      const dismissedMap = new Map<string, any>();
+      (dismissedEmps || []).forEach((d: any) => {
+        if (d.id) dismissedMap.set(String(d.id), d);
+        if (d.staffId) dismissedMap.set(String(d.staffId), d);
+        if (d.fullName) dismissedMap.set(String(d.fullName).toLowerCase().trim(), d);
       });
 
       // Stavka (agar sozlamadan olingan bo'lsa)
@@ -178,11 +192,25 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
 
         const matchedEmp = empMap.get(String(rec.employeeId)) || 
                            empMap.get(String(rec.employeeName || '').toLowerCase().trim());
+        const matchedDismissed = dismissedMap.get(String(rec.employeeId)) || 
+                                 dismissedMap.get(String(rec.employeeName || '').toLowerCase().trim());
 
-        const empName = rec.employeeName || matchedEmp?.fullName || 'Noma\'lum xodim';
-        const empBranch = rec.branch || matchedEmp?.branch || 'Bosh ofis';
-        const empDept = rec.department || matchedEmp?.department || 'Savdo bo\'limi';
-        const empPos = matchedEmp?.position || 'Xodim';
+        const matched = matchedEmp || matchedDismissed;
+
+        // Xodim hozir faolmi yoki ishdan bo'shaganmi?
+        // 1. dismissedMap da bo'lsa
+        // 2. Faol ro'yxatda statusi 'resigned' | 'dismissed' | 'inactive' | 'left' bo'lsa
+        // 3. Faol ro'yxatda umuman topilmasa (avval ro'yxatdan o'chirilgan bo'lsa ham turaveradi)
+        const isDismissed = Boolean(
+          matchedDismissed || 
+          (matchedEmp && (matchedEmp.status === 'resigned' || matchedEmp.status === 'dismissed' || matchedEmp.status === 'inactive' || matchedEmp.workStatus === 'left')) ||
+          (!matchedEmp)
+        );
+
+        const empName = rec.employeeName || matched?.fullName || (isDismissed ? `Sobiq xodim #${rec.employeeId || 'Noma\'lum'}` : 'Noma\'lum xodim');
+        const empBranch = rec.branch || matched?.branch || 'Bosh ofis';
+        const empDept = rec.department || matched?.department || (isDismissed ? "Sobiq xodim" : "Savdo bo'limi");
+        const empPos = matched?.position || (isDismissed ? "Ishdan bo'shagan" : 'Xodim');
 
         // Jarima hisoblash
         const isWaived = Boolean(rec.isWaived || rec.status === 'Kechirilgan' || (rec.penalty && String(rec.penalty).includes('Kechirilgan')));
@@ -203,7 +231,7 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
         penaltyList.push({
           id: rec.id || `att-${rec.employeeId}-${rec.date}`,
           date: rec.date || new Date().toISOString().slice(0, 10),
-          employeeId: String(rec.employeeId || matchedEmp?.id || ''),
+          employeeId: String(rec.employeeId || matched?.id || ''),
           employeeName: empName,
           branch: empBranch,
           department: empDept,
@@ -218,7 +246,8 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
           waivedBy: rec.waivedBy || rec.editedBy,
           waivedAt: rec.waivedAt || rec.editedAt,
           status: isWaived ? 'Kechirilgan (Uzrli)' : 'Jarima hisoblangan',
-          notes: rec.notes || rec.delayReason
+          notes: rec.notes || rec.delayReason,
+          isDismissed
         });
       });
 
@@ -270,11 +299,15 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
         return false;
       }
 
-      // 3. Status Filter (active vs waived)
+      // 3. Employee Status Filter (Faol vs Ishdan bo'shagan)
+      if (employeeStatusFilter === 'active' && item.isDismissed) return false;
+      if (employeeStatusFilter === 'dismissed' && !item.isDismissed) return false;
+
+      // 4. Status Filter (active vs waived)
       if (statusFilter === 'active' && item.isWaived) return false;
       if (statusFilter === 'waived' && !item.isWaived) return false;
 
-      // 4. Date Filter
+      // 5. Date Filter
       if (dateRangeFilter === 'today' && item.date !== today) return false;
       if (dateRangeFilter === 'yesterday' && item.date !== yesterday) return false;
       if (dateRangeFilter === 'week' && (item.date < weekAgo || item.date > today)) return false;
@@ -286,7 +319,7 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
 
       return true;
     });
-  }, [penalties, searchQuery, selectedBranchFilter, statusFilter, dateRangeFilter, customStartDate, customEndDate]);
+  }, [penalties, searchQuery, selectedBranchFilter, statusFilter, employeeStatusFilter, dateRangeFilter, customStartDate, customEndDate]);
 
   // ------------------------------------------
   // KPI Metrics Calculation
@@ -296,9 +329,11 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
     let totalDelayMinutes = 0;
     let totalPenaltyAmount = 0;
     let totalWaivedAmount = 0;
+    let dismissedCount = 0;
     const branchCountMap = new Map<string, number>();
 
     filteredPenalties.forEach(p => {
+      if (p.isDismissed) dismissedCount++;
       totalDelayMinutes += p.delayMinutes || 0;
       if (p.isWaived) {
         totalWaivedAmount += p.penaltyAmount || (p.delayMinutes * 1000);
@@ -327,7 +362,8 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
       formattedTotalTime,
       totalPenaltyAmount,
       totalWaivedAmount,
-      mostLateBranch
+      mostLateBranch,
+      dismissedCount
     };
   }, [filteredPenalties]);
 
@@ -441,12 +477,13 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
   // ------------------------------------------
   const handleExport = (type: 'excel' | 'pdf') => {
     const fileName = `Toyona_Kechikishlar_Jarimalar_${new Date().toISOString().slice(0, 10)}`;
-    const headers = ['№', 'Sana', 'Xodim F.I.O', 'Filial', 'Bo\'lim', 'Lavozim', 'Kelgan vaqt', 'Kechikish (daq)', 'Jarima (so\'m)', 'Holati', 'Izoh / Sabab'];
+    const headers = ['№', 'Sana', 'Xodim F.I.O', 'Xodim Holati', 'Filial', 'Bo\'lim', 'Lavozim', 'Kelgan vaqt', 'Kechikish (daq)', 'Jarima (so\'m)', 'Holati', 'Izoh / Sabab'];
     
     const rows = filteredPenalties.map((p, idx) => [
       idx + 1,
       p.date,
       p.employeeName,
+      p.isDismissed ? "Ishdan bo'shagan" : "Faol",
       p.branch,
       p.department || '-',
       p.position || '-',
@@ -462,6 +499,7 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
         '№': idx + 1,
         'Sana': p.date,
         'Xodim F.I.O': p.employeeName,
+        'Xodim Holati': p.isDismissed ? "Ishdan bo'shagan" : "Faol",
         'Filial': p.branch,
         'Bo\'lim': p.department || '-',
         'Lavozim': p.position || '-',
@@ -612,7 +650,13 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
                 {metrics.totalDelays} <span className="text-xs font-bold text-slate-400">ta holat</span>
               </div>
               <div className="text-[11px] font-semibold text-slate-400">
-                Tanlangan davr bo'yicha kechikishlar
+                {metrics.dismissedCount > 0 ? (
+                  <span className="text-rose-500 dark:text-rose-400 font-bold">
+                    Shundan {metrics.dismissedCount} tasi ishdan bo'shaganlarda
+                  </span>
+                ) : (
+                  "Tanlangan davr bo'yicha kechikishlar"
+                )}
               </div>
             </div>
 
@@ -718,9 +762,21 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
                   onChange={(e) => setStatusFilter(e.target.value as any)}
                   className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 outline-none cursor-pointer"
                 >
-                  <option value="all">Barcha statuslar</option>
+                  <option value="all">Barcha jarima statuslari</option>
                   <option value="active">🔴 Faol jarimada</option>
                   <option value="waived">🟢 Kechirilgan (Uzrli)</option>
+                </select>
+
+                {/* Xodim faolligi tanlash (Faol / Ishdan bo'shagan) */}
+                <select
+                  value={employeeStatusFilter}
+                  onChange={(e) => setEmployeeStatusFilter(e.target.value as any)}
+                  className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 outline-none cursor-pointer"
+                  title="Xodim holati bo'yicha saralash"
+                >
+                  <option value="all">Barcha xodimlar</option>
+                  <option value="active">🟢 Faol xodimlar</option>
+                  <option value="dismissed">🔴 Ishdan bo'shaganlar</option>
                 </select>
 
                 {/* Export & Refresh */}
@@ -746,7 +802,7 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
                   <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
                     <th className="py-3 px-3 w-10 text-center">№</th>
                     <th className="py-3 px-3">Sana</th>
-                    <th className="py-3 px-3">Xodim F.I.O</th>
+                    <th className="py-3 px-3">Xodim F.I.O & Holati</th>
                     <th className="py-3 px-3">Filial & Bo'lim</th>
                     <th className="py-3 px-2 text-center">Reja</th>
                     <th className="py-3 px-2 text-center">Kelgan vaqti</th>
@@ -800,8 +856,21 @@ export default function AttendanceSettings({ currentUser, isSuperAdmin }: Attend
 
                           {/* Xodim */}
                           <td className="py-3 px-3">
-                            <div className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
-                              {item.employeeName}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
+                                {item.employeeName}
+                              </span>
+                              {item.isDismissed ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shadow-xs" title="Ushbu xodim hozirda ishdan bo'shagan / tizimda yo'q">
+                                  <UserX className="w-2.5 h-2.5 text-rose-600" />
+                                  Ishdan bo'shagan
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                  <UserCheck className="w-2.5 h-2.5 text-emerald-600" />
+                                  Faol
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-400 font-medium">
                               {item.position || 'Hodim'} {item.employeeId ? `• #${item.employeeId}` : ''}
